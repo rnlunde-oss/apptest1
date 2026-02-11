@@ -4,6 +4,7 @@ import {
 } from '../data/maps.js';
 import { ENCOUNTER_TABLE, ENCOUNTER_TABLES, createEnemy } from '../data/characters.js';
 import { serializeGameState, saveToSlot, loadFromSlot, autoSave, getSlotSummaries } from '../data/saveManager.js';
+import { isTouchDevice } from '../utils/touchDetect.js';
 
 const PLAYER_SPEED = 160;
 
@@ -156,6 +157,17 @@ export class OverworldScene extends Phaser.Scene {
       backgroundColor: '#00000088', padding: { x: 8, y: 4 },
     }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100);
     this.tweens.add({ targets: inst, alpha: 0, delay: 6000, duration: 1000 });
+
+    // ── Touch Controls ──
+    this.touchControls = null;
+    if (isTouchDevice()) {
+      this.scene.launch('TouchControls');
+      this.touchControls = this.scene.get('TouchControls');
+      this.touchControls.events.on('menu-party', () => this.openPartyScreen());
+      this.touchControls.events.on('menu-inv', () => this.openInventoryScreen());
+      this.touchControls.events.on('menu-exp', () => this.openExperienceScreen());
+      this.touchControls.events.on('menu-save', () => this.openSaveMenu());
+    }
 
     // Title
     this.add.text(400, 14, 'Defense of Rhaud — Eastern Frontier, 250 B.C.E.', {
@@ -461,17 +473,23 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
-    const left = this.cursors.left.isDown || this.wasd.left.isDown;
-    const right = this.cursors.right.isDown || this.wasd.right.isDown;
-    const up = this.cursors.up.isDown || this.wasd.up.isDown;
-    const down = this.cursors.down.isDown || this.wasd.down.isDown;
-
+    // Joystick movement (touch) or keyboard movement
     let vx = 0, vy = 0;
-    if (left) vx = -PLAYER_SPEED;
-    else if (right) vx = PLAYER_SPEED;
-    if (up) vy = -PLAYER_SPEED;
-    else if (down) vy = PLAYER_SPEED;
-    if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
+    const jv = this.touchControls ? this.touchControls.joystickVector : null;
+    if (jv && (jv.x !== 0 || jv.y !== 0)) {
+      vx = jv.x * PLAYER_SPEED;
+      vy = jv.y * PLAYER_SPEED;
+    } else {
+      const left = this.cursors.left.isDown || this.wasd.left.isDown;
+      const right = this.cursors.right.isDown || this.wasd.right.isDown;
+      const up = this.cursors.up.isDown || this.wasd.up.isDown;
+      const down = this.cursors.down.isDown || this.wasd.down.isDown;
+      if (left) vx = -PLAYER_SPEED;
+      else if (right) vx = PLAYER_SPEED;
+      if (up) vy = -PLAYER_SPEED;
+      else if (down) vy = PLAYER_SPEED;
+      if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
+    }
     this.player.body.setVelocity(vx, vy);
 
     this.playerDetail.setPosition(this.player.x, this.player.y - 4);
@@ -486,6 +504,9 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
+      this.tryInteract();
+    } else if (this.touchControls && this.touchControls.interactPressed) {
+      this.touchControls.interactPressed = false;
       this.tryInteract();
     }
 
@@ -506,17 +527,29 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  // ──── Touch Controls Visibility ────
+
+  _hideTouchControls() {
+    if (this.touchControls) this.touchControls.setControlsVisible(false);
+  }
+
+  _showTouchControls() {
+    if (this.touchControls) this.touchControls.setControlsVisible(true);
+  }
+
   // ──── Party Screen ────
 
   openPartyScreen() {
     this.partyOpen = true;
     this.player.body.setVelocity(0);
+    this._hideTouchControls();
     this.scene.launch('Party', {
       onClose: () => {
         this.scene.stop('Party');
         this.time.delayedCall(100, () => {
           this.partyOpen = false;
           this.drawPartyHUD();
+          this._showTouchControls();
         });
       },
     });
@@ -527,13 +560,14 @@ export class OverworldScene extends Phaser.Scene {
   openExperienceScreen() {
     this.experienceOpen = true;
     this.player.body.setVelocity(0);
+    this._hideTouchControls();
     this.scene.launch('Experience', {
       onClose: () => {
         this.scene.stop('Experience');
-        // Short delay so the same X keypress doesn't immediately reopen
         this.time.delayedCall(100, () => {
           this.experienceOpen = false;
           this.drawPartyHUD();
+          this._showTouchControls();
         });
       },
     });
@@ -544,12 +578,14 @@ export class OverworldScene extends Phaser.Scene {
   openInventoryScreen() {
     this.inventoryOpen = true;
     this.player.body.setVelocity(0);
+    this._hideTouchControls();
     this.scene.launch('Inventory', {
       onClose: () => {
         this.scene.stop('Inventory');
         this.time.delayedCall(100, () => {
           this.inventoryOpen = false;
           this.drawPartyHUD();
+          this._showTouchControls();
         });
       },
     });
@@ -560,12 +596,14 @@ export class OverworldScene extends Phaser.Scene {
   openShopScreen() {
     this.shopOpen = true;
     this.player.body.setVelocity(0);
+    this._hideTouchControls();
     this.scene.launch('Shop', {
       onClose: () => {
         this.scene.stop('Shop');
         this.shopOpen = false;
         this.drawPartyHUD();
         this.triggerAutoSave();
+        this._showTouchControls();
       },
     });
   }
@@ -575,12 +613,14 @@ export class OverworldScene extends Phaser.Scene {
   openInnScreen() {
     this.innOpen = true;
     this.player.body.setVelocity(0);
+    this._hideTouchControls();
     this.scene.launch('Inn', {
       onClose: () => {
         this.scene.stop('Inn');
         this.innOpen = false;
         this.drawPartyHUD();
         this.triggerAutoSave();
+        this._showTouchControls();
       },
     });
   }
@@ -600,6 +640,7 @@ export class OverworldScene extends Phaser.Scene {
   startBattle(zone) {
     this.inBattle = true;
     this.player.body.setVelocity(0);
+    this._hideTouchControls();
 
     // Pick encounter from zone table
     const table = ENCOUNTER_TABLES[zone] || ENCOUNTER_TABLES.cursed;
@@ -638,6 +679,7 @@ export class OverworldScene extends Phaser.Scene {
           this.scene.resume();
           this.inBattle = false;
           this.drawPartyHUD();
+          this._showTouchControls();
           if (result === 'win') {
             this.triggerAutoSave();
             if (isBossEncounter) {
@@ -806,6 +848,7 @@ export class OverworldScene extends Phaser.Scene {
   openSaveMenu() {
     this.saveMenuOpen = true;
     this.player.body.setVelocity(0);
+    this._hideTouchControls();
 
     const elements = [];
     const { width, height } = this.scale;
@@ -928,6 +971,7 @@ export class OverworldScene extends Phaser.Scene {
       }
       this.time.delayedCall(100, () => {
         this.saveMenuOpen = false;
+        this._showTouchControls();
       });
     };
 
@@ -962,6 +1006,7 @@ export class OverworldScene extends Phaser.Scene {
 
   showDialogue(lines, onComplete) {
     this.dialogueActive = true;
+    this._hideTouchControls();
     this.dialogueQueue = [...lines];
     this.dialogueCallback = onComplete || null;
     this.showNextLine();
@@ -970,6 +1015,7 @@ export class OverworldScene extends Phaser.Scene {
   showNextLine() {
     if (this.dialogueQueue.length === 0) {
       this.dialogueActive = false;
+      this._showTouchControls();
       if (this.dialogueCallback) this.dialogueCallback();
       return;
     }
@@ -979,25 +1025,44 @@ export class OverworldScene extends Phaser.Scene {
     if (this.dText) this.dText.destroy();
     if (this.dHint) this.dHint.destroy();
 
+    const hintStr = this.touchControls ? '[Tap]' : '[E]';
+
     this.dBox = this.add.rectangle(400, 580, 720, 70, 0x000000, 0.9)
       .setStrokeStyle(2, 0xaa8844).setScrollFactor(0).setDepth(200);
     this.dText = this.add.text(60, 555, text, {
       fontSize: '14px', color: '#ffe8cc',
       wordWrap: { width: 640 }, lineSpacing: 4,
     }).setScrollFactor(0).setDepth(201);
-    this.dHint = this.add.text(740, 595, '[E]', {
+    this.dHint = this.add.text(740, 595, hintStr, {
       fontSize: '10px', color: '#887755',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+
+    // Tap-to-advance: make dialogue box interactive for touch
+    this.dBox.setInteractive();
+    let tapReady = false;
+    this.time.delayedCall(200, () => { tapReady = true; });
+    this.dBox.on('pointerdown', () => {
+      if (!tapReady) return;
+      advanceLine();
+    });
+
+    const advanceLine = () => {
+      handler.remove();
+      this.dBox.off('pointerdown');
+      this.dBox.destroy();
+      this.dText.destroy();
+      this.dHint.destroy();
+      this.showNextLine();
+    };
 
     const handler = this.time.addEvent({
       delay: 80, loop: true,
       callback: () => {
         if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
-          handler.remove();
-          this.dBox.destroy();
-          this.dText.destroy();
-          this.dHint.destroy();
-          this.showNextLine();
+          advanceLine();
+        } else if (this.touchControls && this.touchControls.interactPressed) {
+          this.touchControls.interactPressed = false;
+          advanceLine();
         }
       },
     });

@@ -65,6 +65,27 @@ export class ExperienceScene extends Phaser.Scene {
     this.input.on('wheel', (_pointer, _gos, _dx, dy) => {
       if (!this.modalOpen) this.scrollTalents(dy * 0.5);
     });
+
+    // Drag-to-scroll (touch)
+    this._dragStartY = 0;
+    this._dragLastY = 0;
+    this._dragActive = false;
+    this.input.on('pointerdown', (pointer) => {
+      this._dragStartY = pointer.y;
+      this._dragLastY = pointer.y;
+      this._dragActive = false;
+    });
+    this.input.on('pointermove', (pointer) => {
+      if (!pointer.isDown || this.modalOpen) return;
+      const dy = pointer.y - this._dragStartY;
+      if (!this._dragActive && Math.abs(dy) > 5) this._dragActive = true;
+      if (this._dragActive) {
+        const delta = this._dragLastY - pointer.y;
+        this._dragLastY = pointer.y;
+        this.scrollTalents(delta);
+      }
+    });
+    this.input.on('pointerup', () => { this._dragActive = false; });
   }
 
   update() {

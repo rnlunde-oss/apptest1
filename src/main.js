@@ -9,6 +9,7 @@ import { InventoryScene } from './scenes/InventoryScene.js';
 import { ShopScene } from './scenes/ShopScene.js';
 import { InnScene } from './scenes/InnScene.js';
 import { ExperienceScene } from './scenes/ExperienceScene.js';
+import { TouchControlsScene } from './scenes/TouchControlsScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -23,7 +24,10 @@ const config = {
       debug: false,
     },
   },
-  scene: [TitleScene, BootScene, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene],
+  input: {
+    activePointers: 3,
+  },
+  scene: [TitleScene, BootScene, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, TouchControlsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

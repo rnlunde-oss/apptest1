@@ -105,6 +105,33 @@ export class ShopScene extends Phaser.Scene {
         this.scrollSell(dy * 0.5);
       }
     });
+
+    // Drag-to-scroll (touch) — column-aware
+    this._dragStartY = 0;
+    this._dragLastY = 0;
+    this._dragActive = false;
+    this._dragColumn = null; // 'buy' or 'sell'
+    this.input.on('pointerdown', (pointer) => {
+      this._dragStartY = pointer.y;
+      this._dragLastY = pointer.y;
+      this._dragActive = false;
+      this._dragColumn = pointer.x < 400 ? 'buy' : 'sell';
+    });
+    this.input.on('pointermove', (pointer) => {
+      if (!pointer.isDown) return;
+      const dy = pointer.y - this._dragStartY;
+      if (!this._dragActive && Math.abs(dy) > 5) this._dragActive = true;
+      if (this._dragActive) {
+        const delta = this._dragLastY - pointer.y;
+        this._dragLastY = pointer.y;
+        if (this._dragColumn === 'buy') {
+          this.scrollBuy(delta);
+        } else {
+          this.scrollSell(delta);
+        }
+      }
+    });
+    this.input.on('pointerup', () => { this._dragActive = false; });
   }
 
   update() {
