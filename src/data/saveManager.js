@@ -46,6 +46,7 @@ export function serializeGameState(registry, playerPos) {
     gold: registry.get('gold') || 0,
     bossDefeated: registry.get('bossDefeated') || false,
     collectedItems: { ...(registry.get('collectedItems') || {}) },
+    defeatedOverworldEnemies: { ...(registry.get('defeatedOverworldEnemies') || {}) },
     playerPos: { x: playerPos.x, y: playerPos.y },
     saveTime: new Date().toISOString(),
     version: SAVE_VERSION,

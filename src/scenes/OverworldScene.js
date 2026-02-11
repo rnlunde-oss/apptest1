@@ -107,6 +107,30 @@ const WORLD_ITEMS = [
   { id: 'pickup_3', x: 3, y: 13, itemId: 'scout_boots', label: 'Scout Boots' },
 ];
 
+// Overworld-visible enemy encounters
+const OVERWORLD_ENEMIES = [
+  {
+    id: 'ow_wolfpack',
+    tileX: 16, tileY: 13,
+    name: 'Wolf Pack',
+    enemies: ['dire_wolf', 'dire_wolf', 'dire_wolf'],
+    xp: 40, gold: 35,
+    color: 0x8b7355,
+    preDialogue: ['Three dire wolves block the path, their eyes glowing with corruption.'],
+    postDialogue: ['The wolf pack has been slain. The path is clear.'],
+  },
+  {
+    id: 'ow_treant',
+    tileX: 18, tileY: 5,
+    name: 'Corrupted Treant',
+    enemies: ['corrupted_treant', 'fell_spider', 'fell_spider'],
+    xp: 55, gold: 45,
+    color: 0x3a5a2a,
+    preDialogue: ['A massive corrupted treant blocks the way, spiders nesting in its branches.'],
+    postDialogue: ['The corrupted treant crumbles. Its spider guardians scatter.'],
+  },
+];
+
 export class OverworldScene extends Phaser.Scene {
   constructor() {
     super('Overworld');
@@ -122,6 +146,7 @@ export class OverworldScene extends Phaser.Scene {
     this.spawnPlayer();
     this.spawnNPC();
     this.spawnWorldItems();
+    this.spawnOverworldEnemies();
     this.setupCamera();
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -398,6 +423,119 @@ export class OverworldScene extends Phaser.Scene {
         collected: false,
       });
     }
+  }
+
+  // ──── Overworld Enemies ────
+
+  spawnOverworldEnemies() {
+    this.overworldEnemies = [];
+    const defeated = this.registry.get('defeatedOverworldEnemies') || {};
+
+    for (const def of OVERWORLD_ENEMIES) {
+      if (defeated[def.id]) continue; // already defeated
+
+      const px = def.tileX * TILE_SIZE + TILE_SIZE / 2;
+      const py = def.tileY * TILE_SIZE + TILE_SIZE / 2;
+
+      // Colored rectangle sprite
+      const sprite = this.add.rectangle(px, py, 26, 32, def.color).setDepth(10);
+      this.add.rectangle(px, py, 26, 32).setStrokeStyle(1, 0xff4444, 0.4).setDepth(11);
+
+      // Red !! marker
+      const marker = this.add.text(px, py - 26, '!!', {
+        fontSize: '12px', fontStyle: 'bold', color: '#ff4444',
+      }).setOrigin(0.5).setDepth(12);
+      this.tweens.add({
+        targets: marker, y: py - 30,
+        duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+
+      // [E] hint
+      this.add.text(px, py + 22, '[E]', {
+        fontSize: '7px', color: '#cc6666',
+      }).setOrigin(0.5).setDepth(11);
+
+      // Name label
+      this.add.text(px, py + 30, def.name, {
+        fontSize: '7px', color: '#cc9999',
+      }).setOrigin(0.5).setDepth(11);
+
+      // Idle breathing animation
+      this.tweens.add({
+        targets: sprite, scaleY: 1.05, scaleX: 0.97,
+        duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+
+      // Physics collider
+      this.physics.add.existing(sprite, true);
+      this.physics.add.collider(this.player, sprite);
+
+      this.overworldEnemies.push({
+        id: def.id,
+        def,
+        x: px,
+        y: py,
+        sprite,
+        marker,
+        defeated: false,
+      });
+    }
+  }
+
+  startOverworldEnemyBattle(oe) {
+    this.showDialogue(oe.def.preDialogue, () => {
+      this.inBattle = true;
+      this.sfx.playEncounterStart();
+      this.player.body.setVelocity(0);
+      this._hideTouchControls();
+
+      const enemies = oe.def.enemies.map(key => createEnemy(key));
+      const activeParty = this.getActiveParty();
+
+      for (const member of activeParty) {
+        member.isDefending = false;
+        member.isCharged = false;
+        member.statusEffects = [];
+      }
+
+      this.cameras.main.flash(400, 100, 0, 0);
+      this.time.delayedCall(500, () => {
+        this.scene.launch('Battle', {
+          party: activeParty,
+          enemies,
+          xpReward: oe.def.xp,
+          goldReward: oe.def.gold,
+          enemyTypes: [...oe.def.enemies],
+          roster: this.getFullRoster(),
+          isBossEncounter: false,
+          onBattleEnd: (result) => {
+            this.scene.stop('Battle');
+            this.scene.stop('BattleUI');
+            this.scene.resume();
+            this.inBattle = false;
+            this.drawPartyHUD();
+            this._showTouchControls();
+            if (result === 'win') {
+              oe.defeated = true;
+              oe.sprite.destroy();
+              oe.marker.destroy();
+
+              // Record to registry
+              const defeatedMap = this.registry.get('defeatedOverworldEnemies') || {};
+              defeatedMap[oe.id] = true;
+              this.registry.set('defeatedOverworldEnemies', defeatedMap);
+
+              this.showDialogue(oe.def.postDialogue);
+              this.triggerAutoSave();
+            } else if (result === 'lose') {
+              this.handleDefeat();
+            }
+            // 'run' leaves the enemy intact — nothing to do
+          },
+        });
+        this.scene.pause();
+      });
+    });
   }
 
   // ──── Camera ────
@@ -756,7 +894,17 @@ export class OverworldScene extends Phaser.Scene {
       }
     }
 
-    // 4. Check boss altar interaction
+    // 4. Check overworld enemy interaction
+    for (const oe of this.overworldEnemies) {
+      if (oe.defeated) continue;
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, oe.x, oe.y);
+      if (dist < TILE_SIZE * 2.5) {
+        this.startOverworldEnemyBattle(oe);
+        return;
+      }
+    }
+
+    // 5. Check boss altar interaction
     if (this.bossAltarPos) {
       const altarDist = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.bossAltarPos.x, this.bossAltarPos.y);
       if (altarDist < TILE_SIZE * 2.5) {

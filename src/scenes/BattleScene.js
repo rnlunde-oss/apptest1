@@ -140,6 +140,26 @@ export class BattleScene extends Phaser.Scene {
       } else if (enemy.cls === 'Ranged') {
         // Cursed Archer: triangle
         const tri = this.add.triangle(x, y - 18, 0, 8, 4, 0, 8, 8, 0x998866, 0.7).setDepth(7);
+      } else if (enemy.cls === 'Beast') {
+        // Beast: two amber diagonal claw-scratch lines
+        const claw = this.add.graphics().setDepth(7);
+        claw.lineStyle(2, 0xddaa66, 0.8);
+        claw.lineBetween(x - 5, y - 22, x - 1, y - 14);
+        claw.lineBetween(x + 1, y - 22, x + 5, y - 14);
+      } else if (enemy.cls === 'Demon') {
+        // Demon: two small red horn triangles pointing up
+        const horns = this.add.graphics().setDepth(7);
+        horns.fillStyle(0xcc4422, 0.8);
+        horns.fillTriangle(x - 6, y - 14, x - 3, y - 22, x, y - 14);
+        horns.fillTriangle(x, y - 14, x + 3, y - 22, x + 6, y - 14);
+      } else if (enemy.cls === 'Nature') {
+        // Nature: green diamond/leaf shape with tiny stem
+        const leaf = this.add.graphics().setDepth(7);
+        leaf.fillStyle(0x55aa44, 0.8);
+        leaf.fillTriangle(x, y - 22, x - 5, y - 17, x, y - 12);
+        leaf.fillTriangle(x, y - 22, x + 5, y - 17, x, y - 12);
+        leaf.lineStyle(1, 0x55aa44, 0.6);
+        leaf.lineBetween(x, y - 12, x, y - 9);
       }
 
       this.add.text(x, y + spriteH / 2 + 7, enemy.name, {

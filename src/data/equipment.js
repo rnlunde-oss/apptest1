@@ -515,6 +515,85 @@ export const LOOT_TABLES = {
     { itemId: 'runed_robe', weight: 15 },
     { itemId: 'blessed_mantle', weight: 10 },
   ],
+
+  // ──── Beast loot ────
+  plague_rat: [
+    { itemId: null, weight: 60 },
+    { itemId: 'antidote', weight: 12 },
+    { itemId: 'health_potion', weight: 10 },
+    { itemId: 'cloth_wraps', weight: 8 },
+    { itemId: 'rope_belt', weight: 5 },
+    { itemId: 'leather_cap', weight: 5 },
+  ],
+  blood_bat: [
+    { itemId: null, weight: 45 },
+    { itemId: 'health_potion', weight: 12 },
+    { itemId: 'antidote', weight: 10 },
+    { itemId: 'scout_boots', weight: 8 },
+    { itemId: 'leather_greaves', weight: 8 },
+    { itemId: 'cloth_wraps', weight: 7 },
+    { itemId: 'ranger_bracers', weight: 5 },
+    { itemId: 'sash_of_focus', weight: 5 },
+  ],
+  dire_wolf: [
+    { itemId: null, weight: 45 },
+    { itemId: 'hide_pauldrons', weight: 12 },
+    { itemId: 'leather_greaves', weight: 10 },
+    { itemId: 'worn_boots', weight: 8 },
+    { itemId: 'war_belt', weight: 8 },
+    { itemId: 'health_potion', weight: 7 },
+    { itemId: 'iron_greaves', weight: 5 },
+    { itemId: 'gauntlets_of_might', weight: 5 },
+  ],
+  fell_spider: [
+    { itemId: null, weight: 40 },
+    { itemId: 'antidote', weight: 15 },
+    { itemId: 'cloth_wraps', weight: 10 },
+    { itemId: 'scout_boots', weight: 8 },
+    { itemId: 'ranger_bracers', weight: 8 },
+    { itemId: 'health_potion', weight: 7 },
+    { itemId: 'hunter_bow', weight: 6 },
+    { itemId: 'sash_of_focus', weight: 6 },
+  ],
+
+  // ──── Demon loot ────
+  shadow_fiend: [
+    { itemId: null, weight: 30 },
+    { itemId: 'arcane_circlet', weight: 12 },
+    { itemId: 'tome_of_wisdom', weight: 12 },
+    { itemId: 'sash_of_focus', weight: 10 },
+    { itemId: 'mana_potion', weight: 10 },
+    { itemId: 'runed_robe', weight: 8 },
+    { itemId: 'staff_of_embers', weight: 6 },
+    { itemId: 'blessed_mantle', weight: 6 },
+    { itemId: 'greater_health_potion', weight: 6 },
+  ],
+  hellhound: [
+    { itemId: null, weight: 30 },
+    { itemId: 'iron_helm', weight: 12 },
+    { itemId: 'chainmail_hauberk', weight: 10 },
+    { itemId: 'iron_greaves', weight: 10 },
+    { itemId: 'gauntlets_of_might', weight: 8 },
+    { itemId: 'greater_health_potion', weight: 8 },
+    { itemId: 'frontier_blade', weight: 7 },
+    { itemId: 'ironshod_boots', weight: 7 },
+    { itemId: 'executioner_axe', weight: 4 },
+    { itemId: 'commander_plate', weight: 4 },
+  ],
+
+  // ──── Corrupted Nature loot ────
+  corrupted_treant: [
+    { itemId: null, weight: 25 },
+    { itemId: 'commander_plate', weight: 10 },
+    { itemId: 'warden_helm', weight: 10 },
+    { itemId: 'blessed_mantle', weight: 10 },
+    { itemId: 'executioner_axe', weight: 8 },
+    { itemId: 'runed_robe', weight: 8 },
+    { itemId: 'staff_of_embers', weight: 8 },
+    { itemId: 'iron_shield', weight: 7 },
+    { itemId: 'greater_health_potion', weight: 7 },
+    { itemId: 'chainmail_hauberk', weight: 7 },
+  ],
 };
 
 // Roll loot for a single enemy kill. Returns itemId or null.
