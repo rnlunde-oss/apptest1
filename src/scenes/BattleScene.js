@@ -25,6 +25,8 @@ export class BattleScene extends Phaser.Scene {
   create() {
     this.sfx = this.registry.get('soundManager');
 
+    this._generateAtikeshTexture();
+
     // Dark battlefield
     this.add.rectangle(400, 320, 800, 640, 0x111118);
     this.add.ellipse(400, 440, 750, 160, 0x1a1a28).setDepth(0);
@@ -96,22 +98,29 @@ export class BattleScene extends Phaser.Scene {
 
       this.add.ellipse(x, y + spriteH / 2 + 1, spriteW + 10, 14, 0x000000, 0.3).setDepth(3);
 
-      // Boss red glow
+      let sprite;
+
       if (enemy.isBoss) {
-        const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, 0xff0022, 0.15).setDepth(4);
+        // Boss: purple necromantic glow
+        const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, 0x7722aa, 0.15).setDepth(4);
         this.tweens.add({
           targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
           duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
         });
+
+        // Use detailed procedural texture
+        sprite = this.add.image(x, y, 'atikesh_boss').setDepth(5);
+      } else {
+        // Non-boss red glow (none currently, but kept for structure)
+
+        const spriteAlpha = enemy.cls === 'Spirit' ? 0.7 : 1;
+        sprite = this.add.rectangle(x, y, spriteW, spriteH, enemy.color).setDepth(5).setAlpha(spriteAlpha);
+        const strokeColor = 0xff4444;
+        const strokeAlpha = 0.2;
+        this.add.rectangle(x, y, spriteW, spriteH).setStrokeStyle(1, strokeColor, strokeAlpha).setDepth(6);
       }
 
-      const spriteAlpha = enemy.cls === 'Spirit' ? 0.7 : 1;
-      const sprite = this.add.rectangle(x, y, spriteW, spriteH, enemy.color).setDepth(5).setAlpha(spriteAlpha);
-      const strokeColor = enemy.isBoss ? 0xff2244 : 0xff4444;
-      const strokeAlpha = enemy.isBoss ? 0.5 : 0.2;
-      this.add.rectangle(x, y, spriteW, spriteH).setStrokeStyle(enemy.isBoss ? 2 : 1, strokeColor, strokeAlpha).setDepth(6);
-
-      // Class-based visual icons
+      // Class-based visual icons (skip for boss — texture has its own detail)
       if (enemy.cls === 'Undead') {
         // Skull eyes for undead
         this.add.circle(x, y - 16, 5, 0xddddaa, 0.5).setDepth(7);
@@ -131,11 +140,6 @@ export class BattleScene extends Phaser.Scene {
       } else if (enemy.cls === 'Ranged') {
         // Cursed Archer: triangle
         const tri = this.add.triangle(x, y - 18, 0, 8, 4, 0, 8, 8, 0x998866, 0.7).setDepth(7);
-      } else if (enemy.cls === 'Boss') {
-        // Boss: crown-like icon
-        this.add.circle(x, y - spriteH / 2 - 4, 5, 0xff2244, 0.6).setDepth(7);
-        this.add.circle(x - 4, y - spriteH / 2 - 2, 2, 0xff4466, 0.5).setDepth(7);
-        this.add.circle(x + 4, y - spriteH / 2 - 2, 2, 0xff4466, 0.5).setDepth(7);
       }
 
       this.add.text(x, y + spriteH / 2 + 7, enemy.name, {
@@ -150,6 +154,135 @@ export class BattleScene extends Phaser.Scene {
 
       this.enemySprites.push({ sprite, character: enemy, baseX: x, baseY: y });
     });
+  }
+
+  // ──── Boss Texture Generation ────
+
+  _generateAtikeshTexture() {
+    if (this.textures.exists('atikesh_boss')) return;
+
+    const W = 64, H = 80;
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+
+    // 1. Lower robes — dark trapezoid, wider at bottom
+    g.fillStyle(0x1a1018);
+    g.fillTriangle(16, 45, 48, 45, 56, 78);
+    g.fillTriangle(16, 45, 8, 78, 56, 78);
+    // Red trim lines on robe edges
+    g.lineStyle(1, 0x8b2020);
+    g.lineBetween(10, 76, 16, 45);
+    g.lineBetween(54, 76, 48, 45);
+    // Horizontal red trim near bottom
+    g.lineBetween(12, 70, 52, 70);
+
+    // 2. Arms — dark sleeves extending from shoulders
+    // Left arm (dagger side)
+    g.fillStyle(0x1a1018);
+    g.fillRect(8, 32, 10, 22);
+    // Right arm (orb side)
+    g.fillRect(46, 32, 10, 22);
+
+    // 3. Upper torso — dark robes with red cross pattern
+    g.fillStyle(0x1a1018);
+    g.fillRect(18, 24, 28, 24);
+    // Red cross pattern on chest
+    g.lineStyle(1, 0x8b2020);
+    g.lineBetween(32, 26, 32, 46);
+    g.lineBetween(22, 36, 42, 36);
+
+    // 4. Belt — brown band with skull decorations
+    g.fillStyle(0x4a3828);
+    g.fillRect(16, 44, 32, 4);
+    // Skull decorations on belt (3 small circles)
+    g.fillStyle(0xd4c8a0);
+    g.fillCircle(24, 46, 2);
+    g.fillCircle(32, 46, 2);
+    g.fillCircle(40, 46, 2);
+    // Tiny dark dots for skull eyes
+    g.fillStyle(0x1a1018);
+    g.fillRect(23, 45, 1, 1);
+    g.fillRect(25, 45, 1, 1);
+    g.fillRect(31, 45, 1, 1);
+    g.fillRect(33, 45, 1, 1);
+    g.fillRect(39, 45, 1, 1);
+    g.fillRect(41, 45, 1, 1);
+
+    // 5. Shoulders — wide dark pads with skull decorations
+    g.fillStyle(0x221820);
+    g.fillRect(10, 24, 14, 8);
+    g.fillRect(40, 24, 14, 8);
+    // Skull on left shoulder
+    g.fillStyle(0xd4c8a0);
+    g.fillCircle(17, 28, 3);
+    g.fillStyle(0x1a1018);
+    g.fillRect(16, 27, 1, 1);
+    g.fillRect(18, 27, 1, 1);
+    // Skull on right shoulder
+    g.fillStyle(0xd4c8a0);
+    g.fillCircle(47, 28, 3);
+    g.fillStyle(0x1a1018);
+    g.fillRect(46, 27, 1, 1);
+    g.fillRect(48, 27, 1, 1);
+
+    // 6. Left arm — blood-red dagger
+    // Handle (brown)
+    g.fillStyle(0x5a3a1a);
+    g.fillRect(10, 48, 3, 6);
+    // Guard (dark metal)
+    g.fillStyle(0x666666);
+    g.fillRect(8, 47, 7, 2);
+    // Blade (silver)
+    g.fillStyle(0xaabbcc);
+    g.fillTriangle(11, 47, 9, 38, 13, 38);
+    // Blood drip on blade
+    g.fillStyle(0xcc2222);
+    g.fillRect(11, 40, 1, 3);
+    g.fillRect(10, 42, 1, 2);
+
+    // 7. Right arm — purple magic orb
+    // Outer glow
+    g.fillStyle(0x7733bb, 0.3);
+    g.fillCircle(51, 50, 7);
+    // Orb body
+    g.fillStyle(0x9944cc);
+    g.fillCircle(51, 50, 5);
+    // Bright center highlight
+    g.fillStyle(0xeeccff);
+    g.fillCircle(50, 49, 2);
+
+    // 8. Head — bald pale dome
+    // Neck
+    g.fillStyle(0xc4a882);
+    g.fillRect(28, 18, 8, 8);
+    // Head oval (bald)
+    g.fillStyle(0xc4a882);
+    g.fillCircle(32, 12, 10);
+    // Dark eye sockets
+    g.fillStyle(0x1a0a10);
+    g.fillRect(27, 11, 4, 3);
+    g.fillRect(33, 11, 4, 3);
+    // Glowing white-blue eyes
+    g.fillStyle(0xccddff);
+    g.fillRect(28, 11, 2, 2);
+    g.fillRect(34, 11, 2, 2);
+    // Mouth line
+    g.lineStyle(1, 0x2a1a20);
+    g.lineBetween(30, 16, 34, 16);
+
+    // 9. Robe hem — jagged bottom edge for flowing effect
+    g.fillStyle(0x1a1018);
+    g.fillTriangle(8, 76, 12, 80, 16, 76);
+    g.fillTriangle(16, 76, 20, 80, 24, 76);
+    g.fillTriangle(24, 76, 28, 80, 32, 76);
+    g.fillTriangle(32, 76, 36, 80, 40, 76);
+    g.fillTriangle(40, 76, 44, 80, 48, 76);
+    g.fillTriangle(48, 76, 52, 80, 56, 76);
+    // Red trim on hem tips
+    g.lineStyle(1, 0x8b2020);
+    g.lineBetween(8, 78, 56, 78);
+
+    g.generateTexture('atikesh_boss', W, H);
+    g.destroy();
   }
 
   // ──── Turn System ────
@@ -1018,13 +1151,22 @@ export class BattleScene extends Phaser.Scene {
   }
 
   flashSprite(sprite) {
-    const orig = sprite.fillColor;
-    sprite.setFillStyle(0xffffff);
-    this.tweens.add({
-      targets: sprite, scaleX: 0.85, scaleY: 0.85,
-      duration: 80, yoyo: true,
-      onComplete: () => sprite.setFillStyle(orig),
-    });
+    if (sprite.fillColor !== undefined) {
+      const orig = sprite.fillColor;
+      sprite.setFillStyle(0xffffff);
+      this.tweens.add({
+        targets: sprite, scaleX: 0.85, scaleY: 0.85,
+        duration: 80, yoyo: true,
+        onComplete: () => sprite.setFillStyle(orig),
+      });
+    } else {
+      sprite.setTint(0xffffff);
+      this.tweens.add({
+        targets: sprite, scaleX: 0.85, scaleY: 0.85,
+        duration: 80, yoyo: true,
+        onComplete: () => sprite.clearTint(),
+      });
+    }
   }
 
   showFloatingText(sprite, text, color) {
