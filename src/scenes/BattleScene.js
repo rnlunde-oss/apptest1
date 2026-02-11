@@ -1,0 +1,1019 @@
+import { ABILITIES } from '../data/abilities.js';
+import { awardXP } from '../data/characters.js';
+import { rollLoot, EQUIPMENT, lookupItem, CONSUMABLES } from '../data/equipment.js';
+
+export class BattleScene extends Phaser.Scene {
+  constructor() {
+    super('Battle');
+  }
+
+  init(data) {
+    this.party = data.party;         // active party members (up to 4)
+    this.enemies = data.enemies;     // enemy instances (up to 4)
+    this.xpReward = data.xpReward;   // XP for winning
+    this.goldReward = data.goldReward || 0;
+    this.enemyTypes = data.enemyTypes || []; // original enemy type keys for loot
+    this.fullRoster = data.roster;   // all recruited characters (for shared XP)
+    this.onBattleEnd = data.onBattleEnd;
+    this.isBossEncounter = data.isBossEncounter || false;
+    this.battleOver = false;
+    this.turnQueue = [];
+    this.currentTurnIndex = -1;
+    this.roundNumber = 0;
+  }
+
+  create() {
+    // Dark battlefield
+    this.add.rectangle(400, 320, 800, 640, 0x111118);
+    this.add.ellipse(400, 440, 750, 160, 0x1a1a28).setDepth(0);
+    this.add.rectangle(400, 200, 800, 2, 0x332244, 0.3).setDepth(0);
+
+    this.drawCombatants();
+
+    // Launch UI — it calls buildTurnQueue via callback when ready
+    this.scene.launch('BattleUI', {
+      battleScene: this,
+      party: this.party,
+      enemies: this.enemies,
+      inventory: this.registry.get('inventory'),
+    });
+  }
+
+  drawCombatants() {
+    this.partySprites = [];
+    this.enemySprites = [];
+
+    // Party — bottom row, spaced evenly up to 4
+    const partyCount = this.party.length;
+    const partyStartX = 400 - (partyCount - 1) * 70;
+
+    this.party.forEach((member, i) => {
+      if (member.hp <= 0) return;
+      const x = partyStartX + i * 140;
+      const y = 420;
+
+      this.add.ellipse(x, y + 26, 48, 14, 0x000000, 0.3).setDepth(3);
+      const sprite = this.add.rectangle(x, y, 38, 50, member.color).setDepth(5);
+      this.add.rectangle(x, y, 38, 50).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
+
+      // Class icon
+      const iconMap = {
+        Commander: { shape: 'star', color: 0xffcc44 },
+        Warrior: { shape: 'square', color: 0xbb6622 },
+        Ranger: { shape: 'triangle', color: 0x44aa44 },
+        Wizard: { shape: 'circle', color: 0x6644cc },
+        Priest: { shape: 'circle', color: 0xddddaa },
+      };
+      const icon = iconMap[member.cls] || iconMap.Warrior;
+      this.add.circle(x, y - 20, 4, icon.color, 0.8).setDepth(7);
+
+      // Name under sprite
+      this.add.text(x, y + 32, member.name, {
+        fontSize: '9px', color: '#cccccc',
+      }).setOrigin(0.5).setDepth(7);
+
+      this.tweens.add({
+        targets: sprite, y: y - 3,
+        duration: 900 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+
+      this.partySprites.push({ sprite, character: member, baseX: x, baseY: y });
+    });
+
+    // Enemies — top row
+    const enemyCount = this.enemies.length;
+    const enemyStartX = 400 - (enemyCount - 1) * 65;
+
+    this.enemies.forEach((enemy, i) => {
+      const x = enemyStartX + i * 130;
+      const y = 210;
+
+      // Boss enemies get larger sprites
+      const spriteW = enemy.isBoss ? 50 : 38;
+      const spriteH = enemy.isBoss ? 65 : 50;
+
+      this.add.ellipse(x, y + spriteH / 2 + 1, spriteW + 10, 14, 0x000000, 0.3).setDepth(3);
+
+      // Boss red glow
+      if (enemy.isBoss) {
+        const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, 0xff0022, 0.15).setDepth(4);
+        this.tweens.add({
+          targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
+          duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        });
+      }
+
+      const spriteAlpha = enemy.cls === 'Spirit' ? 0.7 : 1;
+      const sprite = this.add.rectangle(x, y, spriteW, spriteH, enemy.color).setDepth(5).setAlpha(spriteAlpha);
+      const strokeColor = enemy.isBoss ? 0xff2244 : 0xff4444;
+      const strokeAlpha = enemy.isBoss ? 0.5 : 0.2;
+      this.add.rectangle(x, y, spriteW, spriteH).setStrokeStyle(enemy.isBoss ? 2 : 1, strokeColor, strokeAlpha).setDepth(6);
+
+      // Class-based visual icons
+      if (enemy.cls === 'Undead') {
+        // Skull eyes for undead
+        this.add.circle(x, y - 16, 5, 0xddddaa, 0.5).setDepth(7);
+        this.add.circle(x - 2, y - 17, 1.5, 0x220000).setDepth(8);
+        this.add.circle(x + 2, y - 17, 1.5, 0x220000).setDepth(8);
+      } else if (enemy.cls === 'Spirit') {
+        // Wraith: ghostly wisps
+        this.add.circle(x - 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
+        this.add.circle(x + 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
+      } else if (enemy.cls === 'Armored') {
+        // Dark Knight: shield icon
+        this.add.rectangle(x, y - 16, 8, 10, 0x888899, 0.7).setDepth(7);
+        this.add.rectangle(x, y - 16, 8, 10).setStrokeStyle(1, 0xaaaacc, 0.5).setDepth(8);
+      } else if (enemy.cls === 'Caster') {
+        // Necromancer: purple circle
+        this.add.circle(x, y - 18, 4, 0x8844cc, 0.6).setDepth(7);
+      } else if (enemy.cls === 'Ranged') {
+        // Cursed Archer: triangle
+        const tri = this.add.triangle(x, y - 18, 0, 8, 4, 0, 8, 8, 0x998866, 0.7).setDepth(7);
+      } else if (enemy.cls === 'Boss') {
+        // Boss: crown-like icon
+        this.add.circle(x, y - spriteH / 2 - 4, 5, 0xff2244, 0.6).setDepth(7);
+        this.add.circle(x - 4, y - spriteH / 2 - 2, 2, 0xff4466, 0.5).setDepth(7);
+        this.add.circle(x + 4, y - spriteH / 2 - 2, 2, 0xff4466, 0.5).setDepth(7);
+      }
+
+      this.add.text(x, y + spriteH / 2 + 7, enemy.name, {
+        fontSize: '9px', color: enemy.isBoss ? '#ff8888' : '#cc9999',
+        fontStyle: enemy.isBoss ? 'bold' : 'normal',
+      }).setOrigin(0.5).setDepth(7);
+
+      this.tweens.add({
+        targets: sprite, y: y - 3,
+        duration: 1100 + i * 150, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+
+      this.enemySprites.push({ sprite, character: enemy, baseX: x, baseY: y });
+    });
+  }
+
+  // ──── Turn System ────
+
+  buildTurnQueue() {
+    this.roundNumber++;
+    this.turnQueue = [];
+
+    for (const m of this.party) {
+      if (m.hp > 0) this.turnQueue.push({ side: 'party', character: m });
+    }
+    for (const e of this.enemies) {
+      if (e.hp > 0) this.turnQueue.push({ side: 'enemy', character: e });
+    }
+
+    // Sort by speed (descending), tie-break: party goes first
+    this.turnQueue.sort((a, b) => {
+      const spdDiff = this.getEffectiveSpd(b.character) - this.getEffectiveSpd(a.character);
+      if (spdDiff !== 0) return spdDiff;
+      return a.side === 'party' ? -1 : 1;
+    });
+
+    this.currentTurnIndex = -1;
+
+    // Process DOTs at round start (skip round 1)
+    if (this.roundNumber > 1) {
+      this.processDOTs(() => this.nextTurn());
+    } else {
+      this.nextTurn();
+    }
+  }
+
+  getEffectiveSpd(char) {
+    // Start from the getter (base + equipment) for party, or baseSpd for enemies
+    let spd = char.spd;
+    // Status effect percentages scale off baseSpd to prevent equipment amplifying buffs
+    for (const eff of char.statusEffects) {
+      if (eff.stat === 'spd' && eff.type === 'buff') spd += Math.floor(char.baseSpd * eff.amount);
+      if (eff.stat === 'spd' && eff.type === 'debuff') spd -= Math.floor(char.baseSpd * eff.amount);
+    }
+    return Math.max(1, spd);
+  }
+
+  nextTurn() {
+    if (this.battleOver) return;
+
+    this.currentTurnIndex++;
+
+    if (this.currentTurnIndex >= this.turnQueue.length) {
+      // End of round — tick down status effects, then new round
+      this.tickStatusEffects();
+      this.buildTurnQueue();
+      return;
+    }
+
+    const turn = this.turnQueue[this.currentTurnIndex];
+    if (turn.character.hp <= 0) {
+      this.nextTurn();
+      return;
+    }
+
+    // Reset defend at start of their turn
+    turn.character.isDefending = false;
+
+    const uiScene = this.scene.get('BattleUI');
+    uiScene.highlightTurn(turn);
+
+    if (turn.side === 'party') {
+      uiScene.startPlayerTurn(turn.character);
+    } else {
+      this.time.delayedCall(400, () => this.doEnemyAI(turn.character));
+    }
+  }
+
+  // ──── Status Effects ────
+
+  processDOTs(callback) {
+    const allChars = [...this.party, ...this.enemies];
+    const messages = [];
+
+    for (const char of allChars) {
+      if (char.hp <= 0) continue;
+      for (const eff of char.statusEffects) {
+        if (eff.type === 'dot') {
+          const dmg = eff.amount;
+          char.hp = Math.max(0, char.hp - dmg);
+          messages.push({ text: `${char.name} takes ${dmg} poison damage!`, char });
+        }
+      }
+    }
+
+    if (messages.length === 0) { callback(); return; }
+
+    const uiScene = this.scene.get('BattleUI');
+    uiScene.updateHP();
+
+    // Show DOT messages
+    const showNext = (idx) => {
+      if (idx >= messages.length) {
+        if (this.checkAllDeaths()) return;
+        callback();
+        return;
+      }
+      // Floating damage on the affected character
+      const info = this.findSpriteFor(messages[idx].char);
+      if (info) this.showFloatingText(info.sprite, `-${messages[idx].char.statusEffects.find(e => e.type === 'dot')?.amount || '?'}`, '#aa44cc');
+
+      uiScene.showMessage(messages[idx].text, () => {
+        uiScene.updateHP();
+        showNext(idx + 1);
+      });
+    };
+    showNext(0);
+  }
+
+  tickStatusEffects() {
+    const allChars = [...this.party, ...this.enemies];
+    for (const char of allChars) {
+      for (let i = char.statusEffects.length - 1; i >= 0; i--) {
+        char.statusEffects[i].turnsLeft--;
+        if (char.statusEffects[i].turnsLeft <= 0) {
+          char.statusEffects.splice(i, 1);
+        }
+      }
+      // Clear charge if it expired
+      if (char.isCharged && !char.statusEffects.find(e => e.stat === 'charged')) {
+        char.isCharged = false;
+      }
+    }
+  }
+
+  getEffectiveAtk(char) {
+    // Start from the getter (base + equipment) for party, or baseAtk for enemies
+    let atk = char.atk;
+    // Status effect percentages scale off baseAtk to prevent equipment amplifying buffs
+    for (const eff of char.statusEffects) {
+      if (eff.stat === 'atk' && eff.type === 'buff') atk += Math.floor(char.baseAtk * eff.amount);
+      if (eff.stat === 'atk' && eff.type === 'debuff') atk -= Math.floor(char.baseAtk * eff.amount);
+    }
+    return Math.max(1, atk);
+  }
+
+  getEffectiveDef(char) {
+    // Start from the getter (base + equipment) for party, or baseDef for enemies
+    let def = char.def;
+    if (char.isDefending) def *= 2;
+    // Status effect percentages scale off baseDef to prevent equipment amplifying buffs
+    for (const eff of char.statusEffects) {
+      if (eff.stat === 'def' && (eff.type === 'buff' || eff.type === 'shield')) {
+        def += Math.floor(char.baseDef * eff.amount);
+      }
+      if (eff.stat === 'def' && eff.type === 'debuff') {
+        def -= Math.floor(char.baseDef * eff.amount);
+      }
+    }
+    return Math.max(1, def);
+  }
+
+  // ──── Player Actions ────
+
+  executeAbility(abilityKey, user, target) {
+    if (this.battleOver) return;
+
+    const ability = ABILITIES[abilityKey];
+    if (!ability) return;
+    const uiScene = this.scene.get('BattleUI');
+
+    // MP check
+    if (user.mp < ability.mpCost) {
+      uiScene.showMessage(`${user.name} doesn't have enough MP!`, () => {
+        uiScene.startPlayerTurn(user);
+      });
+      return;
+    }
+    user.mp -= ability.mpCost;
+
+    // ── Defend ──
+    if (ability.type === 'defend') {
+      user.isDefending = true;
+      uiScene.updateHP();
+      uiScene.showMessage(`${user.name} braces for impact!`, () => this.nextTurn());
+      return;
+    }
+
+    // ── Charge ──
+    if (ability.type === 'charge') {
+      user.isCharged = true;
+      if (ability.effect) {
+        user.statusEffects.push({
+          ...ability.effect,
+          turnsLeft: ability.effect.turns,
+          label: 'Charged',
+        });
+      }
+      uiScene.updateHP();
+      uiScene.showMessage(`${user.name} builds up power!`, () => this.nextTurn());
+      return;
+    }
+
+    // ── Buff (party-wide or self) ──
+    if (ability.type === 'buff') {
+      const targets = ability.target === 'party'
+        ? this.party.filter(m => m.hp > 0)
+        : [user];
+      for (const t of targets) {
+        if (ability.effect) {
+          // Don't stack same buff
+          const existing = t.statusEffects.find(e => e.stat === ability.effect.stat && e.type === 'buff');
+          if (existing) {
+            existing.turnsLeft = ability.effect.turns; // refresh duration
+          } else {
+            t.statusEffects.push({
+              ...ability.effect,
+              turnsLeft: ability.effect.turns,
+              label: ability.name,
+            });
+          }
+        }
+      }
+      const targetLabel = ability.target === 'party' ? 'the party' : user.name;
+      uiScene.updateHP();
+      uiScene.showMessage(`${user.name} used ${ability.name} on ${targetLabel}!`, () => this.nextTurn());
+      return;
+    }
+
+    // ── Heal (party-wide or single) ──
+    if (ability.type === 'heal') {
+      const healTargets = ability.target === 'party'
+        ? this.party.filter(m => m.hp > 0)
+        : [target];
+
+      // Handle revive — allow targeting dead allies
+      if (ability.revive && target && target.hp <= 0) {
+        target.hp = Math.min(ability.healAmount, target.maxHp);
+        const info = this.findSpriteFor(target);
+        if (info) {
+          info.sprite.setAlpha(1);
+          this.showFloatingText(info.sprite, `+${target.hp}`, '#44ff44');
+        }
+        uiScene.updateHP();
+        uiScene.showMessage(`${user.name} used ${ability.name}! ${target.name} is revived!`, () => this.nextTurn());
+        return;
+      }
+
+      for (const t of healTargets) {
+        if (t.hp <= 0) continue;
+        const heal = ability.healAmount || 0;
+        const before = t.hp;
+        t.hp = Math.min(t.maxHp, t.hp + heal);
+        const actual = t.hp - before;
+        if (actual > 0) {
+          const info = this.findSpriteFor(t);
+          if (info) this.showFloatingText(info.sprite, `+${actual}`, '#44ff44');
+        }
+      }
+      const targetLabel = ability.target === 'party' ? 'the party' : target.name;
+      uiScene.updateHP();
+      uiScene.showMessage(`${user.name} used ${ability.name} on ${targetLabel}!`, () => this.nextTurn());
+      return;
+    }
+
+    // ── All Enemies (AoE physical/magic/debuff) ──
+    if (ability.target === 'all_enemies') {
+      const livingEnemies = this.enemies.filter(e => e.hp > 0);
+      if (livingEnemies.length === 0) { this.nextTurn(); return; }
+
+      const messages = [];
+      let totalDmg = 0;
+
+      const hitNext = (idx) => {
+        if (idx >= livingEnemies.length) {
+          // Apply debuff effects to all hit targets
+          if (ability.effect) {
+            for (const e of livingEnemies) {
+              if (e.hp <= 0) continue;
+              const existing = e.statusEffects.find(
+                s => s.stat === ability.effect.stat && s.type === ability.effect.type
+              );
+              if (existing) {
+                existing.turnsLeft = ability.effect.turns;
+              } else {
+                e.statusEffects.push({
+                  ...ability.effect,
+                  turnsLeft: ability.effect.turns,
+                  label: ability.name,
+                });
+              }
+            }
+          }
+          uiScene.updateHP();
+          let msg = `${user.name} used ${ability.name}! Hit ${livingEnemies.length} enemies for ${totalDmg} total damage!`;
+          if (ability.effect?.type === 'debuff') msg += ' Debuffed!';
+          uiScene.showMessage(msg, () => {
+            if (this.checkAllDeaths()) return;
+            this.nextTurn();
+          });
+          return;
+        }
+
+        const enemy = livingEnemies[idx];
+
+        // Accuracy check per target
+        if (Math.random() * 100 > ability.accuracy) {
+          hitNext(idx + 1);
+          return;
+        }
+
+        // Damage calc
+        let atkStat = this.getEffectiveAtk(user);
+        let defStat = this.getEffectiveDef(enemy);
+        let power = ability.power;
+        if (user.isCharged && (ability.type === 'physical' || ability.type === 'debuff')) {
+          power *= 2;
+          if (idx === 0) {
+            user.isCharged = false;
+            user.statusEffects = user.statusEffects.filter(e => e.stat !== 'charged');
+          }
+        }
+        const baseDmg = (power * (atkStat / defStat)) * 0.8;
+        const randomMod = 0.9 + Math.random() * 0.2;
+        const damage = Math.max(1, Math.floor(baseDmg * randomMod));
+        enemy.hp = Math.max(0, enemy.hp - damage);
+        totalDmg += damage;
+
+        const info = this.findSpriteFor(enemy);
+        if (info) {
+          this.flashSprite(info.sprite);
+          this.showFloatingText(info.sprite, `-${damage}`, '#ff4444');
+        }
+
+        this.time.delayedCall(200, () => hitNext(idx + 1));
+      };
+
+      hitNext(0);
+      return;
+    }
+
+    // ── Debuff (with damage) ──
+    if (ability.type === 'debuff') {
+      this.doAttack(user, target, ability, () => {
+        // Apply debuff effect on hit
+        if (ability.effect && target.hp > 0) {
+          const existing = target.statusEffects.find(e => e.stat === ability.effect.stat && e.type === 'debuff');
+          if (existing) {
+            existing.turnsLeft = ability.effect.turns;
+          } else {
+            target.statusEffects.push({
+              ...ability.effect,
+              turnsLeft: ability.effect.turns,
+              label: ability.name,
+            });
+          }
+        }
+        if (this.checkAllDeaths()) return;
+        this.nextTurn();
+      });
+      return;
+    }
+
+    // ── Physical / Magic attack (with heal-on-hit support for Drain Life) ──
+    this.doAttack(user, target, ability, () => {
+      // Apply on-hit effects (DOT, etc.)
+      if (ability.effect && target.hp > 0) {
+        const existing = target.statusEffects.find(
+          e => e.type === ability.effect.type && e.stat === ability.effect.stat
+        );
+        if (existing) {
+          existing.turnsLeft = ability.effect.turns;
+        } else {
+          target.statusEffects.push({
+            ...ability.effect,
+            turnsLeft: ability.effect.turns,
+            label: ability.name,
+          });
+        }
+      }
+      // Heal-on-hit (e.g. Drain Life)
+      if (ability.healAmount && user.hp > 0) {
+        const before = user.hp;
+        user.hp = Math.min(user.maxHp, user.hp + ability.healAmount);
+        const actual = user.hp - before;
+        if (actual > 0) {
+          const userInfo = this.findSpriteFor(user);
+          if (userInfo) this.showFloatingText(userInfo.sprite, `+${actual}`, '#44ff44');
+        }
+        uiScene.updateHP();
+      }
+      if (this.checkAllDeaths()) return;
+      this.nextTurn();
+    });
+  }
+
+  doAttack(attacker, defender, ability, callback) {
+    const uiScene = this.scene.get('BattleUI');
+
+    // Accuracy
+    if (Math.random() * 100 > ability.accuracy) {
+      uiScene.showMessage(`${attacker.name} used ${ability.name}... but missed!`, callback);
+      return;
+    }
+
+    // Damage calc
+    let atkStat = this.getEffectiveAtk(attacker);
+    let defStat = this.getEffectiveDef(defender);
+
+    // Charge doubles attack power
+    let power = ability.power;
+    if (attacker.isCharged && (ability.type === 'physical' || ability.type === 'debuff')) {
+      power *= 2;
+      attacker.isCharged = false;
+      // Remove charged status
+      attacker.statusEffects = attacker.statusEffects.filter(e => e.stat !== 'charged');
+    }
+
+    const baseDmg = (power * (atkStat / defStat)) * 0.8;
+    const randomMod = 0.9 + Math.random() * 0.2;
+    const damage = Math.max(1, Math.floor(baseDmg * randomMod));
+
+    defender.hp = Math.max(0, defender.hp - damage);
+
+    const defInfo = this.findSpriteFor(defender);
+    if (defInfo) {
+      this.flashSprite(defInfo.sprite);
+      this.showFloatingText(defInfo.sprite, `-${damage}`, '#ff4444');
+    }
+
+    let msg = `${attacker.name} used ${ability.name}! (-${damage} HP)`;
+    if (defender.isDefending) msg += ' (Guarded!)';
+    if (power > ability.power) msg += ' CHARGED!';
+    if (ability.effect?.type === 'dot' && defender.hp > 0) msg += ' Poisoned!';
+    if (ability.effect?.type === 'debuff' && defender.hp > 0) msg += ' Defense lowered!';
+
+    uiScene.updateHP();
+    uiScene.showMessage(msg, callback);
+  }
+
+  // ──── Item Usage ────
+
+  executeItem(itemId, user, target) {
+    if (this.battleOver) return;
+
+    const item = CONSUMABLES[itemId];
+    if (!item) return;
+
+    const uiScene = this.scene.get('BattleUI');
+    const inventory = this.registry.get('inventory');
+
+    // Remove one copy from inventory
+    const idx = inventory.indexOf(itemId);
+    if (idx === -1) return;
+    inventory.splice(idx, 1);
+
+    if (item.type === 'heal_hp') {
+      const before = target.hp;
+      target.hp = Math.min(target.maxHp, target.hp + item.amount);
+      const actual = target.hp - before;
+      const info = this.findSpriteFor(target);
+      if (info && actual > 0) this.showFloatingText(info.sprite, `+${actual}`, '#44ff44');
+      uiScene.updateHP();
+      uiScene.showMessage(`${user.name} used ${item.name} on ${target.name}! (+${actual} HP)`, () => this.nextTurn());
+      return;
+    }
+
+    if (item.type === 'heal_mp') {
+      const before = target.mp;
+      target.mp = Math.min(target.maxMp, target.mp + item.amount);
+      const actual = target.mp - before;
+      const info = this.findSpriteFor(target);
+      if (info && actual > 0) this.showFloatingText(info.sprite, `+${actual}`, '#4488ff');
+      uiScene.updateHP();
+      uiScene.showMessage(`${user.name} used ${item.name} on ${target.name}! (+${actual} MP)`, () => this.nextTurn());
+      return;
+    }
+
+    if (item.type === 'cleanse') {
+      const hadEffects = target.statusEffects.length > 0;
+      target.statusEffects = [];
+      uiScene.updateHP();
+      const msg = hadEffects
+        ? `${user.name} used ${item.name} on ${target.name}! Status effects cleared!`
+        : `${user.name} used ${item.name} on ${target.name}! No effects to clear.`;
+      uiScene.showMessage(msg, () => this.nextTurn());
+      return;
+    }
+  }
+
+  // ──── Enemy AI ────
+
+  doEnemyAI(enemy) {
+    if (this.battleOver || enemy.hp <= 0) { this.nextTurn(); return; }
+
+    const uiScene = this.scene.get('BattleUI');
+
+    // Boss Phase 2: add new abilities when below 50% HP
+    if (enemy.isBoss && !enemy.phase2Active && enemy.hp < enemy.maxHp * 0.5 && enemy.phase2Abilities) {
+      enemy.phase2Active = true;
+      for (const abKey of enemy.phase2Abilities) {
+        enemy.abilities.push(abKey);
+      }
+      // Update weights: boost phase 2 abilities
+      enemy.aiWeights = enemy.abilities.map((_, idx) => {
+        if (idx < enemy.abilities.length - enemy.phase2Abilities.length) return 25;
+        return 40; // higher weight for phase 2 abilities
+      });
+      uiScene.showMessage(`${enemy.name}'s power surges!`, () => this.doEnemyAI_pick(enemy));
+      return;
+    }
+
+    this.doEnemyAI_pick(enemy);
+  }
+
+  doEnemyAI_pick(enemy) {
+    if (this.battleOver || enemy.hp <= 0) { this.nextTurn(); return; }
+
+    const uiScene = this.scene.get('BattleUI');
+
+    // Weighted random ability selection
+    const weights = enemy.aiWeights || enemy.abilities.map(() => 1);
+    const totalW = weights.reduce((s, w) => s + w, 0);
+    let roll = Math.random() * totalW;
+    let chosenIdx = 0;
+
+    for (let i = 0; i < weights.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) { chosenIdx = i; break; }
+    }
+
+    let abilityKey = enemy.abilities[chosenIdx];
+    let ability = ABILITIES[abilityKey];
+    if (!ability) { this.nextTurn(); return; }
+
+    // Necromancer AI: if raise_dead chosen but no damaged allies, fall back to dark_bolt
+    if (ability.target === 'ally_enemy') {
+      const damagedAlly = this.enemies.find(e => e !== enemy && e.hp > 0 && e.hp < e.maxHp);
+      if (!damagedAlly) {
+        abilityKey = 'dark_bolt';
+        ability = ABILITIES[abilityKey];
+        if (!ability) { this.nextTurn(); return; }
+      }
+    }
+
+    enemy.mp -= ability.mpCost;
+
+    // ── Defend ──
+    if (ability.type === 'defend') {
+      enemy.isDefending = true;
+      uiScene.showMessage(`${enemy.name} raises a guard!`, () => this.nextTurn());
+      return;
+    }
+
+    // ── Charge ──
+    if (ability.type === 'charge') {
+      enemy.isCharged = true;
+      if (ability.effect) {
+        enemy.statusEffects.push({
+          ...ability.effect,
+          turnsLeft: ability.effect.turns,
+          label: 'Charged',
+        });
+      }
+      uiScene.showMessage(`${enemy.name} builds up power!`, () => this.nextTurn());
+      return;
+    }
+
+    // ── Heal ally enemy (Necromancer raise_dead) ──
+    if (ability.type === 'heal' && ability.target === 'ally_enemy') {
+      const damagedAlly = this.enemies.find(e => e !== enemy && e.hp > 0 && e.hp < e.maxHp);
+      if (damagedAlly) {
+        const before = damagedAlly.hp;
+        damagedAlly.hp = Math.min(damagedAlly.maxHp, damagedAlly.hp + ability.healAmount);
+        const actual = damagedAlly.hp - before;
+        if (actual > 0) {
+          const info = this.findSpriteFor(damagedAlly);
+          if (info) this.showFloatingText(info.sprite, `+${actual}`, '#44ff44');
+        }
+        uiScene.updateHP();
+        uiScene.showMessage(`${enemy.name} used ${ability.name} on ${damagedAlly.name}! (+${actual} HP)`, () => this.nextTurn());
+        return;
+      }
+    }
+
+    // ── Buff all enemy allies (Necromancer dark_pact, Atikesh undying_will on self) ──
+    if (ability.type === 'buff') {
+      let targets;
+      if (ability.target === 'all_allies_enemy') {
+        targets = this.enemies.filter(e => e.hp > 0);
+      } else {
+        targets = [enemy];
+      }
+      for (const t of targets) {
+        if (ability.effect) {
+          const existing = t.statusEffects.find(e => e.stat === ability.effect.stat && e.type === ability.effect.type);
+          if (existing) {
+            existing.turnsLeft = ability.effect.turns;
+          } else {
+            t.statusEffects.push({
+              ...ability.effect,
+              turnsLeft: ability.effect.turns,
+              label: ability.name,
+            });
+          }
+        }
+      }
+      const targetLabel = ability.target === 'all_allies_enemy' ? 'all allies' : enemy.name;
+      uiScene.updateHP();
+      uiScene.showMessage(`${enemy.name} used ${ability.name} on ${targetLabel}!`, () => this.nextTurn());
+      return;
+    }
+
+    // ── AoE vs party (all_enemies from enemy perspective hits party) ──
+    if (ability.target === 'all_enemies') {
+      const livingParty = this.party.filter(m => m.hp > 0);
+      if (livingParty.length === 0) { this.checkAllDeaths(); return; }
+
+      let totalDmg = 0;
+      const hitNext = (idx) => {
+        if (idx >= livingParty.length) {
+          // Apply debuff effects to all hit targets
+          if (ability.effect) {
+            for (const m of livingParty) {
+              if (m.hp <= 0) continue;
+              const existing = m.statusEffects.find(
+                s => s.stat === ability.effect.stat && s.type === ability.effect.type
+              );
+              if (existing) {
+                existing.turnsLeft = ability.effect.turns;
+              } else {
+                m.statusEffects.push({
+                  ...ability.effect,
+                  turnsLeft: ability.effect.turns,
+                  label: ability.name,
+                });
+              }
+            }
+          }
+          uiScene.updateHP();
+          let msg = `${enemy.name} used ${ability.name}! Hit ${livingParty.length} targets for ${totalDmg} total damage!`;
+          if (ability.effect?.type === 'debuff') msg += ' Debuffed!';
+          uiScene.showMessage(msg, () => {
+            if (this.checkAllDeaths()) return;
+            this.nextTurn();
+          });
+          return;
+        }
+
+        const target = livingParty[idx];
+
+        // Accuracy check
+        if (Math.random() * 100 > ability.accuracy) {
+          hitNext(idx + 1);
+          return;
+        }
+
+        let atkStat = this.getEffectiveAtk(enemy);
+        let defStat = this.getEffectiveDef(target);
+        let power = ability.power;
+        if (enemy.isCharged && (ability.type === 'physical' || ability.type === 'debuff')) {
+          power *= 2;
+          if (idx === 0) {
+            enemy.isCharged = false;
+            enemy.statusEffects = enemy.statusEffects.filter(e => e.stat !== 'charged');
+          }
+        }
+        const baseDmg = (power * (atkStat / defStat)) * 0.8;
+        const randomMod = 0.9 + Math.random() * 0.2;
+        const damage = Math.max(1, Math.floor(baseDmg * randomMod));
+        target.hp = Math.max(0, target.hp - damage);
+        totalDmg += damage;
+
+        const info = this.findSpriteFor(target);
+        if (info) {
+          this.flashSprite(info.sprite);
+          this.showFloatingText(info.sprite, `-${damage}`, '#ff4444');
+        }
+
+        this.time.delayedCall(200, () => hitNext(idx + 1));
+      };
+
+      hitNext(0);
+      return;
+    }
+
+    // Pick target: random alive party member
+    const alive = this.party.filter(m => m.hp > 0);
+    if (alive.length === 0) { this.checkAllDeaths(); return; }
+    const target = alive[Math.floor(Math.random() * alive.length)];
+
+    // ── Debuff with damage ──
+    if (ability.type === 'debuff') {
+      this.doAttack(enemy, target, ability, () => {
+        if (ability.effect && target.hp > 0) {
+          const existing = target.statusEffects.find(e => e.stat === ability.effect.stat && e.type === ability.effect.type);
+          if (existing) { existing.turnsLeft = ability.effect.turns; }
+          else { target.statusEffects.push({ ...ability.effect, turnsLeft: ability.effect.turns, label: ability.name }); }
+        }
+        if (this.checkAllDeaths()) return;
+        this.nextTurn();
+      });
+      return;
+    }
+
+    // ── Regular attack (physical/magic with on-hit effects) ──
+    this.doAttack(enemy, target, ability, () => {
+      if (ability.effect && target.hp > 0) {
+        const existing = target.statusEffects.find(
+          e => e.type === ability.effect.type && e.stat === ability.effect.stat
+        );
+        if (existing) { existing.turnsLeft = ability.effect.turns; }
+        else { target.statusEffects.push({ ...ability.effect, turnsLeft: ability.effect.turns, label: ability.name }); }
+      }
+      // Heal-on-hit for enemies (e.g. Soul Drain, Life Siphon)
+      if (ability.healAmount && enemy.hp > 0) {
+        const before = enemy.hp;
+        enemy.hp = Math.min(enemy.maxHp, enemy.hp + ability.healAmount);
+        const actual = enemy.hp - before;
+        if (actual > 0) {
+          const enemyInfo = this.findSpriteFor(enemy);
+          if (enemyInfo) this.showFloatingText(enemyInfo.sprite, `+${actual}`, '#44ff44');
+        }
+        uiScene.updateHP();
+      }
+      if (this.checkAllDeaths()) return;
+      this.nextTurn();
+    });
+  }
+
+  // ──── Death & Victory ────
+
+  checkAllDeaths() {
+    const uiScene = this.scene.get('BattleUI');
+
+    for (const es of this.enemySprites) {
+      if (es.character.hp <= 0 && es.sprite.alpha > 0) {
+        this.tweens.add({ targets: es.sprite, alpha: 0, y: es.sprite.y + 30, duration: 500 });
+      }
+    }
+    for (const ps of this.partySprites) {
+      if (ps.character.hp <= 0 && ps.sprite.alpha > 0) {
+        this.tweens.add({ targets: ps.sprite, alpha: 0, y: ps.sprite.y + 20, duration: 500 });
+      }
+    }
+
+    // All enemies dead → victory
+    if (this.enemies.every(e => e.hp <= 0)) {
+      this.battleOver = true;
+      this.handleVictory();
+      return true;
+    }
+
+    // All party dead → defeat
+    if (this.party.every(m => m.hp <= 0)) {
+      this.battleOver = true;
+      uiScene.showMessage('Your party has fallen...', () => {
+        this.time.delayedCall(600, () => this.onBattleEnd('lose'));
+      });
+      return true;
+    }
+
+    return false;
+  }
+
+  handleVictory() {
+    const uiScene = this.scene.get('BattleUI');
+    const xp = this.xpReward;
+    const gold = this.goldReward;
+
+    // Award XP to ALL recruited roster members (shared progression)
+    const levelUps = [];
+    for (const char of this.fullRoster) {
+      if (!char.recruited) continue;
+      const result = awardXP(char, xp);
+      if (result.leveled) {
+        let msg = `${char.name} reached Level ${result.newLevel}!`;
+        if (result.newLevel >= 5 && !char.subclass) {
+          msg += ' Subclass available!';
+        }
+        levelUps.push(msg);
+      }
+    }
+
+    // Award gold
+    const currentGold = this.registry.get('gold') || 0;
+    this.registry.set('gold', currentGold + gold);
+
+    // Roll loot for each defeated enemy
+    const lootDrops = [];
+    const inventory = this.registry.get('inventory') || [];
+    for (const enemyType of this.enemyTypes) {
+      const itemId = rollLoot(enemyType);
+      if (itemId) {
+        inventory.push(itemId);
+        const result = lookupItem(itemId);
+        lootDrops.push(result ? result.item.name : itemId);
+      }
+    }
+
+    // Build victory message
+    let victoryMsg = `Victory! +${xp} XP, +${gold} Gold`;
+    if (lootDrops.length > 0) {
+      victoryMsg += ` | Loot: ${lootDrops.join(', ')}`;
+    }
+
+    uiScene.showMessage(victoryMsg, () => {
+      if (levelUps.length > 0) {
+        this.showLevelUpMessages(levelUps, 0, () => {
+          this.time.delayedCall(400, () => this.onBattleEnd('win'));
+        });
+      } else {
+        this.time.delayedCall(400, () => this.onBattleEnd('win'));
+      }
+    });
+  }
+
+  showLevelUpMessages(messages, idx, callback) {
+    if (idx >= messages.length) { callback(); return; }
+    const uiScene = this.scene.get('BattleUI');
+    uiScene.showMessage(`LEVEL UP! ${messages[idx]}`, () => {
+      this.showLevelUpMessages(messages, idx + 1, callback);
+    });
+  }
+
+  // ──── Run ────
+
+  attemptRun() {
+    if (this.battleOver) return;
+    const uiScene = this.scene.get('BattleUI');
+
+    const avgPSpd = this.party.reduce((s, m) => s + this.getEffectiveSpd(m), 0) / this.party.length;
+    const avgESpd = this.enemies.reduce((s, e) => s + this.getEffectiveSpd(e), 0) / this.enemies.length;
+    const chance = 0.4 + (avgPSpd - avgESpd) * 0.04;
+
+    if (Math.random() < Math.max(0.15, Math.min(0.85, chance))) {
+      this.battleOver = true;
+      uiScene.showMessage('Your party retreats safely!', () => {
+        this.time.delayedCall(300, () => this.onBattleEnd('run'));
+      });
+    } else {
+      uiScene.showMessage("Can't escape!", () => this.nextTurn());
+    }
+  }
+
+  // ──── Visual Helpers ────
+
+  findSpriteFor(character) {
+    for (const ps of this.partySprites) { if (ps.character === character) return ps; }
+    for (const es of this.enemySprites) { if (es.character === character) return es; }
+    return null;
+  }
+
+  flashSprite(sprite) {
+    const orig = sprite.fillColor;
+    sprite.setFillStyle(0xffffff);
+    this.tweens.add({
+      targets: sprite, scaleX: 0.85, scaleY: 0.85,
+      duration: 80, yoyo: true,
+      onComplete: () => sprite.setFillStyle(orig),
+    });
+  }
+
+  showFloatingText(sprite, text, color) {
+    const ft = this.add.text(sprite.x, sprite.y - 35, text, {
+      fontSize: '18px', fontStyle: 'bold', color,
+    }).setOrigin(0.5).setDepth(20);
+    this.tweens.add({
+      targets: ft, y: ft.y - 30, alpha: 0,
+      duration: 1000, onComplete: () => ft.destroy(),
+    });
+  }
+}
