@@ -416,6 +416,7 @@ export class ExperienceScene extends Phaser.Scene {
         .on('pointerover', () => learnBtn.setFillStyle(0x335544))
         .on('pointerout', () => learnBtn.setFillStyle(0x224433))
         .on('pointerdown', () => {
+          this.registry.get('soundManager').playButtonClick();
           purchaseTalent(char, talent.id);
           this.refresh();
         });
@@ -519,6 +520,7 @@ export class ExperienceScene extends Phaser.Scene {
       .on('pointerover', () => confirmBtn.setFillStyle(0x335544))
       .on('pointerout', () => confirmBtn.setFillStyle(0x224433))
       .on('pointerdown', () => {
+        this.registry.get('soundManager').playButtonClick();
         chooseSubclass(char, subclassKey);
         this.closeModal();
         this.refresh();
@@ -689,6 +691,7 @@ export class ExperienceScene extends Phaser.Scene {
           .on('pointerover', () => eqBtn.setFillStyle(0x335544))
           .on('pointerout', () => eqBtn.setFillStyle(0x224433))
           .on('pointerdown', () => {
+            this.registry.get('soundManager').playButtonClick();
             setActiveAbility(char, slotIndex, abilityKey);
             this.closeModal();
             this.refresh();

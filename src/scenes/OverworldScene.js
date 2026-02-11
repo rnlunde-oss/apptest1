@@ -117,6 +117,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   create() {
+    this.sfx = this.registry.get('soundManager');
     this.buildMap();
     this.spawnPlayer();
     this.spawnNPC();
@@ -135,6 +136,7 @@ export class OverworldScene extends Phaser.Scene {
     this.inventoryKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
     this.experienceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.muteKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
 
     this.lastTileX = Math.floor(this.player.x / TILE_SIZE);
     this.lastTileY = Math.floor(this.player.y / TILE_SIZE);
@@ -525,6 +527,11 @@ export class OverworldScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
       this.openSaveMenu();
     }
+
+    if (Phaser.Input.Keyboard.JustDown(this.muteKey)) {
+      const muted = this.sfx.toggleMute();
+      this.showSaveToast(muted ? 'Sound OFF' : 'Sound ON');
+    }
   }
 
   // ──── Touch Controls Visibility ────
@@ -541,10 +548,12 @@ export class OverworldScene extends Phaser.Scene {
 
   openPartyScreen() {
     this.partyOpen = true;
+    this.sfx.playMenuOpen();
     this.player.body.setVelocity(0);
     this._hideTouchControls();
     this.scene.launch('Party', {
       onClose: () => {
+        this.sfx.playMenuClose();
         this.scene.stop('Party');
         this.time.delayedCall(100, () => {
           this.partyOpen = false;
@@ -559,10 +568,12 @@ export class OverworldScene extends Phaser.Scene {
 
   openExperienceScreen() {
     this.experienceOpen = true;
+    this.sfx.playMenuOpen();
     this.player.body.setVelocity(0);
     this._hideTouchControls();
     this.scene.launch('Experience', {
       onClose: () => {
+        this.sfx.playMenuClose();
         this.scene.stop('Experience');
         this.time.delayedCall(100, () => {
           this.experienceOpen = false;
@@ -577,10 +588,12 @@ export class OverworldScene extends Phaser.Scene {
 
   openInventoryScreen() {
     this.inventoryOpen = true;
+    this.sfx.playMenuOpen();
     this.player.body.setVelocity(0);
     this._hideTouchControls();
     this.scene.launch('Inventory', {
       onClose: () => {
+        this.sfx.playMenuClose();
         this.scene.stop('Inventory');
         this.time.delayedCall(100, () => {
           this.inventoryOpen = false;
@@ -595,10 +608,12 @@ export class OverworldScene extends Phaser.Scene {
 
   openShopScreen() {
     this.shopOpen = true;
+    this.sfx.playMenuOpen();
     this.player.body.setVelocity(0);
     this._hideTouchControls();
     this.scene.launch('Shop', {
       onClose: () => {
+        this.sfx.playMenuClose();
         this.scene.stop('Shop');
         this.shopOpen = false;
         this.drawPartyHUD();
@@ -612,10 +627,12 @@ export class OverworldScene extends Phaser.Scene {
 
   openInnScreen() {
     this.innOpen = true;
+    this.sfx.playMenuOpen();
     this.player.body.setVelocity(0);
     this._hideTouchControls();
     this.scene.launch('Inn', {
       onClose: () => {
+        this.sfx.playMenuClose();
         this.scene.stop('Inn');
         this.innOpen = false;
         this.drawPartyHUD();
@@ -639,6 +656,7 @@ export class OverworldScene extends Phaser.Scene {
 
   startBattle(zone) {
     this.inBattle = true;
+    this.sfx.playEncounterStart();
     this.player.body.setVelocity(0);
     this._hideTouchControls();
 
@@ -789,6 +807,7 @@ export class OverworldScene extends Phaser.Scene {
     if (!char.recruited) {
       const dialogue = NPC_DIALOGUES[closest.id];
       this.showDialogue(dialogue.recruit, () => {
+        this.sfx.playNPCRecruit();
         char.recruited = true;
         const activeCount = Object.values(roster).filter(c => c.active).length;
         if (activeCount < 4) {
@@ -811,6 +830,7 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   collectWorldItem(wi) {
+    this.sfx.playItemPickup();
     wi.collected = true;
     wi.glow.destroy();
     wi.core.destroy();
@@ -834,6 +854,7 @@ export class OverworldScene extends Phaser.Scene {
   // ──── Save System ────
 
   triggerAutoSave() {
+    this.sfx.playSave();
     const state = serializeGameState(this.registry, { x: this.player.x, y: this.player.y });
     autoSave(state);
     // Also save to active slot if one is set
@@ -847,6 +868,7 @@ export class OverworldScene extends Phaser.Scene {
 
   openSaveMenu() {
     this.saveMenuOpen = true;
+    this.sfx.playMenuOpen();
     this.player.body.setVelocity(0);
     this._hideTouchControls();
 
@@ -923,6 +945,7 @@ export class OverworldScene extends Phaser.Scene {
         btnBg.setFillStyle(0x335533);
       });
       btnBg.on('pointerdown', () => {
+        this.sfx.playSave();
         const state = serializeGameState(this.registry, { x: this.player.x, y: this.player.y });
         state.activeSlot = slotNum;
         saveToSlot(slotNum, state);
@@ -947,6 +970,7 @@ export class OverworldScene extends Phaser.Scene {
       const slotNum = i;
       const handler = (event) => {
         if (event.key === String(slotNum)) {
+          this.sfx.playSave();
           const state = serializeGameState(this.registry, { x: this.player.x, y: this.player.y });
           state.activeSlot = slotNum;
           saveToSlot(slotNum, state);
@@ -964,6 +988,7 @@ export class OverworldScene extends Phaser.Scene {
     const escHandler = () => closeSaveMenu();
 
     const closeSaveMenu = () => {
+      this.sfx.playMenuClose();
       for (const el of elements) el.destroy();
       // Remove keyboard handlers
       for (const kh of keyHandlers) {
@@ -1047,6 +1072,7 @@ export class OverworldScene extends Phaser.Scene {
     });
 
     const advanceLine = () => {
+      this.sfx.playDialogueAdvance();
       handler.remove();
       this.dBox.off('pointerdown');
       this.dBox.destroy();

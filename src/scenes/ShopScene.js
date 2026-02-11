@@ -376,6 +376,7 @@ export class ShopScene extends Phaser.Scene {
     const gold = this.registry.get('gold') || 0;
     if (gold < item.buyPrice) return;
 
+    this.registry.get('soundManager').playPurchase();
     this.registry.set('gold', gold - item.buyPrice);
     this.inventory.push(item.id);
 
@@ -391,6 +392,7 @@ export class ShopScene extends Phaser.Scene {
     const idx = this.inventory.indexOf(itemId);
     if (idx === -1) return;
 
+    this.registry.get('soundManager').playPurchase();
     this.inventory.splice(idx, 1);
     const gold = this.registry.get('gold') || 0;
     this.registry.set('gold', gold + item.sellPrice);

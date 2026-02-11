@@ -136,6 +136,7 @@ export class InnScene extends Phaser.Scene {
     }
 
     this.registry.set('gold', gold - cost);
+    this.registry.get('soundManager').playRestHeal();
 
     for (const member of this.recruited) {
       member.hp = member.maxHp;
@@ -217,6 +218,7 @@ export class InnScene extends Phaser.Scene {
     const gold = this.registry.get('gold') || 0;
     if (gold < item.buyPrice) return;
 
+    this.registry.get('soundManager').playPurchase();
     this.registry.set('gold', gold - item.buyPrice);
     this.inventory.push(item.id);
 

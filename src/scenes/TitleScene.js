@@ -7,6 +7,11 @@ export class TitleScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+    this.sfx = this.registry.get('soundManager');
+
+    // Resume AudioContext on first interaction
+    this.input.once('pointerdown', () => this.sfx.resume());
+    this.input.keyboard.once('keydown', () => this.sfx.resume());
 
     // Dark background
     this.add.rectangle(width / 2, height / 2, width, height, 0x0a0a12);
@@ -77,11 +82,13 @@ export class TitleScene extends Phaser.Scene {
 
     // Keyboard shortcuts
     this.input.keyboard.on('keydown-N', () => {
+      this.sfx.playButtonClick();
       this.scene.start('Boot');
     });
 
     if (autoSummary.exists) {
       this.input.keyboard.on('keydown-C', () => {
+        this.sfx.playButtonClick();
         const data = loadAutoSave();
         if (data) this.scene.start('Boot', { loadData: data });
       });
@@ -91,6 +98,7 @@ export class TitleScene extends Phaser.Scene {
       const slotNum = i;
       this.input.keyboard.on(`keydown-${i}`, () => {
         if (!slotSummaries[slotNum - 1].exists) return;
+        this.sfx.playButtonClick();
         const data = loadFromSlot(slotNum);
         if (data) this.scene.start('Boot', { loadData: data });
       });
@@ -124,7 +132,7 @@ export class TitleScene extends Phaser.Scene {
       bg.setFillStyle(0x1a1a2e);
       bg.setStrokeStyle(1, 0x4a3a6a, 0.6);
     });
-    bg.on('pointerdown', onClick);
+    bg.on('pointerdown', () => { this.sfx.playButtonClick(); onClick(); });
 
     return { bg, text, hintText };
   }

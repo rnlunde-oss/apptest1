@@ -10,6 +10,7 @@ import { ShopScene } from './scenes/ShopScene.js';
 import { InnScene } from './scenes/InnScene.js';
 import { ExperienceScene } from './scenes/ExperienceScene.js';
 import { TouchControlsScene } from './scenes/TouchControlsScene.js';
+import { SoundManager } from './utils/SoundManager.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -35,3 +36,6 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+const soundManager = new SoundManager();
+game.registry.set('soundManager', soundManager);

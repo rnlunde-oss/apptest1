@@ -281,6 +281,7 @@ export class PartyScene extends Phaser.Scene {
   }
 
   toggleActive(char) {
+    this.registry.get('soundManager').playButtonClick();
     const activeCount = this.rosterList.filter(c => c.active).length;
 
     if (char.active) {

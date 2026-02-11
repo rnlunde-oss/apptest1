@@ -494,6 +494,7 @@ export class InventoryScene extends Phaser.Scene {
         .on('pointerover', () => unBtn.setFillStyle(0x554433))
         .on('pointerout', () => unBtn.setFillStyle(0x443322))
         .on('pointerdown', () => {
+          this.registry.get('soundManager').playButtonClick();
           unequipItem(char, slot, this.inventory);
           this.closeModal();
           this.refresh();
@@ -590,6 +591,7 @@ export class InventoryScene extends Phaser.Scene {
         .on('pointerover', () => eqBtn.setFillStyle(0x335544))
         .on('pointerout', () => eqBtn.setFillStyle(0x224433))
         .on('pointerdown', () => {
+          this.registry.get('soundManager').playButtonClick();
           equipItem(char, item.id, this.inventory);
           this.closeModal();
           this.refresh();

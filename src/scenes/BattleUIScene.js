@@ -17,6 +17,7 @@ export class BattleUIScene extends Phaser.Scene {
   }
 
   create() {
+    this.sfx = this.registry.get('soundManager');
     this.drawTurnOrderBar();
     this.drawPartyPanel();
     this.drawEnemyPanel();
@@ -337,7 +338,7 @@ export class BattleUIScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true })
         .on('pointerover', () => bg.setFillStyle(0x333366))
         .on('pointerout', () => bg.setFillStyle(0x222244, 0.9))
-        .on('pointerdown', () => { this.hideTargetMenu(); callback(target); });
+        .on('pointerdown', () => { this.sfx.playButtonClick(); this.hideTargetMenu(); callback(target); });
 
       const label2 = this.add.text(bx, by + 4, target.name, {
         fontSize: '9px', color: '#ffffff', fontStyle: 'bold',
@@ -386,6 +387,7 @@ export class BattleUIScene extends Phaser.Scene {
   onAbilitySelect(abilityKey, character) {
     const ability = ABILITIES[abilityKey];
     if (!ability || character.mp < ability.mpCost) return;
+    this.sfx.playButtonClick();
     this.hideAbilityMenu();
     this.returnToMenu = (ch) => this.showAbilityMenu(ch);
 
@@ -520,6 +522,7 @@ export class BattleUIScene extends Phaser.Scene {
   }
 
   onItemSelect(itemId, character) {
+    this.sfx.playButtonClick();
     this.hideItemMenu();
     this.returnToMenu = (ch) => this.showItemMenu(ch);
 
@@ -547,6 +550,7 @@ export class BattleUIScene extends Phaser.Scene {
 
   onRun() {
     if (!this.menuVisible) return;
+    this.sfx.playButtonClick();
     this.hideAbilityMenu();
     this.battleScene.attemptRun();
   }
@@ -636,6 +640,7 @@ export class BattleUIScene extends Phaser.Scene {
     this.tweens.add({ targets: this.msgHint, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
 
     const advance = () => {
+      this.sfx.playDialogueAdvance();
       if (this.msgBox) this.msgBox.destroy();
       if (this.msgText) this.msgText.destroy();
       if (this.msgHint) this.msgHint.destroy();

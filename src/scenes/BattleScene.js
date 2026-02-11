@@ -23,6 +23,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create() {
+    this.sfx = this.registry.get('soundManager');
+
     // Dark battlefield
     this.add.rectangle(400, 320, 800, 640, 0x111118);
     this.add.ellipse(400, 440, 750, 160, 0x1a1a28).setDepth(0);
@@ -234,6 +236,7 @@ export class BattleScene extends Phaser.Scene {
         if (eff.type === 'dot') {
           const dmg = eff.amount;
           char.hp = Math.max(0, char.hp - dmg);
+          this.sfx.playPoisonTick();
           messages.push({ text: `${char.name} takes ${dmg} poison damage!`, char });
         }
       }
@@ -327,6 +330,7 @@ export class BattleScene extends Phaser.Scene {
     // ── Defend ──
     if (ability.type === 'defend') {
       user.isDefending = true;
+      this.sfx.playBuff();
       uiScene.updateHP();
       uiScene.showMessage(`${user.name} braces for impact!`, () => this.nextTurn());
       return;
@@ -342,6 +346,7 @@ export class BattleScene extends Phaser.Scene {
           label: 'Charged',
         });
       }
+      this.sfx.playBuff();
       uiScene.updateHP();
       uiScene.showMessage(`${user.name} builds up power!`, () => this.nextTurn());
       return;
@@ -368,6 +373,7 @@ export class BattleScene extends Phaser.Scene {
         }
       }
       const targetLabel = ability.target === 'party' ? 'the party' : user.name;
+      this.sfx.playBuff();
       uiScene.updateHP();
       uiScene.showMessage(`${user.name} used ${ability.name} on ${targetLabel}!`, () => this.nextTurn());
       return;
@@ -382,6 +388,7 @@ export class BattleScene extends Phaser.Scene {
       // Handle revive — allow targeting dead allies
       if (ability.revive && target && target.hp <= 0) {
         target.hp = Math.min(ability.healAmount, target.maxHp);
+        this.sfx.playHeal();
         const info = this.findSpriteFor(target);
         if (info) {
           info.sprite.setAlpha(1);
@@ -403,6 +410,7 @@ export class BattleScene extends Phaser.Scene {
           if (info) this.showFloatingText(info.sprite, `+${actual}`, '#44ff44');
         }
       }
+      this.sfx.playHeal();
       const targetLabel = ability.target === 'party' ? 'the party' : target.name;
       uiScene.updateHP();
       uiScene.showMessage(`${user.name} used ${ability.name} on ${targetLabel}!`, () => this.nextTurn());
@@ -437,6 +445,7 @@ export class BattleScene extends Phaser.Scene {
               }
             }
           }
+          if (ability.effect?.type === 'debuff') this.sfx.playDebuff();
           uiScene.updateHP();
           let msg = `${user.name} used ${ability.name}! Hit ${livingEnemies.length} enemies for ${totalDmg} total damage!`;
           if (ability.effect?.type === 'debuff') msg += ' Debuffed!';
@@ -471,6 +480,7 @@ export class BattleScene extends Phaser.Scene {
         const damage = Math.max(1, Math.floor(baseDmg * randomMod));
         enemy.hp = Math.max(0, enemy.hp - damage);
         totalDmg += damage;
+        this.sfx.playAttackHit();
 
         const info = this.findSpriteFor(enemy);
         if (info) {
@@ -489,6 +499,7 @@ export class BattleScene extends Phaser.Scene {
     if (ability.type === 'debuff') {
       this.doAttack(user, target, ability, () => {
         // Apply debuff effect on hit
+        this.sfx.playDebuff();
         if (ability.effect && target.hp > 0) {
           const existing = target.statusEffects.find(e => e.stat === ability.effect.stat && e.type === 'debuff');
           if (existing) {
@@ -545,6 +556,7 @@ export class BattleScene extends Phaser.Scene {
 
     // Accuracy
     if (Math.random() * 100 > ability.accuracy) {
+      this.sfx.playMiss();
       uiScene.showMessage(`${attacker.name} used ${ability.name}... but missed!`, callback);
       return;
     }
@@ -567,6 +579,8 @@ export class BattleScene extends Phaser.Scene {
     const damage = Math.max(1, Math.floor(baseDmg * randomMod));
 
     defender.hp = Math.max(0, defender.hp - damage);
+    if (ability.type === 'magic') this.sfx.playSpellCast();
+    else this.sfx.playAttackHit();
 
     const defInfo = this.findSpriteFor(defender);
     if (defInfo) {
@@ -604,6 +618,7 @@ export class BattleScene extends Phaser.Scene {
       const before = target.hp;
       target.hp = Math.min(target.maxHp, target.hp + item.amount);
       const actual = target.hp - before;
+      this.sfx.playHeal();
       const info = this.findSpriteFor(target);
       if (info && actual > 0) this.showFloatingText(info.sprite, `+${actual}`, '#44ff44');
       uiScene.updateHP();
@@ -615,6 +630,7 @@ export class BattleScene extends Phaser.Scene {
       const before = target.mp;
       target.mp = Math.min(target.maxMp, target.mp + item.amount);
       const actual = target.mp - before;
+      this.sfx.playHeal();
       const info = this.findSpriteFor(target);
       if (info && actual > 0) this.showFloatingText(info.sprite, `+${actual}`, '#4488ff');
       uiScene.updateHP();
@@ -881,6 +897,7 @@ export class BattleScene extends Phaser.Scene {
 
     for (const es of this.enemySprites) {
       if (es.character.hp <= 0 && es.sprite.alpha > 0) {
+        this.sfx.playEnemyDeath();
         this.tweens.add({ targets: es.sprite, alpha: 0, y: es.sprite.y + 30, duration: 500 });
       }
     }
@@ -900,6 +917,7 @@ export class BattleScene extends Phaser.Scene {
     // All party dead → defeat
     if (this.party.every(m => m.hp <= 0)) {
       this.battleOver = true;
+      this.sfx.playDefeat();
       uiScene.showMessage('Your party has fallen...', () => {
         this.time.delayedCall(600, () => this.onBattleEnd('lose'));
       });
@@ -910,6 +928,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   handleVictory() {
+    this.sfx.playVictoryFanfare();
     const uiScene = this.scene.get('BattleUI');
     const xp = this.xpReward;
     const gold = this.goldReward;
@@ -964,6 +983,7 @@ export class BattleScene extends Phaser.Scene {
   showLevelUpMessages(messages, idx, callback) {
     if (idx >= messages.length) { callback(); return; }
     const uiScene = this.scene.get('BattleUI');
+    this.sfx.playLevelUp();
     uiScene.showMessage(`LEVEL UP! ${messages[idx]}`, () => {
       this.showLevelUpMessages(messages, idx + 1, callback);
     });
