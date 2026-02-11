@@ -162,6 +162,7 @@ export class OverworldScene extends Phaser.Scene {
     this.experienceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
     this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.muteKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    this.mapKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
 
     this.lastTileX = Math.floor(this.player.x / TILE_SIZE);
     this.lastTileY = Math.floor(this.player.y / TILE_SIZE);
@@ -176,10 +177,11 @@ export class OverworldScene extends Phaser.Scene {
     this.saveMenuOpen = false;
 
     this.drawPartyHUD();
+    this.buildMiniMap();
 
     // Instructions
     const inst = this.add.text(400, 620,
-      'WASD: Move | E: Interact/Shop | P: Party | I: Inv | X: Exp | ESC: Save', {
+      'WASD: Move | E: Interact/Shop | P: Party | I: Inv | X: Exp | N: Map | ESC: Save', {
       fontSize: '11px', color: '#ffffff',
       backgroundColor: '#00000088', padding: { x: 8, y: 4 },
     }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100);
@@ -594,6 +596,147 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  // ──── Mini-Map ────
+
+  buildMiniMap() {
+    const MINI_SCALE = 4;
+    const mapW = MAP_COLS * MINI_SCALE; // 100
+    const mapH = MAP_ROWS * MINI_SCALE; // 80
+
+    this.minimapContainer = this.add.container(690, 36)
+      .setScrollFactor(0).setDepth(150);
+    this.minimapVisible = true;
+
+    // Semi-transparent background with border
+    const bg = this.add.rectangle(mapW / 2, mapH / 2, mapW + 6, mapH + 6, 0x000000, 0.6)
+      .setStrokeStyle(1, 0xaaaaaa, 0.4);
+    this.minimapContainer.add(bg);
+
+    // Draw tile grid
+    const gfx = this.add.graphics();
+    for (let row = 0; row < MAP_ROWS; row++) {
+      for (let col = 0; col < MAP_COLS; col++) {
+        const tile = OVERWORLD_MAP[row][col];
+        const color = TILE_COLORS[tile] ?? 0x000000;
+        gfx.fillStyle(color, 1);
+        gfx.fillRect(col * MINI_SCALE, row * MINI_SCALE, MINI_SCALE, MINI_SCALE);
+      }
+    }
+    this.minimapContainer.add(gfx);
+
+    // Campfire dots (orange)
+    for (const cf of this.campfireTiles) {
+      const dot = this.add.rectangle(
+        (cf.x / TILE_SIZE) * MINI_SCALE,
+        (cf.y / TILE_SIZE) * MINI_SCALE,
+        3, 3, 0xff6600
+      );
+      this.minimapContainer.add(dot);
+    }
+
+    // Inn dots (yellow-orange)
+    for (const inn of this.innTiles) {
+      const dot = this.add.rectangle(
+        (inn.x / TILE_SIZE) * MINI_SCALE,
+        (inn.y / TILE_SIZE) * MINI_SCALE,
+        3, 3, 0xddaa44
+      );
+      this.minimapContainer.add(dot);
+    }
+
+    // Boss altar dot (pulsing red)
+    if (this.bossAltarPos) {
+      const bx = (this.bossAltarPos.x / TILE_SIZE) * MINI_SCALE;
+      const by = (this.bossAltarPos.y / TILE_SIZE) * MINI_SCALE;
+      const bossDot = this.add.circle(bx, by, 2.5, 0xff2244);
+      this.minimapContainer.add(bossDot);
+      this.tweens.add({
+        targets: bossDot, alpha: 0.3,
+        duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+    }
+
+    // NPC dots (yellow = unrecruited, green = recruited)
+    this.minimapNPCDots = [];
+    const roster = this.registry.get('roster');
+    for (const npc of this.npcs) {
+      const char = roster[npc.id];
+      const dotColor = char.recruited ? 0x44ff44 : 0xffff00;
+      const dot = this.add.circle(
+        (npc.x / TILE_SIZE) * MINI_SCALE,
+        (npc.y / TILE_SIZE) * MINI_SCALE,
+        2, dotColor
+      );
+      this.minimapContainer.add(dot);
+      this.minimapNPCDots.push({ dot, id: npc.id });
+    }
+
+    // Overworld enemy dots (red, only if not defeated)
+    this.minimapEnemyDots = [];
+    for (const oe of this.overworldEnemies) {
+      if (oe.defeated) continue;
+      const dot = this.add.circle(
+        (oe.x / TILE_SIZE) * MINI_SCALE,
+        (oe.y / TILE_SIZE) * MINI_SCALE,
+        2, 0xff4444
+      );
+      this.minimapContainer.add(dot);
+      this.minimapEnemyDots.push({ dot, id: oe.id });
+    }
+
+    // Player dot (blinking white)
+    this.minimapPlayerDot = this.add.circle(
+      (this.player.x / TILE_SIZE) * MINI_SCALE,
+      (this.player.y / TILE_SIZE) * MINI_SCALE,
+      2, 0xffffff
+    );
+    this.minimapContainer.add(this.minimapPlayerDot);
+    this.tweens.add({
+      targets: this.minimapPlayerDot, alpha: 0.3,
+      duration: 400, yoyo: true, repeat: -1,
+    });
+
+    // "N" key label below map
+    const label = this.add.text(mapW / 2, mapH + 8, 'N: Map', {
+      fontSize: '7px', color: '#666666',
+    }).setOrigin(0.5, 0);
+    this.minimapContainer.add(label);
+
+    // Touch: tap map label to toggle
+    if (isTouchDevice()) {
+      label.setText('Map').setInteractive({ useHandCursor: true });
+      label.on('pointerdown', () => {
+        this.minimapVisible = !this.minimapVisible;
+        this.minimapContainer.setVisible(this.minimapVisible);
+      });
+    }
+  }
+
+  updateMiniMap() {
+    if (!this.minimapVisible) return;
+
+    const MINI_SCALE = 4;
+
+    // Update player dot position
+    this.minimapPlayerDot.setPosition(
+      (this.player.x / TILE_SIZE) * MINI_SCALE,
+      (this.player.y / TILE_SIZE) * MINI_SCALE
+    );
+
+    // Update NPC dot colors based on recruited status
+    const roster = this.registry.get('roster');
+    for (const nd of this.minimapNPCDots) {
+      const char = roster[nd.id];
+      nd.dot.setFillStyle(char.recruited ? 0x44ff44 : 0xffff00);
+    }
+
+    // Hide defeated enemy dots
+    for (const ed of this.minimapEnemyDots) {
+      const oe = this.overworldEnemies.find(e => e.id === ed.id);
+      if (oe && oe.defeated) ed.dot.setVisible(false);
+    }
+  }
+
   // ──── Helpers ────
 
   getActiveParty() {
@@ -670,6 +813,13 @@ export class OverworldScene extends Phaser.Scene {
       const muted = this.sfx.toggleMute();
       this.showSaveToast(muted ? 'Sound OFF' : 'Sound ON');
     }
+
+    if (Phaser.Input.Keyboard.JustDown(this.mapKey)) {
+      this.minimapVisible = !this.minimapVisible;
+      this.minimapContainer.setVisible(this.minimapVisible);
+    }
+
+    this.updateMiniMap();
   }
 
   // ──── Touch Controls Visibility ────
