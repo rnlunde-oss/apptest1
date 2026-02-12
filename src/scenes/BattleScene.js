@@ -88,8 +88,8 @@ export class BattleScene extends Phaser.Scene {
     } else {
       this.add.rectangle(400, 320, 800, 640, 0x111118);
     }
-    this.add.ellipse(400, 440, 750, 160, 0x1a1a28).setDepth(0);
-    this.add.rectangle(400, 200, 800, 2, 0x332244, 0.3).setDepth(0);
+    this.add.ellipse(400, 350, 760, 400, 0x1a1a28, 0.6).setDepth(0);
+    this.add.rectangle(400, 320, 2, 640, 0x332244, 0.3).setDepth(0);
 
     this.drawCombatants();
 
@@ -106,30 +106,29 @@ export class BattleScene extends Phaser.Scene {
     this.partySprites = [];
     this.enemySprites = [];
 
-    // Party — bottom row, spaced evenly up to 4
+    // Party — vertical left column
     const partyCount = this.party.length;
-    const partyStartX = 400 - (partyCount - 1) * 70;
+    const partyStartY = 270 - (partyCount - 1) * 60;
 
     this.party.forEach((member, i) => {
       if (member.hp <= 0) return;
-      const x = partyStartX + i * 140;
-      const y = 420;
+      const x = 170;
+      const y = partyStartY + i * 120;
 
-      this.add.ellipse(x, y + 26, 48, 14, 0x000000, 0.3).setDepth(3);
+      this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
 
       // Use character sprite if available, otherwise fallback to colored rectangle
       const spriteKey = this.getCharSpriteKey(member);
       let sprite;
       if (spriteKey && this.textures.exists(spriteKey)) {
         sprite = this.add.image(x, y, spriteKey).setDepth(5);
-        // Scale to fit battle sprite size (~38x50 area, but allow larger for detail)
-        const targetH = 64;
+        const targetH = 128;
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
       } else {
-        sprite = this.add.rectangle(x, y, 38, 50, member.color).setDepth(5);
-        this.add.rectangle(x, y, 38, 50).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
+        sprite = this.add.rectangle(x, y, 76, 100, member.color).setDepth(5);
+        this.add.rectangle(x, y, 76, 100).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
 
         // Class icon
         const iconMap = {
@@ -140,48 +139,48 @@ export class BattleScene extends Phaser.Scene {
           Priest: { shape: 'circle', color: 0xddddaa },
         };
         const icon = iconMap[member.cls] || iconMap.Warrior;
-        this.add.circle(x, y - 20, 4, icon.color, 0.8).setDepth(7);
+        this.add.circle(x, y - 40, 8, icon.color, 0.8).setDepth(7);
       }
 
       // Name under sprite
-      this.add.text(x, y + 32, member.name, {
-        fontSize: '9px', color: '#cccccc',
+      this.add.text(x, y + 58, member.name, {
+        fontSize: '11px', color: '#cccccc',
       }).setOrigin(0.5).setDepth(7);
 
       this.tweens.add({
-        targets: sprite, y: y - 3,
+        targets: sprite, y: y - 5,
         duration: 900 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
       });
 
       this.partySprites.push({ sprite, character: member, baseX: x, baseY: y });
     });
 
-    // Enemies — top row
+    // Enemies — vertical right column
     const enemyCount = this.enemies.length;
-    const enemyStartX = 400 - (enemyCount - 1) * 65;
+    const enemyStartY = 270 - (enemyCount - 1) * 60;
 
     this.enemies.forEach((enemy, i) => {
-      const x = enemyStartX + i * 130;
-      const y = 210;
+      const x = 630;
+      const y = enemyStartY + i * 120;
 
       // Boss enemies get larger sprites
-      const spriteW = enemy.isBoss ? 50 : 38;
-      const spriteH = enemy.isBoss ? 65 : 50;
+      const spriteW = enemy.isBoss ? 100 : 76;
+      const spriteH = enemy.isBoss ? 130 : 100;
 
-      this.add.ellipse(x, y + spriteH / 2 + 1, spriteW + 10, 14, 0x000000, 0.3).setDepth(3);
+      this.add.ellipse(x, y + spriteH / 2 + 2, spriteW + 20, 28, 0x000000, 0.3).setDepth(3);
 
       let sprite;
       const enemySpriteKey = this.getCharSpriteKey(enemy);
 
       if (enemySpriteKey && this.textures.exists(enemySpriteKey)) {
         sprite = this.add.image(x, y, enemySpriteKey).setDepth(5);
-        const targetH = enemy.isBoss ? 80 : 64;
+        const targetH = enemy.isBoss ? 160 : 128;
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
         if (enemy.cls === 'Spirit') sprite.setAlpha(0.7);
         if (enemy.isBoss) {
-          const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, enemy.color, 0.15).setDepth(4);
+          const glow = this.add.ellipse(x, y, spriteW + 32, spriteH + 32, enemy.color, 0.15).setDepth(4);
           this.tweens.add({
             targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
             duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -189,7 +188,7 @@ export class BattleScene extends Phaser.Scene {
         }
       } else if (enemy.isBoss) {
         // Boss glow
-        const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, enemy.color, 0.15).setDepth(4);
+        const glow = this.add.ellipse(x, y, spriteW + 32, spriteH + 32, enemy.color, 0.15).setDepth(4);
         this.tweens.add({
           targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
           duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -211,46 +210,46 @@ export class BattleScene extends Phaser.Scene {
       // Class-based visual icons (skip for boss and image sprites)
       if (!enemySpriteKey || !this.textures.exists(enemySpriteKey)) {
         if (enemy.cls === 'Undead') {
-          this.add.circle(x, y - 16, 5, 0xddddaa, 0.5).setDepth(7);
-          this.add.circle(x - 2, y - 17, 1.5, 0x220000).setDepth(8);
-          this.add.circle(x + 2, y - 17, 1.5, 0x220000).setDepth(8);
+          this.add.circle(x, y - 32, 10, 0xddddaa, 0.5).setDepth(7);
+          this.add.circle(x - 4, y - 34, 3, 0x220000).setDepth(8);
+          this.add.circle(x + 4, y - 34, 3, 0x220000).setDepth(8);
         } else if (enemy.cls === 'Spirit') {
-          this.add.circle(x - 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
-          this.add.circle(x + 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
+          this.add.circle(x - 6, y - 36, 4, 0xccaaff, 0.6).setDepth(7);
+          this.add.circle(x + 6, y - 36, 4, 0xccaaff, 0.6).setDepth(7);
         } else if (enemy.cls === 'Armored') {
-          this.add.rectangle(x, y - 16, 8, 10, 0x888899, 0.7).setDepth(7);
-          this.add.rectangle(x, y - 16, 8, 10).setStrokeStyle(1, 0xaaaacc, 0.5).setDepth(8);
+          this.add.rectangle(x, y - 32, 16, 20, 0x888899, 0.7).setDepth(7);
+          this.add.rectangle(x, y - 32, 16, 20).setStrokeStyle(1, 0xaaaacc, 0.5).setDepth(8);
         } else if (enemy.cls === 'Caster') {
-          this.add.circle(x, y - 18, 4, 0x8844cc, 0.6).setDepth(7);
+          this.add.circle(x, y - 36, 8, 0x8844cc, 0.6).setDepth(7);
         } else if (enemy.cls === 'Ranged') {
-          this.add.triangle(x, y - 18, 0, 8, 4, 0, 8, 8, 0x998866, 0.7).setDepth(7);
+          this.add.triangle(x, y - 36, 0, 16, 8, 0, 16, 16, 0x998866, 0.7).setDepth(7);
         } else if (enemy.cls === 'Beast') {
           const claw = this.add.graphics().setDepth(7);
-          claw.lineStyle(2, 0xddaa66, 0.8);
-          claw.lineBetween(x - 5, y - 22, x - 1, y - 14);
-          claw.lineBetween(x + 1, y - 22, x + 5, y - 14);
+          claw.lineStyle(3, 0xddaa66, 0.8);
+          claw.lineBetween(x - 10, y - 44, x - 2, y - 28);
+          claw.lineBetween(x + 2, y - 44, x + 10, y - 28);
         } else if (enemy.cls === 'Demon') {
           const horns = this.add.graphics().setDepth(7);
           horns.fillStyle(0xcc4422, 0.8);
-          horns.fillTriangle(x - 6, y - 14, x - 3, y - 22, x, y - 14);
-          horns.fillTriangle(x, y - 14, x + 3, y - 22, x + 6, y - 14);
+          horns.fillTriangle(x - 12, y - 28, x - 6, y - 44, x, y - 28);
+          horns.fillTriangle(x, y - 28, x + 6, y - 44, x + 12, y - 28);
         } else if (enemy.cls === 'Nature') {
           const leaf = this.add.graphics().setDepth(7);
           leaf.fillStyle(0x55aa44, 0.8);
-          leaf.fillTriangle(x, y - 22, x - 5, y - 17, x, y - 12);
-          leaf.fillTriangle(x, y - 22, x + 5, y - 17, x, y - 12);
+          leaf.fillTriangle(x, y - 44, x - 10, y - 34, x, y - 24);
+          leaf.fillTriangle(x, y - 44, x + 10, y - 34, x, y - 24);
           leaf.lineStyle(1, 0x55aa44, 0.6);
-          leaf.lineBetween(x, y - 12, x, y - 9);
+          leaf.lineBetween(x, y - 24, x, y - 18);
         }
       }
 
-      this.add.text(x, y + spriteH / 2 + 7, enemy.name, {
-        fontSize: '9px', color: enemy.isBoss ? '#ff8888' : '#cc9999',
+      this.add.text(x, y + spriteH / 2 + 14, enemy.name, {
+        fontSize: '11px', color: enemy.isBoss ? '#ff8888' : '#cc9999',
         fontStyle: enemy.isBoss ? 'bold' : 'normal',
       }).setOrigin(0.5).setDepth(7);
 
       this.tweens.add({
-        targets: sprite, y: y - 3,
+        targets: sprite, y: y - 5,
         duration: 1100 + i * 150, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
       });
 
@@ -1227,12 +1226,12 @@ export class BattleScene extends Phaser.Scene {
     for (const es of this.enemySprites) {
       if (es.character.hp <= 0 && es.sprite.alpha > 0) {
         this.sfx.playEnemyDeath();
-        this.tweens.add({ targets: es.sprite, alpha: 0, y: es.sprite.y + 30, duration: 500 });
+        this.tweens.add({ targets: es.sprite, alpha: 0, x: es.sprite.x + 50, duration: 500 });
       }
     }
     for (const ps of this.partySprites) {
       if (ps.character.hp <= 0 && ps.sprite.alpha > 0) {
-        this.tweens.add({ targets: ps.sprite, alpha: 0, y: ps.sprite.y + 20, duration: 500 });
+        this.tweens.add({ targets: ps.sprite, alpha: 0, x: ps.sprite.x - 50, duration: 500 });
       }
     }
 
@@ -1359,34 +1358,34 @@ export class BattleScene extends Phaser.Scene {
   addAllyMidBattle(allyChar) {
     this.party.push(allyChar);
 
-    // Create sprite at next party position
+    // Create sprite at next party position (vertical left column)
     const i = this.party.length - 1;
     const partyCount = this.party.length;
-    const partyStartX = 400 - (partyCount - 1) * 70;
+    const partyStartY = 270 - (partyCount - 1) * 60;
 
-    // Reposition existing party sprites for even spacing
+    // Reposition existing party sprites for even vertical spacing
     this.partySprites.forEach((ps, idx) => {
-      const newX = partyStartX + idx * 140;
-      ps.baseX = newX;
-      this.tweens.add({ targets: ps.sprite, x: newX, duration: 400, ease: 'Sine.easeInOut' });
+      const newY = partyStartY + idx * 120;
+      ps.baseY = newY;
+      this.tweens.add({ targets: ps.sprite, y: newY, duration: 400, ease: 'Sine.easeInOut' });
     });
 
-    const x = partyStartX + i * 140;
-    const y = 420;
+    const x = 170;
+    const y = partyStartY + i * 120;
 
-    this.add.ellipse(x, y + 26, 48, 14, 0x000000, 0.3).setDepth(3);
+    this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
 
     const spriteKey = this.getCharSpriteKey(allyChar);
     let sprite;
     if (spriteKey && this.textures.exists(spriteKey)) {
       sprite = this.add.image(x, y, spriteKey).setDepth(5);
-      const targetH = 64;
+      const targetH = 128;
       const scale = targetH / sprite.height;
       sprite.setScale(scale);
       sprite.setOrigin(0.5, 0.5);
     } else {
-      sprite = this.add.rectangle(x, y, 38, 50, allyChar.color).setDepth(5);
-      this.add.rectangle(x, y, 38, 50).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
+      sprite = this.add.rectangle(x, y, 76, 100, allyChar.color).setDepth(5);
+      this.add.rectangle(x, y, 76, 100).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
 
       const iconMap = {
         Commander: { color: 0xffcc44 },
@@ -1397,11 +1396,11 @@ export class BattleScene extends Phaser.Scene {
         Farmer: { color: 0x88aa44 },
       };
       const icon = iconMap[allyChar.cls] || iconMap.Warrior;
-      this.add.circle(x, y - 20, 4, icon.color, 0.8).setDepth(7);
+      this.add.circle(x, y - 40, 8, icon.color, 0.8).setDepth(7);
     }
 
-    this.add.text(x, y + 32, allyChar.name, {
-      fontSize: '9px', color: '#cccccc',
+    this.add.text(x, y + 58, allyChar.name, {
+      fontSize: '11px', color: '#cccccc',
     }).setOrigin(0.5).setDepth(7);
 
     // Fade in
@@ -1409,7 +1408,7 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.add({ targets: sprite, alpha: 1, duration: 600, ease: 'Sine.easeIn' });
 
     this.tweens.add({
-      targets: sprite, y: y - 3,
+      targets: sprite, y: y - 5,
       duration: 900 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
     });
 
@@ -1467,8 +1466,8 @@ export class BattleScene extends Phaser.Scene {
   }
 
   showFloatingText(sprite, text, color) {
-    const ft = this.add.text(sprite.x, sprite.y - 35, text, {
-      fontSize: '18px', fontStyle: 'bold', color,
+    const ft = this.add.text(sprite.x, sprite.y - 70, text, {
+      fontSize: '22px', fontStyle: 'bold', color,
     }).setOrigin(0.5).setDepth(20);
     this.tweens.add({
       targets: ft, y: ft.y - 30, alpha: 0,
