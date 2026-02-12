@@ -3,6 +3,7 @@ import { TitleScene } from './scenes/TitleScene.js';
 import { BootScene } from './scenes/BootScene.js';
 import { CutsceneScene } from './scenes/CutsceneScene.js';
 import { TutorialBattleScene } from './scenes/TutorialBattleScene.js';
+import { PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat } from './scenes/PostTutorialCutscene.js';
 import { OverworldScene } from './scenes/OverworldScene.js';
 import { BattleScene } from './scenes/BattleScene.js';
 import { BattleUIScene } from './scenes/BattleUIScene.js';
@@ -30,7 +31,7 @@ const config = {
   input: {
     activePointers: 3,
   },
-  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, TouchControlsScene],
+  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, TouchControlsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

@@ -21,13 +21,11 @@ export class TutorialBattleScene extends Phaser.Scene {
   showPostBattle() {
     this.showDialogue([
       'The last skeleton crumbles to dust.',
-      'Farmer Alan: "Thank you, Captain. I owe you my life."',
-      'Alan returns to tend his farm. The road east awaits.',
+      'Farmer Alan: "Thank you, Captain. But something worse is coming..."',
     ], () => {
-      this.registry.set('tutorialComplete', true);
       this.cameras.main.fadeOut(600, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('Overworld');
+        this.scene.start('PostTutorialCutscene');
       });
     });
   }
