@@ -22,6 +22,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('collectedItems', { ...(this.loadData.collectedItems || {}) });
       this.registry.set('defeatedOverworldEnemies', { ...(this.loadData.defeatedOverworldEnemies || {}) });
       this.registry.set('activeSlot', this.loadData.activeSlot || null);
+      this.registry.set('partyOrder', this.loadData.partyOrder || []);
 
       this.scene.start('Overworld', { playerPos: this.loadData.playerPos });
     } else {
@@ -41,6 +42,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('collectedItems', {});
       this.registry.set('defeatedOverworldEnemies', {});
       this.registry.set('activeSlot', null);
+      this.registry.set('partyOrder', ['metz']);
 
       this.scene.start('Cutscene');
     }

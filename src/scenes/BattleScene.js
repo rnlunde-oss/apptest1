@@ -1,6 +1,7 @@
 import { ABILITIES } from '../data/abilities.js';
 import { awardXP } from '../data/characters.js';
 import { rollLoot, EQUIPMENT, lookupItem, CONSUMABLES } from '../data/equipment.js';
+import { applyFormationDR, getFormationDR, getPartyFormationPositions, getEnemyFormationPositions } from '../utils/formation.js';
 
 export class BattleScene extends Phaser.Scene {
   constructor() {
@@ -106,15 +107,16 @@ export class BattleScene extends Phaser.Scene {
   drawCombatants() {
     this.partySprites = [];
     this.enemySprites = [];
+    this.formationOverlays = [];
 
-    // Party — horizontal row, bottom-left
-    const partyCount = this.party.length;
-    const partyStartX = 200 - (partyCount - 1) * 50;
+    // Party — diamond/wedge formation
+    const partyPositions = getPartyFormationPositions(this.party.length);
 
     this.party.forEach((member, i) => {
       if (member.hp <= 0) return;
-      const x = partyStartX + i * 100;
-      const y = 380;
+      const pos = partyPositions[i] || partyPositions[0];
+      const x = pos.x;
+      const y = pos.y;
 
       this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
 
@@ -156,13 +158,13 @@ export class BattleScene extends Phaser.Scene {
       this.partySprites.push({ sprite, character: member, baseX: x, baseY: y });
     });
 
-    // Enemies — horizontal row, middle-right
-    const enemyCount = this.enemies.length;
-    const enemyStartX = 600 - (enemyCount - 1) * 50;
+    // Enemies — mirrored diamond/wedge formation
+    const enemyPositions = getEnemyFormationPositions(this.enemies.length);
 
     this.enemies.forEach((enemy, i) => {
-      const x = enemyStartX + i * 100;
-      const y = 290;
+      const pos = enemyPositions[i] || enemyPositions[0];
+      const x = pos.x;
+      const y = pos.y;
 
       // Boss enemies get larger sprites
       const spriteW = enemy.isBoss ? 100 : 76;
@@ -256,6 +258,97 @@ export class BattleScene extends Phaser.Scene {
 
       this.enemySprites.push({ sprite, character: enemy, baseX: x, baseY: y });
     });
+
+    // Create formation DR overlays
+    this.createFormationOverlays();
+  }
+
+  createFormationOverlays() {
+    // Clean up old overlays
+    if (this.formationOverlays) {
+      for (const ov of this.formationOverlays) {
+        if (ov.graphic) ov.graphic.destroy();
+      }
+    }
+    this.formationOverlays = [];
+
+    // Party overlays — blue shield glow behind sprites
+    for (let i = 0; i < this.partySprites.length; i++) {
+      const ps = this.partySprites[i];
+      const idx = this.party.indexOf(ps.character);
+      const dr = getFormationDR(this.party, idx);
+      if (dr > 0) {
+        const glow = this.add.ellipse(ps.baseX, ps.baseY, 90, 110, 0x4488ff, dr * 0.3).setDepth(4);
+        // Sync with idle bobbing
+        this.tweens.add({
+          targets: glow, y: ps.baseY - 5,
+          duration: 900 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        });
+        this.formationOverlays.push({ graphic: glow, side: 'party', index: idx });
+      }
+    }
+
+    // Enemy overlays — dark semi-transparent overlay on sprites
+    for (let i = 0; i < this.enemySprites.length; i++) {
+      const es = this.enemySprites[i];
+      const idx = this.enemies.indexOf(es.character);
+      const dr = getFormationDR(this.enemies, idx);
+      if (dr > 0) {
+        const spriteW = es.character.isBoss ? 100 : 76;
+        const spriteH = es.character.isBoss ? 130 : 100;
+        const shade = this.add.rectangle(es.baseX, es.baseY, spriteW, spriteH, 0x000000, dr * 0.5).setDepth(9);
+        // Sync with idle bobbing
+        this.tweens.add({
+          targets: shade, y: es.baseY - 5,
+          duration: 1100 + i * 150, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        });
+        this.formationOverlays.push({ graphic: shade, side: 'enemy', index: idx });
+      }
+    }
+  }
+
+  updateFormationOverlays() {
+    // Destroy old overlays and recreate with updated DR values
+    if (this.formationOverlays) {
+      for (const ov of this.formationOverlays) {
+        if (ov.graphic) ov.graphic.destroy();
+      }
+    }
+    this.formationOverlays = [];
+
+    // Party overlays
+    for (let i = 0; i < this.partySprites.length; i++) {
+      const ps = this.partySprites[i];
+      if (ps.character.hp <= 0) continue;
+      const idx = this.party.indexOf(ps.character);
+      const dr = getFormationDR(this.party, idx);
+      if (dr > 0) {
+        const glow = this.add.ellipse(ps.sprite.x, ps.sprite.y, 90, 110, 0x4488ff, dr * 0.3).setDepth(4);
+        this.tweens.add({
+          targets: glow, y: ps.baseY - 5,
+          duration: 900 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        });
+        this.formationOverlays.push({ graphic: glow, side: 'party', index: idx });
+      }
+    }
+
+    // Enemy overlays
+    for (let i = 0; i < this.enemySprites.length; i++) {
+      const es = this.enemySprites[i];
+      if (es.character.hp <= 0) continue;
+      const idx = this.enemies.indexOf(es.character);
+      const dr = getFormationDR(this.enemies, idx);
+      if (dr > 0) {
+        const spriteW = es.character.isBoss ? 100 : 76;
+        const spriteH = es.character.isBoss ? 130 : 100;
+        const shade = this.add.rectangle(es.sprite.x, es.sprite.y, spriteW, spriteH, 0x000000, dr * 0.5).setDepth(9);
+        this.tweens.add({
+          targets: shade, y: es.baseY - 5,
+          duration: 1100 + i * 150, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+        });
+        this.formationOverlays.push({ graphic: shade, side: 'enemy', index: idx });
+      }
+    }
   }
 
   // ──── Boss Texture Generation ────
@@ -592,10 +685,13 @@ export class BattleScene extends Phaser.Scene {
       if (char.hp <= 0) continue;
       for (const eff of char.statusEffects) {
         if (eff.type === 'dot') {
-          const dmg = eff.amount;
+          const rawDmg = eff.amount;
+          const group = this.party.includes(char) ? this.party : this.enemies;
+          const charIdx = group.indexOf(char);
+          const dmg = applyFormationDR(rawDmg, group, charIdx);
           char.hp = Math.max(0, char.hp - dmg);
           this.sfx.playPoisonTick();
-          messages.push({ text: `${char.name} takes ${dmg} poison damage!`, char });
+          messages.push({ text: `${char.name} takes ${dmg} poison damage!`, char, dmg });
         }
       }
     }
@@ -614,7 +710,7 @@ export class BattleScene extends Phaser.Scene {
       }
       // Floating damage on the affected character
       const info = this.findSpriteFor(messages[idx].char);
-      if (info) this.showFloatingText(info.sprite, `-${messages[idx].char.statusEffects.find(e => e.type === 'dot')?.amount || '?'}`, '#aa44cc');
+      if (info) this.showFloatingText(info.sprite, `-${messages[idx].dmg}`, '#aa44cc');
 
       uiScene.showMessage(messages[idx].text, () => {
         uiScene.updateHP();
@@ -835,7 +931,9 @@ export class BattleScene extends Phaser.Scene {
         }
         const baseDmg = (power * (atkStat / defStat)) * 0.8;
         const randomMod = 0.9 + Math.random() * 0.2;
-        const damage = Math.max(1, Math.floor(baseDmg * randomMod));
+        const rawDamage = Math.max(1, Math.floor(baseDmg * randomMod));
+        const enemyIdx = this.enemies.indexOf(enemy);
+        const damage = applyFormationDR(rawDamage, this.enemies, enemyIdx);
         enemy.hp = Math.max(0, enemy.hp - damage);
         totalDmg += damage;
         this.sfx.playAttackHit();
@@ -934,7 +1032,12 @@ export class BattleScene extends Phaser.Scene {
 
     const baseDmg = (power * (atkStat / defStat)) * 0.8;
     const randomMod = 0.9 + Math.random() * 0.2;
-    const damage = Math.max(1, Math.floor(baseDmg * randomMod));
+    const rawDamage = Math.max(1, Math.floor(baseDmg * randomMod));
+
+    // Apply formation DR
+    const defGroup = this.party.includes(defender) ? this.party : this.enemies;
+    const defIdx = defGroup.indexOf(defender);
+    const damage = applyFormationDR(rawDamage, defGroup, defIdx);
 
     defender.hp = Math.max(0, defender.hp - damage);
     if (ability.type === 'magic') this.sfx.playSpellCast();
@@ -1187,7 +1290,9 @@ export class BattleScene extends Phaser.Scene {
         }
         const baseDmg = (power * (atkStat / defStat)) * 0.8;
         const randomMod = 0.9 + Math.random() * 0.2;
-        const damage = Math.max(1, Math.floor(baseDmg * randomMod));
+        const rawDamage = Math.max(1, Math.floor(baseDmg * randomMod));
+        const targetIdx = this.party.indexOf(target);
+        const damage = applyFormationDR(rawDamage, this.party, targetIdx);
         target.hp = Math.max(0, target.hp - damage);
         totalDmg += damage;
 
@@ -1264,6 +1369,9 @@ export class BattleScene extends Phaser.Scene {
         this.tweens.add({ targets: ps.sprite, alpha: 0, y: ps.sprite.y + 30, duration: 500 });
       }
     }
+
+    // Update formation DR overlays when characters fall
+    this.updateFormationOverlays();
 
     // Tutorial: trigger onFirstEnemyKill when the first enemy dies
     if (this.isTutorial && !this.firstKillFired && this.tutorialCallbacks.onFirstEnemyKill) {
@@ -1388,20 +1496,21 @@ export class BattleScene extends Phaser.Scene {
   addAllyMidBattle(allyChar) {
     this.party.push(allyChar);
 
-    // Create sprite at next party position (horizontal bottom-left row)
+    // Recalculate formation positions for the new party size
     const i = this.party.length - 1;
-    const partyCount = this.party.length;
-    const partyStartX = 200 - (partyCount - 1) * 50;
+    const partyPositions = getPartyFormationPositions(this.party.length);
 
-    // Reposition existing party sprites for even horizontal spacing
+    // Reposition existing party sprites to new formation positions
     this.partySprites.forEach((ps, idx) => {
-      const newX = partyStartX + idx * 100;
-      ps.baseX = newX;
-      this.tweens.add({ targets: ps.sprite, x: newX, duration: 400, ease: 'Sine.easeInOut' });
+      const newPos = partyPositions[idx];
+      ps.baseX = newPos.x;
+      ps.baseY = newPos.y;
+      this.tweens.add({ targets: ps.sprite, x: newPos.x, duration: 400, ease: 'Sine.easeInOut' });
     });
 
-    const x = partyStartX + i * 100;
-    const y = 380;
+    const pos = partyPositions[i];
+    const x = pos.x;
+    const y = pos.y;
 
     this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
 

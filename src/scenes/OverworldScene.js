@@ -1154,7 +1154,18 @@ export class OverworldScene extends Phaser.Scene {
 
   getActiveParty() {
     const roster = this.registry.get('roster');
-    return Object.values(roster).filter(c => c.recruited && c.active);
+    const active = Object.values(roster).filter(c => c.recruited && c.active);
+    const partyOrder = this.registry.get('partyOrder') || [];
+    // Sort active members by their position in partyOrder
+    active.sort((a, b) => {
+      const ai = partyOrder.indexOf(a.id);
+      const bi = partyOrder.indexOf(b.id);
+      // Characters not in partyOrder go to the end
+      const aIdx = ai === -1 ? 999 : ai;
+      const bIdx = bi === -1 ? 999 : bi;
+      return aIdx - bIdx;
+    });
+    return active;
   }
 
   getFullRoster() {
@@ -1591,6 +1602,12 @@ export class OverworldScene extends Phaser.Scene {
         const activeCount = Object.values(roster).filter(c => c.active).length;
         if (activeCount < 4) {
           char.active = true;
+          // Add to partyOrder
+          const partyOrder = this.registry.get('partyOrder') || [];
+          if (!partyOrder.includes(char.id)) {
+            partyOrder.push(char.id);
+            this.registry.set('partyOrder', partyOrder);
+          }
         } else {
           char.active = false;
           this.showDialogue([

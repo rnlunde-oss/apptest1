@@ -48,6 +48,7 @@ export function serializeGameState(registry, playerPos) {
     tutorialComplete: registry.get('tutorialComplete') || false,
     collectedItems: { ...(registry.get('collectedItems') || {}) },
     defeatedOverworldEnemies: { ...(registry.get('defeatedOverworldEnemies') || {}) },
+    partyOrder: [...(registry.get('partyOrder') || [])],
     playerPos: { x: playerPos.x, y: playerPos.y },
     saveTime: new Date().toISOString(),
     version: SAVE_VERSION,
