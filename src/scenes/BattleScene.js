@@ -16,10 +16,17 @@ export class BattleScene extends Phaser.Scene {
     this.fullRoster = data.roster;   // all recruited characters (for shared XP)
     this.onBattleEnd = data.onBattleEnd;
     this.isBossEncounter = data.isBossEncounter || false;
+    this.zone = data.zone || 'deep';
     this.battleOver = false;
     this.turnQueue = [];
     this.currentTurnIndex = -1;
     this.roundNumber = 0;
+  }
+
+  preload() {
+    if (this.zone === 'cursed' && !this.textures.exists('bg_farmland')) {
+      this.load.image('bg_farmland', 'assets/backgrounds/farmland.png');
+    }
   }
 
   create() {
@@ -27,8 +34,15 @@ export class BattleScene extends Phaser.Scene {
 
     this._generateAtikeshTexture();
 
-    // Dark battlefield
-    this.add.rectangle(400, 320, 800, 640, 0x111118);
+    // Battlefield background
+    if (this.zone === 'cursed' && this.textures.exists('bg_farmland')) {
+      const bg = this.add.image(400, 320, 'bg_farmland');
+      const scaleX = 800 / bg.width;
+      const scaleY = 640 / bg.height;
+      bg.setScale(Math.max(scaleX, scaleY));
+    } else {
+      this.add.rectangle(400, 320, 800, 640, 0x111118);
+    }
     this.add.ellipse(400, 440, 750, 160, 0x1a1a28).setDepth(0);
     this.add.rectangle(400, 200, 800, 2, 0x332244, 0.3).setDepth(0);
 

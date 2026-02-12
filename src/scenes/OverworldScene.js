@@ -502,6 +502,8 @@ export class OverworldScene extends Phaser.Scene {
 
       this.cameras.main.flash(400, 100, 0, 0);
       this.time.delayedCall(500, () => {
+        const tile = OVERWORLD_MAP[oe.def.tileY]?.[oe.def.tileX];
+        const oeZone = tile === 2 ? 'cursed' : tile === 9 ? 'deep' : 'cursed';
         this.scene.launch('Battle', {
           party: activeParty,
           enemies,
@@ -510,6 +512,7 @@ export class OverworldScene extends Phaser.Scene {
           enemyTypes: [...oe.def.enemies],
           roster: this.getFullRoster(),
           isBossEncounter: false,
+          zone: oeZone,
           onBattleEnd: (result) => {
             this.scene.stop('Battle');
             this.scene.stop('BattleUI');
@@ -979,6 +982,7 @@ export class OverworldScene extends Phaser.Scene {
         enemyTypes: [...picked.enemies], // pass original keys for loot rolling
         roster: this.getFullRoster(),
         isBossEncounter,
+        zone,
         onBattleEnd: (result) => {
           this.scene.stop('Battle');
           this.scene.stop('BattleUI');
