@@ -163,8 +163,22 @@ export class OverworldScene extends Phaser.Scene {
     this.loadedPos = data?.playerPos || null;
   }
 
+  preload() {
+    if (!this.textures.exists('grassland_tileset')) {
+      this.load.image('grassland_tileset', 'assets/tilesets/grassland_tileset.png');
+    }
+    const dirs = ['down', 'up', 'left', 'right'];
+    for (const d of dirs) {
+      const key = `player_${d}`;
+      if (!this.textures.exists(key)) {
+        this.load.image(key, `assets/sprites/${key}.png`);
+      }
+    }
+  }
+
   create() {
     this.sfx = this.registry.get('soundManager');
+    this._buildGrassTileTextures();
     this.buildMap();
     this.spawnPlayer();
     this.spawnNPC();
@@ -289,6 +303,128 @@ export class OverworldScene extends Phaser.Scene {
     return ((h & 0x7fffffff) % 10000) / 10000;
   }
 
+  _buildGrassTileTextures() {
+    if (this.textures.exists('grass_0')) return; // already built
+    if (!this.textures.exists('grassland_tileset')) return; // tileset not loaded
+
+    const src = this.textures.get('grassland_tileset').getSourceImage();
+    const cellW = src.width / 4;   // 256 per cell
+    const cellH = src.height / 4;  // 256 per cell
+
+    // Usable region within each cell: skip ~8px margin sides, ~48px earth edge at bottom
+    const marginX = 8;
+    const marginTop = 8;
+    const usableW = cellW - marginX * 2;   // ~240
+    const usableH = cellH - marginTop - 48; // ~192
+
+    const FRAME_MAP = [
+      // Row 1: Pure grass variants (interior)
+      { frame: 'grass_0', col: 0, row: 0 },
+      { frame: 'grass_1', col: 1, row: 0 },
+      { frame: 'grass_2', col: 2, row: 0 },
+      { frame: 'grass_3', col: 3, row: 0 },
+      // Row 2: Transition tiles
+      { frame: 'grass_4', col: 0, row: 1 },  // dirt from NW
+      { frame: 'grass_5', col: 1, row: 1 },  // diagonal dirt
+      { frame: 'grass_6', col: 2, row: 1 },  // dirt from NE
+      { frame: 'grass_7', col: 3, row: 1 },  // dirt on top
+      // Row 3: More transitions
+      { frame: 'grass_8', col: 0, row: 2 },  // mostly dirt
+      { frame: 'grass_9', col: 1, row: 2 },  // dirt with grass left border
+      { frame: 'grass_10', col: 2, row: 2 }, // round dirt clearing
+      { frame: 'grass_11', col: 3, row: 2 }, // small round dirt clearing
+      // Row 4: Inner corners + flower decorations
+      { frame: 'grass_12', col: 0, row: 3 },  // inner corner BL
+      { frame: 'grass_13', col: 1, row: 3 },  // inner corner BR
+      { frame: 'grass_deco_flower1', col: 2, row: 3, isDeco: true },
+      { frame: 'grass_deco_flower2', col: 3, row: 3, isDeco: true },
+    ];
+
+    const outSize = 32; // target texture size
+
+    for (const entry of FRAME_MAP) {
+      const canvas = document.createElement('canvas');
+      canvas.width = outSize;
+      canvas.height = outSize;
+      const ctx = canvas.getContext('2d');
+
+      const sx = entry.col * cellW + marginX;
+      const sy = entry.row * cellH + marginTop;
+
+      ctx.drawImage(src, sx, sy, usableW, usableH, 0, 0, outSize, outSize);
+
+      // For decoration textures, remove dark background pixels (RGB < 30 → transparent)
+      if (entry.isDeco) {
+        const imgData = ctx.getImageData(0, 0, outSize, outSize);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i] < 30 && d[i + 1] < 30 && d[i + 2] < 30) {
+            d[i + 3] = 0;
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      }
+
+      this.textures.addCanvas(entry.frame, canvas);
+    }
+  }
+
+  _getGrassAutotileMask(col, row) {
+    // Returns 4-bit mask: N=1, E=2, S=4, W=8; bit SET if neighbor is also tile 12
+    let mask = 0;
+    const n = row > 0 ? OVERWORLD_MAP[row - 1][col] : -1;
+    const e = col < MAP_COLS - 1 ? OVERWORLD_MAP[row][col + 1] : -1;
+    const s = row < MAP_ROWS - 1 ? OVERWORLD_MAP[row + 1][col] : -1;
+    const w = col > 0 ? OVERWORLD_MAP[row][col - 1] : -1;
+    if (n === 12) mask |= 1;
+    if (e === 12) mask |= 2;
+    if (s === 12) mask |= 4;
+    if (w === 12) mask |= 8;
+    return mask;
+  }
+
+  _getGrassFrame(col, row) {
+    const mask = this._getGrassAutotileMask(col, row);
+    // mask bits: N=1, E=2, S=4, W=8
+    switch (mask) {
+      case 0b1111: { // all grass neighbors — pick random interior variant
+        const variant = Math.floor(this._tileRandom(col, row, 42) * 4);
+        return { key: `grass_${variant}`, flipX: false, flipY: false };
+      }
+      case 0b1110: // N missing (E+S+W present) — dirt on top
+        return { key: 'grass_7', flipX: false, flipY: false };
+      case 0b1101: // E missing (N+S+W present) — dirt on right (flip grass_9)
+        return { key: 'grass_9', flipX: true, flipY: false };
+      case 0b1011: // S missing (N+E+W present) — dirt on bottom (flip grass_7)
+        return { key: 'grass_7', flipX: false, flipY: true };
+      case 0b0111: // W missing (N+E+S present) — dirt on left
+        return { key: 'grass_9', flipX: false, flipY: false };
+      case 0b1100: // N+E missing (S+W present) — dirt from NE
+        return { key: 'grass_6', flipX: false, flipY: false };
+      case 0b0110: // N+W missing (E+S present) — dirt from NW
+        return { key: 'grass_4', flipX: false, flipY: false };
+      case 0b0011: // S+E missing (N+W present) — inner corner BL
+        return { key: 'grass_12', flipX: false, flipY: false };
+      case 0b1001: // S+W missing (N+E present) — inner corner BR
+        return { key: 'grass_13', flipX: false, flipY: false };
+      case 0b1010: // N+S missing (E+W present) — corridor horizontal
+        return { key: 'grass_5', flipX: false, flipY: false };
+      case 0b0101: // E+W missing (N+S present) — corridor vertical
+        return { key: 'grass_5', flipX: false, flipY: true };
+      case 0b0000: // isolated — small clearing
+        return { key: 'grass_11', flipX: false, flipY: false };
+      default: {
+        // 1 neighbor (mask = 1,2,4,8) or 3 missing — clearing
+        const popcount = (mask & 1) + ((mask >> 1) & 1) + ((mask >> 2) & 1) + ((mask >> 3) & 1);
+        if (popcount <= 1) {
+          return { key: 'grass_10', flipX: false, flipY: false };
+        }
+        // Fallback for any remaining 2-neighbor combos not explicitly handled
+        return { key: 'grass_8', flipX: false, flipY: false };
+      }
+    }
+  }
+
   renderTile(col, row) {
     const key = `${col},${row}`;
     if (this.renderedTiles.has(key)) return;
@@ -303,9 +439,20 @@ export class OverworldScene extends Phaser.Scene {
     let wall = null;
 
     // Base tile
-    objects.push(this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color).setDepth(0));
-    objects.push(this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE)
-      .setStrokeStyle(1, 0x000000, 0.08).setDepth(1));
+    if (tile === 12 && this.textures.exists('grass_0')) {
+      const { key, flipX, flipY } = this._getGrassFrame(col, row);
+      const grassImg = this.add.image(x, y, key)
+        .setDisplaySize(TILE_SIZE, TILE_SIZE)
+        .setFlipX(flipX).setFlipY(flipY)
+        .setDepth(0);
+      objects.push(grassImg);
+      objects.push(this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE)
+        .setStrokeStyle(1, 0x000000, 0.04).setDepth(1));
+    } else {
+      objects.push(this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color).setDepth(0));
+      objects.push(this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE)
+        .setStrokeStyle(1, 0x000000, 0.08).setDepth(1));
+    }
 
     // Impassable tiles
     if (tile === 1 || tile === 4 || tile === 7 || tile === 11 || tile === 14 || tile === 21) {
@@ -350,12 +497,21 @@ export class OverworldScene extends Phaser.Scene {
       }));
     }
 
-    // Farmland — wheat tufts
-    if (tile === 12 && r0 < 0.15) {
-      objects.push(this.add.circle(
-        x - 6 + r1 * 12, y - 6 + r2 * 12,
-        2, 0xccaa44, 0.5
-      ).setDepth(2));
+    // Farmland — flower decorations from tileset
+    if (tile === 12 && r0 < 0.12 && this.textures.exists('grass_deco_flower1')) {
+      const decoKey = r1 < 0.5 ? 'grass_deco_flower1' : 'grass_deco_flower2';
+      const deco = this.add.image(
+        x - 6 + r1 * 12, y - 6 + r2 * 12, decoKey
+      ).setDisplaySize(10, 10).setAlpha(0.7).setDepth(2);
+      objects.push(deco);
+    } else if (tile === 12 && r0 < 0.15) {
+      // Fallback wheat tufts if tileset not loaded
+      if (!this.textures.exists('grass_0')) {
+        objects.push(this.add.circle(
+          x - 6 + r1 * 12, y - 6 + r2 * 12,
+          2, 0xccaa44, 0.5
+        ).setDepth(2));
+      }
     }
 
     // Forest — tree sprites
@@ -563,12 +719,25 @@ export class OverworldScene extends Phaser.Scene {
 
   spawnPlayer() {
     const { x, y } = this.loadedPos || this.playerSpawn || { x: 272, y: 336 };
-    this.player = this.add.rectangle(x, y, 22, 28, 0xcc2222).setDepth(10);
+
+    // Sprite-based player with directional textures
+    this.playerDir = 'down';
+    const SPRITE_DISPLAY_H = 36;
+    this.player = this.add.sprite(x, y, 'player_down').setDepth(10);
+    const scaleY = SPRITE_DISPLAY_H / this.player.height;
+    this.player.setScale(scaleY);
     this.physics.add.existing(this.player);
     this.player.body.setCollideWorldBounds(true);
-    this.player.body.setSize(20, 24);
-    this.playerDetail = this.add.rectangle(x, y - 4, 14, 8, 0xdd6644).setDepth(11);
-    this.playerLabel = this.add.text(x, y - 22, 'Cpt. Metz', {
+    this.player.body.setSize(
+      this.player.width * 0.55,
+      this.player.height * 0.35,
+    );
+    this.player.body.setOffset(
+      this.player.width * 0.22,
+      this.player.height * 0.62,
+    );
+
+    this.playerLabel = this.add.text(x, y - SPRITE_DISPLAY_H / 2 - 4, 'Cpt. Metz', {
       fontSize: '9px', color: '#ffdddd', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(11);
     this.physics.add.collider(this.player, this.walls);
@@ -1016,10 +1185,25 @@ export class OverworldScene extends Phaser.Scene {
       else if (down) vy = PLAYER_SPEED;
       if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
     }
+    // Update facing direction based on movement
+    if (vx !== 0 || vy !== 0) {
+      let newDir;
+      if (Math.abs(vy) > Math.abs(vx)) {
+        newDir = vy < 0 ? 'up' : 'down';
+      } else {
+        newDir = vx < 0 ? 'left' : 'right';
+      }
+      if (newDir !== this.playerDir) {
+        this.playerDir = newDir;
+        this.player.setTexture(`player_${newDir}`);
+        const scaleY = 36 / this.player.height;
+        this.player.setScale(scaleY);
+      }
+    }
+
     this.player.body.setVelocity(vx, vy);
     this.updateViewportTiles(this.player.x, this.player.y);
 
-    this.playerDetail.setPosition(this.player.x, this.player.y - 4);
     this.playerLabel.setPosition(this.player.x, this.player.y - 22);
 
     const tx = Math.floor(this.player.x / TILE_SIZE);
@@ -1266,7 +1450,6 @@ export class OverworldScene extends Phaser.Scene {
       if (c.recruited) { c.hp = c.maxHp; c.mp = c.maxMp; }
     }
     this.player.setPosition(this.playerSpawn.x, this.playerSpawn.y);
-    this.playerDetail.setPosition(this.playerSpawn.x, this.playerSpawn.y - 4);
     this.playerLabel.setPosition(this.playerSpawn.x, this.playerSpawn.y - 22);
     this.updateViewportTiles(this.playerSpawn.x, this.playerSpawn.y, true);
     this.drawPartyHUD();
