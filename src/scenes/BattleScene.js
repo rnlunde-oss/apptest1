@@ -1466,7 +1466,7 @@ export class BattleScene extends Phaser.Scene {
     };
     // Exact match first, then match base id (before '_' suffix for enemies)
     if (spriteMap[character.id]) return spriteMap[character.id];
-    const baseId = character.id.replace(/_[a-z0-9]{4}$/, '').replace(/^tut_/, '');
+    const baseId = character.id.replace(/_[a-z0-9]{1,4}$/, '').replace(/^tut_/, '');
     return spriteMap[baseId] || null;
   }
 
