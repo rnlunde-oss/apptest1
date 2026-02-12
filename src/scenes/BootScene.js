@@ -40,7 +40,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('defeatedOverworldEnemies', {});
       this.registry.set('activeSlot', null);
 
-      this.scene.start('Overworld');
+      this.scene.start('Cutscene');
     }
   }
 }
