@@ -221,6 +221,22 @@ export const ENEMY_DEFS = {
     phase2Abilities: ['dark_wave', 'doom_curse', 'undying_will'],
     desc: 'The Necromancer Lord. Master of the cursed lands.',
   },
+  dagvar: {
+    id: 'dagvar',
+    name: 'Dagvar',
+    cls: 'Boss',
+    color: 0x553322,
+    maxHp: 180,
+    maxMp: 0,
+    atk: 18,
+    def: 16,
+    spd: 9,
+    abilities: ['dagvar_cleave', 'dagvar_crush', 'dagvar_guard'],
+    aiWeights: [45, 30, 25],
+    isBoss: true,
+    phase2Abilities: ['dagvar_darkslash', 'dagvar_drain', 'dagvar_curse'],
+    desc: 'A fallen knight consumed by dark power. Guardian of the Catacombs.',
+  },
 
   // ──── Beasts (corrupted by Atikesh's magic) ────
   plague_rat: {

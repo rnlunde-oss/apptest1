@@ -799,6 +799,15 @@ export const ABILITIES = {
     effect: { type: 'debuff', stat: 'spd', amount: 0.3, turns: 3 },
   },
 
+  // ──── Dagvar (Catacombs Boss) ────
+  dagvar_cleave:    { name: 'Shadow Cleave',   type: 'physical', target: 'enemy',       power: 40, mpCost: 0,  accuracy: 90, desc: 'A brutal swing of his cursed greatsword.' },
+  dagvar_crush:     { name: 'Crushing Blow',   type: 'physical', target: 'enemy',       power: 55, mpCost: 0,  accuracy: 82, desc: 'An overhead strike that cracks armor.', effect: { type: 'debuff', stat: 'def', amount: 0.2, turns: 3 } },
+  dagvar_guard:     { name: 'Dark Bulwark',    type: 'buff',     target: 'self',        power: 0,  mpCost: 0,  accuracy: 100, desc: 'Wraps himself in dark energy. Boosts defense.', effect: { type: 'shield', stat: 'def', amount: 0.4, turns: 3 } },
+  // Phase 2 (below 50% HP):
+  dagvar_darkslash: { name: 'Abyssal Slash',   type: 'physical', target: 'all_enemies', power: 30, mpCost: 0,  accuracy: 85, desc: 'A sweeping dark-infused slash hits all foes.' },
+  dagvar_drain:     { name: 'Soul Reave',      type: 'magic',    target: 'enemy',       power: 35, mpCost: 0,  accuracy: 90, desc: 'Rips life force from the target. Heals the caster.', healAmount: 20 },
+  dagvar_curse:     { name: 'Death Mark',      type: 'debuff',   target: 'enemy',       power: 20, mpCost: 0,  accuracy: 88, desc: 'Marks a foe for death. Drains life over time.', effect: { type: 'dot', stat: 'hp', amount: 10, turns: 3 } },
+
   // ──── Boss: Atikesh abilities ────
   necrotic_blast: {
     name: 'Necrotic Blast',

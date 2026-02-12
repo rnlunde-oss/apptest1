@@ -59,12 +59,19 @@ export class BattleScene extends Phaser.Scene {
     if (!this.textures.exists('spr_farmer_alan')) {
       this.load.image('spr_farmer_alan', 'assets/sprites/alan_battle.png');
     }
+    if (!this.textures.exists('spr_skeleton')) {
+      this.load.image('spr_skeleton', 'assets/sprites/skeleton_battle.png');
+    }
+    if (!this.textures.exists('spr_dagvar')) {
+      this.load.image('spr_dagvar', 'assets/sprites/dagvar_battle.png');
+    }
   }
 
   create() {
     this.sfx = this.registry.get('soundManager');
 
     this._generateAtikeshTexture();
+    this._generateDagvarTexture();
 
     // Battlefield background
     const bgKeys = {
@@ -164,20 +171,36 @@ export class BattleScene extends Phaser.Scene {
       this.add.ellipse(x, y + spriteH / 2 + 1, spriteW + 10, 14, 0x000000, 0.3).setDepth(3);
 
       let sprite;
+      const enemySpriteKey = this.getCharSpriteKey(enemy);
 
-      if (enemy.isBoss) {
-        // Boss: purple necromantic glow
-        const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, 0x7722aa, 0.15).setDepth(4);
+      if (enemySpriteKey && this.textures.exists(enemySpriteKey)) {
+        sprite = this.add.image(x, y, enemySpriteKey).setDepth(5);
+        const targetH = enemy.isBoss ? 80 : 64;
+        const scale = targetH / sprite.height;
+        sprite.setScale(scale);
+        sprite.setOrigin(0.5, 0.5);
+        if (enemy.cls === 'Spirit') sprite.setAlpha(0.7);
+        if (enemy.isBoss) {
+          const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, enemy.color, 0.15).setDepth(4);
+          this.tweens.add({
+            targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
+            duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+          });
+        }
+      } else if (enemy.isBoss) {
+        // Boss glow
+        const glow = this.add.ellipse(x, y, spriteW + 16, spriteH + 16, enemy.color, 0.15).setDepth(4);
         this.tweens.add({
           targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
           duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
         });
 
-        // Use detailed procedural texture
-        sprite = this.add.image(x, y, 'atikesh_boss').setDepth(5);
+        // Use boss-specific procedural texture
+        const baseId = enemy.id.replace(/_[a-z0-9]{4}$/, '');
+        const bossTexKey = baseId + '_boss';
+        sprite = this.add.image(x, y, this.textures.exists(bossTexKey) ? bossTexKey : 'atikesh_boss').setDepth(5);
       } else {
-        // Non-boss red glow (none currently, but kept for structure)
-
+        // Fallback: colored rectangle
         const spriteAlpha = enemy.cls === 'Spirit' ? 0.7 : 1;
         sprite = this.add.rectangle(x, y, spriteW, spriteH, enemy.color).setDepth(5).setAlpha(spriteAlpha);
         const strokeColor = 0xff4444;
@@ -185,46 +208,40 @@ export class BattleScene extends Phaser.Scene {
         this.add.rectangle(x, y, spriteW, spriteH).setStrokeStyle(1, strokeColor, strokeAlpha).setDepth(6);
       }
 
-      // Class-based visual icons (skip for boss — texture has its own detail)
-      if (enemy.cls === 'Undead') {
-        // Skull eyes for undead
-        this.add.circle(x, y - 16, 5, 0xddddaa, 0.5).setDepth(7);
-        this.add.circle(x - 2, y - 17, 1.5, 0x220000).setDepth(8);
-        this.add.circle(x + 2, y - 17, 1.5, 0x220000).setDepth(8);
-      } else if (enemy.cls === 'Spirit') {
-        // Wraith: ghostly wisps
-        this.add.circle(x - 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
-        this.add.circle(x + 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
-      } else if (enemy.cls === 'Armored') {
-        // Dark Knight: shield icon
-        this.add.rectangle(x, y - 16, 8, 10, 0x888899, 0.7).setDepth(7);
-        this.add.rectangle(x, y - 16, 8, 10).setStrokeStyle(1, 0xaaaacc, 0.5).setDepth(8);
-      } else if (enemy.cls === 'Caster') {
-        // Necromancer: purple circle
-        this.add.circle(x, y - 18, 4, 0x8844cc, 0.6).setDepth(7);
-      } else if (enemy.cls === 'Ranged') {
-        // Cursed Archer: triangle
-        const tri = this.add.triangle(x, y - 18, 0, 8, 4, 0, 8, 8, 0x998866, 0.7).setDepth(7);
-      } else if (enemy.cls === 'Beast') {
-        // Beast: two amber diagonal claw-scratch lines
-        const claw = this.add.graphics().setDepth(7);
-        claw.lineStyle(2, 0xddaa66, 0.8);
-        claw.lineBetween(x - 5, y - 22, x - 1, y - 14);
-        claw.lineBetween(x + 1, y - 22, x + 5, y - 14);
-      } else if (enemy.cls === 'Demon') {
-        // Demon: two small red horn triangles pointing up
-        const horns = this.add.graphics().setDepth(7);
-        horns.fillStyle(0xcc4422, 0.8);
-        horns.fillTriangle(x - 6, y - 14, x - 3, y - 22, x, y - 14);
-        horns.fillTriangle(x, y - 14, x + 3, y - 22, x + 6, y - 14);
-      } else if (enemy.cls === 'Nature') {
-        // Nature: green diamond/leaf shape with tiny stem
-        const leaf = this.add.graphics().setDepth(7);
-        leaf.fillStyle(0x55aa44, 0.8);
-        leaf.fillTriangle(x, y - 22, x - 5, y - 17, x, y - 12);
-        leaf.fillTriangle(x, y - 22, x + 5, y - 17, x, y - 12);
-        leaf.lineStyle(1, 0x55aa44, 0.6);
-        leaf.lineBetween(x, y - 12, x, y - 9);
+      // Class-based visual icons (skip for boss and image sprites)
+      if (!enemySpriteKey || !this.textures.exists(enemySpriteKey)) {
+        if (enemy.cls === 'Undead') {
+          this.add.circle(x, y - 16, 5, 0xddddaa, 0.5).setDepth(7);
+          this.add.circle(x - 2, y - 17, 1.5, 0x220000).setDepth(8);
+          this.add.circle(x + 2, y - 17, 1.5, 0x220000).setDepth(8);
+        } else if (enemy.cls === 'Spirit') {
+          this.add.circle(x - 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
+          this.add.circle(x + 3, y - 18, 2, 0xccaaff, 0.6).setDepth(7);
+        } else if (enemy.cls === 'Armored') {
+          this.add.rectangle(x, y - 16, 8, 10, 0x888899, 0.7).setDepth(7);
+          this.add.rectangle(x, y - 16, 8, 10).setStrokeStyle(1, 0xaaaacc, 0.5).setDepth(8);
+        } else if (enemy.cls === 'Caster') {
+          this.add.circle(x, y - 18, 4, 0x8844cc, 0.6).setDepth(7);
+        } else if (enemy.cls === 'Ranged') {
+          this.add.triangle(x, y - 18, 0, 8, 4, 0, 8, 8, 0x998866, 0.7).setDepth(7);
+        } else if (enemy.cls === 'Beast') {
+          const claw = this.add.graphics().setDepth(7);
+          claw.lineStyle(2, 0xddaa66, 0.8);
+          claw.lineBetween(x - 5, y - 22, x - 1, y - 14);
+          claw.lineBetween(x + 1, y - 22, x + 5, y - 14);
+        } else if (enemy.cls === 'Demon') {
+          const horns = this.add.graphics().setDepth(7);
+          horns.fillStyle(0xcc4422, 0.8);
+          horns.fillTriangle(x - 6, y - 14, x - 3, y - 22, x, y - 14);
+          horns.fillTriangle(x, y - 14, x + 3, y - 22, x + 6, y - 14);
+        } else if (enemy.cls === 'Nature') {
+          const leaf = this.add.graphics().setDepth(7);
+          leaf.fillStyle(0x55aa44, 0.8);
+          leaf.fillTriangle(x, y - 22, x - 5, y - 17, x, y - 12);
+          leaf.fillTriangle(x, y - 22, x + 5, y - 17, x, y - 12);
+          leaf.lineStyle(1, 0x55aa44, 0.6);
+          leaf.lineBetween(x, y - 12, x, y - 9);
+        }
       }
 
       this.add.text(x, y + spriteH / 2 + 7, enemy.name, {
@@ -367,6 +384,100 @@ export class BattleScene extends Phaser.Scene {
     g.lineBetween(8, 78, 56, 78);
 
     g.generateTexture('atikesh_boss', W, H);
+    g.destroy();
+  }
+
+  _generateDagvarTexture() {
+    if (this.textures.exists('dagvar_boss')) return;
+
+    const W = 64, H = 80;
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+
+    // Leg guards — dark plate armor
+    g.fillStyle(0x2a2018);
+    g.fillRect(20, 52, 10, 26);
+    g.fillRect(34, 52, 10, 26);
+    // Knee plates
+    g.fillStyle(0x3a3028);
+    g.fillRect(18, 52, 14, 5);
+    g.fillRect(32, 52, 14, 5);
+    // Boots
+    g.fillStyle(0x1a1510);
+    g.fillRect(18, 72, 14, 8);
+    g.fillRect(32, 72, 14, 8);
+
+    // Torso — heavy dark breastplate
+    g.fillStyle(0x2a2218);
+    g.fillRect(16, 28, 32, 24);
+    // Chest plate highlight
+    g.fillStyle(0x3a3228);
+    g.fillRect(20, 30, 24, 8);
+    // Dark rune cross on chest
+    g.lineStyle(1, 0x662244);
+    g.lineBetween(32, 32, 32, 48);
+    g.lineBetween(24, 40, 40, 40);
+
+    // Belt with buckle
+    g.fillStyle(0x4a3828);
+    g.fillRect(16, 48, 32, 4);
+    g.fillStyle(0x884422);
+    g.fillCircle(32, 50, 2);
+
+    // Shoulder pauldrons — large, spiked
+    g.fillStyle(0x332818);
+    g.fillRect(6, 24, 14, 10);
+    g.fillRect(44, 24, 14, 10);
+    // Spikes
+    g.fillStyle(0x443828);
+    g.fillTriangle(8, 24, 13, 16, 18, 24);
+    g.fillTriangle(46, 24, 51, 16, 56, 24);
+
+    // Arms — armored
+    g.fillStyle(0x2a2018);
+    g.fillRect(6, 32, 10, 18);
+    g.fillRect(48, 32, 10, 18);
+    // Gauntlets
+    g.fillStyle(0x3a3028);
+    g.fillRect(4, 48, 12, 6);
+    g.fillRect(48, 48, 12, 6);
+
+    // Greatsword — right side, large dark blade
+    g.fillStyle(0x4a3020);
+    g.fillRect(52, 42, 3, 12);
+    // Cross guard
+    g.fillStyle(0x555555);
+    g.fillRect(48, 40, 11, 3);
+    // Blade
+    g.fillStyle(0x778899);
+    g.fillRect(52, 10, 4, 30);
+    g.fillTriangle(52, 10, 54, 4, 56, 10);
+    // Dark energy on blade edge
+    g.fillStyle(0x662244);
+    g.fillRect(53, 14, 2, 22);
+
+    // Helmet — horned dark helm
+    g.fillStyle(0x2a2018);
+    g.fillCircle(32, 14, 10);
+    // Visor slit
+    g.fillStyle(0x111008);
+    g.fillRect(26, 12, 12, 4);
+    // Glowing red eyes through visor
+    g.fillStyle(0xcc2222);
+    g.fillRect(28, 13, 3, 2);
+    g.fillRect(33, 13, 3, 2);
+    // Horns curving upward
+    g.fillStyle(0x3a3028);
+    g.fillTriangle(22, 14, 16, 2, 26, 10);
+    g.fillTriangle(42, 14, 48, 2, 38, 10);
+
+    // Dark energy wisps
+    g.fillStyle(0x662244, 0.4);
+    g.fillCircle(10, 20, 3);
+    g.fillCircle(54, 22, 2);
+    g.fillCircle(6, 44, 2);
+    g.fillCircle(58, 38, 3);
+
+    g.generateTexture('dagvar_boss', W, H);
     g.destroy();
   }
 
@@ -1317,12 +1428,17 @@ export class BattleScene extends Phaser.Scene {
 
   // ──── Visual Helpers ────
 
-  getCharSpriteKey(member) {
+  getCharSpriteKey(character) {
     const spriteMap = {
       metz: 'spr_metz',
       farmer_alan: 'spr_farmer_alan',
+      skeleton: 'spr_skeleton',
+      dagvar: 'spr_dagvar',
     };
-    return spriteMap[member.id] || null;
+    // Exact match first, then match base id (before '_' suffix for enemies)
+    if (spriteMap[character.id]) return spriteMap[character.id];
+    const baseId = character.id.replace(/_[a-z0-9]{4}$/, '').replace(/^tut_/, '');
+    return spriteMap[baseId] || null;
   }
 
   findSpriteFor(character) {
