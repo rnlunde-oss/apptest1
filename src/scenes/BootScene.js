@@ -18,6 +18,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('inventory', [...(this.loadData.inventory || [])]);
       this.registry.set('gold', this.loadData.gold || 0);
       this.registry.set('bossDefeated', this.loadData.bossDefeated || false);
+      this.registry.set('tutorialComplete', this.loadData.tutorialComplete !== false);
       this.registry.set('collectedItems', { ...(this.loadData.collectedItems || {}) });
       this.registry.set('defeatedOverworldEnemies', { ...(this.loadData.defeatedOverworldEnemies || {}) });
       this.registry.set('activeSlot', this.loadData.activeSlot || null);
@@ -36,6 +37,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('inventory', ['rusty_sword', 'leather_cap', 'rope_belt', 'worn_boots', 'health_potion', 'health_potion']);
       this.registry.set('gold', 100);
       this.registry.set('bossDefeated', false);
+      this.registry.set('tutorialComplete', false);
       this.registry.set('collectedItems', {});
       this.registry.set('defeatedOverworldEnemies', {});
       this.registry.set('activeSlot', null);

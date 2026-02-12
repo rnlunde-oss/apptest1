@@ -21,6 +21,11 @@ export class BattleScene extends Phaser.Scene {
     this.turnQueue = [];
     this.currentTurnIndex = -1;
     this.roundNumber = 0;
+
+    // Tutorial support
+    this.isTutorial = data.isTutorial || false;
+    this.tutorialCallbacks = data.tutorialCallbacks || {};
+    this.firstKillFired = false;
   }
 
   preload() {
@@ -45,6 +50,14 @@ export class BattleScene extends Phaser.Scene {
     const key = backgrounds[this.zone];
     if (key && !this.textures.exists(key)) {
       this.load.image(key, paths[key]);
+    }
+
+    // Character battle sprites
+    if (!this.textures.exists('spr_metz')) {
+      this.load.image('spr_metz', 'assets/sprites/metz_battle.png');
+    }
+    if (!this.textures.exists('spr_farmer_alan')) {
+      this.load.image('spr_farmer_alan', 'assets/sprites/alan_battle.png');
     }
   }
 
@@ -96,19 +109,32 @@ export class BattleScene extends Phaser.Scene {
       const y = 420;
 
       this.add.ellipse(x, y + 26, 48, 14, 0x000000, 0.3).setDepth(3);
-      const sprite = this.add.rectangle(x, y, 38, 50, member.color).setDepth(5);
-      this.add.rectangle(x, y, 38, 50).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
 
-      // Class icon
-      const iconMap = {
-        Commander: { shape: 'star', color: 0xffcc44 },
-        Warrior: { shape: 'square', color: 0xbb6622 },
-        Ranger: { shape: 'triangle', color: 0x44aa44 },
-        Wizard: { shape: 'circle', color: 0x6644cc },
-        Priest: { shape: 'circle', color: 0xddddaa },
-      };
-      const icon = iconMap[member.cls] || iconMap.Warrior;
-      this.add.circle(x, y - 20, 4, icon.color, 0.8).setDepth(7);
+      // Use character sprite if available, otherwise fallback to colored rectangle
+      const spriteKey = this.getCharSpriteKey(member);
+      let sprite;
+      if (spriteKey && this.textures.exists(spriteKey)) {
+        sprite = this.add.image(x, y, spriteKey).setDepth(5);
+        // Scale to fit battle sprite size (~38x50 area, but allow larger for detail)
+        const targetH = 64;
+        const scale = targetH / sprite.height;
+        sprite.setScale(scale);
+        sprite.setOrigin(0.5, 0.5);
+      } else {
+        sprite = this.add.rectangle(x, y, 38, 50, member.color).setDepth(5);
+        this.add.rectangle(x, y, 38, 50).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
+
+        // Class icon
+        const iconMap = {
+          Commander: { shape: 'star', color: 0xffcc44 },
+          Warrior: { shape: 'square', color: 0xbb6622 },
+          Ranger: { shape: 'triangle', color: 0x44aa44 },
+          Wizard: { shape: 'circle', color: 0x6644cc },
+          Priest: { shape: 'circle', color: 0xddddaa },
+        };
+        const icon = iconMap[member.cls] || iconMap.Warrior;
+        this.add.circle(x, y - 20, 4, icon.color, 0.8).setDepth(7);
+      }
 
       // Name under sprite
       this.add.text(x, y + 32, member.name, {
@@ -1099,6 +1125,15 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
+    // Tutorial: trigger onFirstEnemyKill when the first enemy dies
+    if (this.isTutorial && !this.firstKillFired && this.tutorialCallbacks.onFirstEnemyKill) {
+      const anyDead = this.enemies.some(e => e.hp <= 0);
+      if (anyDead) {
+        this.firstKillFired = true;
+        this.tutorialCallbacks.onFirstEnemyKill(this);
+      }
+    }
+
     // All enemies dead → victory
     if (this.enemies.every(e => e.hp <= 0)) {
       this.battleOver = true;
@@ -1187,6 +1222,13 @@ export class BattleScene extends Phaser.Scene {
     if (this.battleOver) return;
     const uiScene = this.scene.get('BattleUI');
 
+    if (this.isTutorial) {
+      uiScene.showMessage("You can't flee!", () => {
+        uiScene.startPlayerTurn(this.turnQueue[this.currentTurnIndex].character);
+      });
+      return;
+    }
+
     const avgPSpd = this.party.reduce((s, m) => s + this.getEffectiveSpd(m), 0) / this.party.length;
     const avgESpd = this.enemies.reduce((s, e) => s + this.getEffectiveSpd(e), 0) / this.enemies.length;
     const chance = 0.4 + (avgPSpd - avgESpd) * 0.04;
@@ -1201,7 +1243,87 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  // ──── Mid-Battle Ally ────
+
+  addAllyMidBattle(allyChar) {
+    this.party.push(allyChar);
+
+    // Create sprite at next party position
+    const i = this.party.length - 1;
+    const partyCount = this.party.length;
+    const partyStartX = 400 - (partyCount - 1) * 70;
+
+    // Reposition existing party sprites for even spacing
+    this.partySprites.forEach((ps, idx) => {
+      const newX = partyStartX + idx * 140;
+      ps.baseX = newX;
+      this.tweens.add({ targets: ps.sprite, x: newX, duration: 400, ease: 'Sine.easeInOut' });
+    });
+
+    const x = partyStartX + i * 140;
+    const y = 420;
+
+    this.add.ellipse(x, y + 26, 48, 14, 0x000000, 0.3).setDepth(3);
+
+    const spriteKey = this.getCharSpriteKey(allyChar);
+    let sprite;
+    if (spriteKey && this.textures.exists(spriteKey)) {
+      sprite = this.add.image(x, y, spriteKey).setDepth(5);
+      const targetH = 64;
+      const scale = targetH / sprite.height;
+      sprite.setScale(scale);
+      sprite.setOrigin(0.5, 0.5);
+    } else {
+      sprite = this.add.rectangle(x, y, 38, 50, allyChar.color).setDepth(5);
+      this.add.rectangle(x, y, 38, 50).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
+
+      const iconMap = {
+        Commander: { color: 0xffcc44 },
+        Warrior: { color: 0xbb6622 },
+        Ranger: { color: 0x44aa44 },
+        Wizard: { color: 0x6644cc },
+        Priest: { color: 0xddddaa },
+        Farmer: { color: 0x88aa44 },
+      };
+      const icon = iconMap[allyChar.cls] || iconMap.Warrior;
+      this.add.circle(x, y - 20, 4, icon.color, 0.8).setDepth(7);
+    }
+
+    this.add.text(x, y + 32, allyChar.name, {
+      fontSize: '9px', color: '#cccccc',
+    }).setOrigin(0.5).setDepth(7);
+
+    // Fade in
+    sprite.setAlpha(0);
+    this.tweens.add({ targets: sprite, alpha: 1, duration: 600, ease: 'Sine.easeIn' });
+
+    this.tweens.add({
+      targets: sprite, y: y - 3,
+      duration: 900 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+
+    this.partySprites.push({ sprite, character: allyChar, baseX: x, baseY: y });
+
+    // Rebuild the turn queue to include the new ally
+    // (They'll appear in next round's turn order)
+
+    // Tell UI to rebuild party panel
+    const uiScene = this.scene.get('BattleUI');
+    uiScene.rebuildPartyPanel();
+
+    // Show floating text
+    this.showFloatingText(sprite, 'Joins the fight!', '#44ff44');
+  }
+
   // ──── Visual Helpers ────
+
+  getCharSpriteKey(member) {
+    const spriteMap = {
+      metz: 'spr_metz',
+      farmer_alan: 'spr_farmer_alan',
+    };
+    return spriteMap[member.id] || null;
+  }
 
   findSpriteFor(character) {
     for (const ps of this.partySprites) { if (ps.character === character) return ps; }

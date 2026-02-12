@@ -599,6 +599,26 @@ export const ABILITIES = {
     effect: { type: 'debuff', stat: 'atk', amount: 0.25, turns: 3 },
   },
 
+  // ──── Farmer Alan (tutorial NPC) ────
+  alan_pitchfork: {
+    name: 'Pitchfork Jab',
+    type: 'physical',
+    target: 'enemy',
+    power: 25,
+    mpCost: 0,
+    accuracy: 95,
+    desc: 'A sturdy jab with a pitchfork.',
+  },
+  alan_defend: {
+    name: 'Brace',
+    type: 'defend',
+    target: 'self',
+    power: 0,
+    mpCost: 0,
+    accuracy: 100,
+    desc: 'Raises guard to reduce damage.',
+  },
+
   // ──── Enemy abilities ────
   bone_claw: {
     name: 'Bone Claw',

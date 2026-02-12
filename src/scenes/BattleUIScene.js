@@ -143,6 +143,16 @@ export class BattleUIScene extends Phaser.Scene {
     });
   }
 
+  rebuildPartyPanel() {
+    // Destroy existing party panel and redraw with updated party
+    if (this.partyPanel) {
+      this.partyPanel.destroy();
+    }
+    this.party = this.battleScene.party;
+    this.drawPartyPanel();
+    this.updateHP();
+  }
+
   // ──── Enemy Panel (top-right) ────
 
   drawEnemyPanel() {
@@ -550,6 +560,12 @@ export class BattleUIScene extends Phaser.Scene {
 
   onRun() {
     if (!this.menuVisible) return;
+    if (this.battleScene.isTutorial) {
+      this.showMessage("Can't flee from this battle!", () => {
+        this.startPlayerTurn(this.activeCharacter);
+      });
+      return;
+    }
     this.sfx.playButtonClick();
     this.hideAbilityMenu();
     this.battleScene.attemptRun();

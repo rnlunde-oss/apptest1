@@ -105,7 +105,11 @@ export class CutsceneScene extends Phaser.Scene {
     this.transitioning = true;
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.start('Overworld');
+      if (!this.registry.get('tutorialComplete')) {
+        this.scene.start('TutorialBattle');
+      } else {
+        this.scene.start('Overworld');
+      }
     });
   }
 }
