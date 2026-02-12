@@ -1,6 +1,7 @@
 import {
   OVERWORLD_MAP, TILE_SIZE, TILE_COLORS,
   MAP_COLS, MAP_ROWS, ENCOUNTER_RATE, ENCOUNTER_RATE_DEEP,
+  ENCOUNTER_RATE_FARM, ENCOUNTER_RATE_FOREST, ENCOUNTER_RATE_DEEP_FOREST, ENCOUNTER_RATE_MT_PASS,
 } from '../data/maps.js';
 import { ENCOUNTER_TABLE, ENCOUNTER_TABLES, createEnemy } from '../data/characters.js';
 import { serializeGameState, saveToSlot, loadFromSlot, autoSave, getSlotSummaries } from '../data/saveManager.js';
@@ -102,16 +103,16 @@ const NPC_DIALOGUES = {
 
 // World item pickup definitions
 const WORLD_ITEMS = [
-  { id: 'pickup_1', x: 6, y: 5, itemId: 'iron_helm', label: 'Iron Helm' },
-  { id: 'pickup_2', x: 16, y: 7, itemId: 'frontier_blade', label: 'Frontier Blade' },
-  { id: 'pickup_3', x: 3, y: 13, itemId: 'scout_boots', label: 'Scout Boots' },
+  { id: 'pickup_1', x: 10, y: 53, itemId: 'iron_helm', label: 'Iron Helm' },
+  { id: 'pickup_2', x: 22, y: 24, itemId: 'frontier_blade', label: 'Frontier Blade' },
+  { id: 'pickup_3', x: 12, y: 44, itemId: 'scout_boots', label: 'Scout Boots' },
 ];
 
 // Overworld-visible enemy encounters
 const OVERWORLD_ENEMIES = [
   {
     id: 'ow_wolfpack',
-    tileX: 16, tileY: 13,
+    tileX: 30, tileY: 45,
     name: 'Wolf Pack',
     enemies: ['dire_wolf', 'dire_wolf', 'dire_wolf'],
     xp: 40, gold: 35,
@@ -121,13 +122,33 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_treant',
-    tileX: 18, tileY: 5,
+    tileX: 35, tileY: 24,
     name: 'Corrupted Treant',
     enemies: ['corrupted_treant', 'fell_spider', 'fell_spider'],
     xp: 55, gold: 45,
     color: 0x3a5a2a,
     preDialogue: ['A massive corrupted treant blocks the way, spiders nesting in its branches.'],
     postDialogue: ['The corrupted treant crumbles. Its spider guardians scatter.'],
+  },
+  {
+    id: 'ow_skeleton_patrol',
+    tileX: 50, tileY: 10,
+    name: 'Skeleton Patrol',
+    enemies: ['skeleton', 'skeleton', 'cursed_archer'],
+    xp: 50, gold: 40,
+    color: 0xccccaa,
+    preDialogue: ['A patrol of undead soldiers blocks the cursed path ahead.'],
+    postDialogue: ['The skeleton patrol crumbles to dust.'],
+  },
+  {
+    id: 'ow_mountain_bandits',
+    tileX: 25, tileY: 10,
+    name: 'Mountain Bandits',
+    enemies: ['dark_knight', 'skeleton', 'skeleton'],
+    xp: 55, gold: 50,
+    color: 0x334455,
+    preDialogue: ['A dark knight and his skeletal minions guard the mountain pass.'],
+    postDialogue: ['The mountain bandits have been defeated. The pass is clear.'],
   },
 ];
 
@@ -209,8 +230,10 @@ export class OverworldScene extends Phaser.Scene {
 
   buildMap() {
     this.walls = this.physics.add.staticGroup();
-    this.campfireTiles = []; // track campfire positions for shop interaction
-    this.innTiles = []; // track inn positions for rest interaction
+    this.campfireTiles = [];
+    this.innTiles = [];
+    this.bossAltarPositions = []; // track all boss altars
+    this.dungeonEntrances = []; // track dungeon entrance positions
 
     for (let row = 0; row < MAP_ROWS; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
@@ -223,13 +246,15 @@ export class OverworldScene extends Phaser.Scene {
         this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE)
           .setStrokeStyle(1, 0x000000, 0.08).setDepth(1);
 
-        if (tile === 1 || tile === 4 || tile === 7 || tile === 11) {
+        // Impassable tiles
+        if (tile === 1 || tile === 4 || tile === 7 || tile === 11 || tile === 14 || tile === 21) {
           const wall = this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color);
           this.physics.add.existing(wall, true);
           this.walls.add(wall);
           wall.setDepth(0);
         }
 
+        // Cursed ground particles
         if (tile === 2 && Math.random() < 0.3) {
           const p = this.add.circle(
             x - 8 + Math.random() * 16, y - 8 + Math.random() * 16,
@@ -242,7 +267,7 @@ export class OverworldScene extends Phaser.Scene {
           });
         }
 
-        // Deep cursed ground — more, bigger, faster purple particles
+        // Deep cursed ground
         if (tile === 9 && Math.random() < 0.5) {
           const dp = this.add.circle(
             x - 8 + Math.random() * 16, y - 8 + Math.random() * 16,
@@ -255,7 +280,45 @@ export class OverworldScene extends Phaser.Scene {
           });
         }
 
-        // Boss altar — pulsing crimson glow
+        // Farmland — wheat tufts
+        if (tile === 12 && Math.random() < 0.15) {
+          this.add.circle(
+            x - 6 + Math.random() * 12, y - 6 + Math.random() * 12,
+            2, 0xccaa44, 0.5
+          ).setDepth(2);
+        }
+
+        // Forest — tree sprites
+        if (tile === 13 && Math.random() < 0.3) {
+          const tx = x - 6 + Math.random() * 12;
+          const ty = y - 6 + Math.random() * 12;
+          this.add.circle(tx, ty - 4, 5, 0x227722, 0.6).setDepth(2);
+          this.add.rectangle(tx, ty + 2, 2, 6, 0x553311, 0.5).setDepth(2);
+        }
+
+        // Deep forest — denser decorations
+        if (tile === 17 && Math.random() < 0.4) {
+          const tx = x - 6 + Math.random() * 12;
+          const ty = y - 6 + Math.random() * 12;
+          this.add.circle(tx, ty - 4, 6, 0x114411, 0.7).setDepth(2);
+          this.add.rectangle(tx, ty + 3, 2, 7, 0x442200, 0.5).setDepth(2);
+        }
+
+        // Mountain pass — rock particles
+        if (tile === 15 && Math.random() < 0.15) {
+          this.add.rectangle(
+            x - 8 + Math.random() * 16, y - 8 + Math.random() * 16,
+            3, 2, 0x777766, 0.4
+          ).setDepth(2);
+        }
+
+        // Bridge — wood plank lines
+        if (tile === 19) {
+          this.add.rectangle(x, y - 4, TILE_SIZE - 4, 2, 0x664422, 0.4).setDepth(2);
+          this.add.rectangle(x, y + 4, TILE_SIZE - 4, 2, 0x664422, 0.4).setDepth(2);
+        }
+
+        // Boss altar
         if (tile === 10) {
           const glow = this.add.circle(x, y, 14, 0xff0033, 0.2).setDepth(2);
           this.tweens.add({
@@ -267,15 +330,48 @@ export class OverworldScene extends Phaser.Scene {
             targets: core, alpha: 0.3,
             duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
           });
-          this.add.text(x, y + 18, 'Altar of Atikesh', {
+
+          // Determine which boss altar this is based on position
+          const isVranekSpire = col <= 20 && row <= 10;
+          const altarName = isVranekSpire ? 'Vranek Spire' : 'Altar of Atikesh';
+          const bossKey = isVranekSpire ? 'vranek' : 'atikesh';
+
+          this.add.text(x, y + 18, altarName, {
             fontSize: '7px', color: '#cc4466',
           }).setOrigin(0.5).setDepth(3);
           this.add.text(x, y + 27, '[E]', {
             fontSize: '7px', color: '#882233',
           }).setOrigin(0.5).setDepth(3);
-          this.bossAltarPos = { x, y };
+
+          this.bossAltarPositions.push({ x, y, bossKey, name: altarName });
+          // Keep backward compat for the original Atikesh altar
+          if (!isVranekSpire) this.bossAltarPos = { x, y };
         }
 
+        // Dungeon entrance — purple glow
+        if (tile === 18) {
+          const glow = this.add.circle(x, y, 12, 0x6622aa, 0.2).setDepth(2);
+          this.tweens.add({
+            targets: glow, scaleX: 1.4, scaleY: 1.4, alpha: 0.05,
+            duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+          });
+          const core = this.add.circle(x, y, 4, 0x8833cc, 0.5).setDepth(3);
+          this.tweens.add({
+            targets: core, alpha: 0.2,
+            duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+          });
+
+          const entranceName = col <= 48 ? 'The Reliquary' : 'Dungeon';
+          this.add.text(x, y + 18, entranceName, {
+            fontSize: '7px', color: '#8844cc',
+          }).setOrigin(0.5).setDepth(3);
+          this.add.text(x, y + 27, '[E]', {
+            fontSize: '7px', color: '#553388',
+          }).setOrigin(0.5).setDepth(3);
+          this.dungeonEntrances.push({ x, y, name: entranceName });
+        }
+
+        // Campfire / shop
         if (tile === 8) {
           const wall = this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color);
           this.physics.add.existing(wall, true);
@@ -287,20 +383,17 @@ export class OverworldScene extends Phaser.Scene {
             targets: fire, scaleX: 1.3, scaleY: 1.4, alpha: 0.6,
             duration: 400, yoyo: true, repeat: -1,
           });
-          this.add.text(x, y + 18, 'Campfire', {
+          this.add.text(x, y + 18, 'Shop', {
             fontSize: '8px', color: '#ffaa44',
           }).setOrigin(0.5).setDepth(3);
-
-          // Shop hint
-          this.add.text(x, y + 27, '[E] Shop', {
+          this.add.text(x, y + 27, '[E]', {
             fontSize: '7px', color: '#886633',
           }).setOrigin(0.5).setDepth(3);
-
           this.campfireTiles.push({ x, y });
         }
 
+        // Inn
         if (tile === 11) {
-          // Warm glow
           const glow = this.add.circle(x, y, 14, 0xffaa44, 0.15).setDepth(2);
           this.tweens.add({
             targets: glow, scaleX: 1.3, scaleY: 1.3, alpha: 0.05,
@@ -342,12 +435,12 @@ export class OverworldScene extends Phaser.Scene {
 
     // NPC placement data: id, pixel position, name color, detail color
     const NPC_DEFS = [
-      { id: 'rivin',  x: 13 * TILE_SIZE + 16, y: 3 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
-      { id: 'lyra',   x: 2 * TILE_SIZE + 16,  y: 2 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
-      { id: 'fenton', x: 7 * TILE_SIZE + 16,  y: 13 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
-      { id: 'rickets',x: 2 * TILE_SIZE + 16,  y: 8 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
-      { id: 'hyla',   x: 8 * TILE_SIZE + 16,  y: 1 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
-      { id: 'anuel',  x: 13 * TILE_SIZE + 16, y: 9 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
+      { id: 'rivin',  x: 22 * TILE_SIZE + 16, y: 26 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
+      { id: 'lyra',   x: 20 * TILE_SIZE + 16, y: 28 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
+      { id: 'fenton', x: 14 * TILE_SIZE + 16, y: 41 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
+      { id: 'rickets',x: 33 * TILE_SIZE + 16, y: 22 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
+      { id: 'hyla',   x: 65 * TILE_SIZE + 16, y: 35 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
+      { id: 'anuel',  x: 67 * TILE_SIZE + 16, y: 10 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
     ];
 
     this.npcs = [];
@@ -503,7 +596,8 @@ export class OverworldScene extends Phaser.Scene {
       this.cameras.main.flash(400, 100, 0, 0);
       this.time.delayedCall(500, () => {
         const tile = OVERWORLD_MAP[oe.def.tileY]?.[oe.def.tileX];
-        const oeZone = tile === 2 ? 'cursed' : tile === 9 ? 'deep' : 'cursed';
+        const zoneTable = { 2: 'cursed', 9: 'deep', 12: 'farmland', 13: 'forest', 15: 'mountain_pass', 17: 'forest' };
+        const oeZone = zoneTable[tile] || 'cursed';
         this.scene.launch('Battle', {
           party: activeParty,
           enemies,
@@ -602,11 +696,11 @@ export class OverworldScene extends Phaser.Scene {
   // ──── Mini-Map ────
 
   buildMiniMap() {
-    const MINI_SCALE = 4;
-    const mapW = MAP_COLS * MINI_SCALE; // 100
-    const mapH = MAP_ROWS * MINI_SCALE; // 80
+    const MINI_SCALE = 2;
+    const mapW = MAP_COLS * MINI_SCALE; // 160
+    const mapH = MAP_ROWS * MINI_SCALE; // 120
 
-    this.minimapContainer = this.add.container(690, 36)
+    this.minimapContainer = this.add.container(630, 36)
       .setScrollFactor(0).setDepth(150);
     this.minimapVisible = true;
 
@@ -718,7 +812,7 @@ export class OverworldScene extends Phaser.Scene {
   updateMiniMap() {
     if (!this.minimapVisible) return;
 
-    const MINI_SCALE = 4;
+    const MINI_SCALE = 2;
 
     // Update player dot position
     this.minimapPlayerDot.setPosition(
@@ -938,10 +1032,19 @@ export class OverworldScene extends Phaser.Scene {
   checkEncounter(tx, ty) {
     if (ty < 0 || ty >= MAP_ROWS || tx < 0 || tx >= MAP_COLS) return;
     const tile = OVERWORLD_MAP[ty][tx];
-    if (tile === 2) {
-      if (Math.random() < ENCOUNTER_RATE) this.startBattle('cursed');
-    } else if (tile === 9) {
-      if (Math.random() < ENCOUNTER_RATE_DEEP) this.startBattle('deep');
+
+    const ZONE_MAP = {
+      2:  { zone: 'cursed', rate: ENCOUNTER_RATE },
+      9:  { zone: 'deep', rate: ENCOUNTER_RATE_DEEP },
+      12: { zone: 'farmland', rate: ENCOUNTER_RATE_FARM },
+      13: { zone: 'forest', rate: ENCOUNTER_RATE_FOREST },
+      15: { zone: 'mountain_pass', rate: ENCOUNTER_RATE_MT_PASS },
+      17: { zone: 'forest', rate: ENCOUNTER_RATE_DEEP_FOREST },
+    };
+
+    const entry = ZONE_MAP[tile];
+    if (entry && Math.random() < entry.rate) {
+      this.startBattle(entry.zone);
     }
   }
 
@@ -963,7 +1066,7 @@ export class OverworldScene extends Phaser.Scene {
 
     const enemies = picked.enemies.map(key => createEnemy(key));
     const activeParty = this.getActiveParty();
-    const isBossEncounter = zone === 'boss';
+    const isBossEncounter = zone === 'boss' || zone === 'vranek';
 
     // Reset battle state on party members
     for (const member of activeParty) {
@@ -993,8 +1096,13 @@ export class OverworldScene extends Phaser.Scene {
           if (result === 'win') {
             this.triggerAutoSave();
             if (isBossEncounter) {
-              this.registry.set('bossDefeated', true);
-              this.showDialogue(['Atikesh has been vanquished! The eastern frontier is saved!']);
+              if (zone === 'vranek') {
+                this.registry.set('vranekDefeated', true);
+                this.showDialogue(['The dark forces of Vranek Spire have been vanquished! The mountain pass is safe.']);
+              } else {
+                this.registry.set('bossDefeated', true);
+                this.showDialogue(['Atikesh has been vanquished! The eastern frontier is saved!']);
+              }
             }
           } else if (result === 'lose') {
             this.handleDefeat();
@@ -1058,36 +1166,73 @@ export class OverworldScene extends Phaser.Scene {
       }
     }
 
-    // 5. Check boss altar interaction
-    if (this.bossAltarPos) {
-      const altarDist = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.bossAltarPos.x, this.bossAltarPos.y);
-      if (altarDist < TILE_SIZE * 2.5) {
-        const bossDefeated = this.registry.get('bossDefeated');
-        if (bossDefeated) {
-          this.showDialogue(['The altar lies silent. Atikesh\'s power has been broken.']);
-          return;
-        }
-        const roster = this.registry.get('roster');
-        const recruitedCount = Object.values(roster).filter(c => c.recruited).length;
-        if (recruitedCount < 7) { // Metz + 6 companions
-          this.showDialogue([
-            'The altar is dormant. You sense a powerful presence, but it requires more allies to face this threat.',
-            `Companions recruited: ${recruitedCount - 1}/6`,
-          ]);
-          return;
-        }
-        // All companions recruited — offer boss fight
+    // 5. Check dungeon entrance interaction
+    for (const de of this.dungeonEntrances) {
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, de.x, de.y);
+      if (dist < TILE_SIZE * 2.5) {
         this.showDialogue([
-          'The altar pulses with dark energy. Atikesh awaits...',
-          'Do you wish to challenge the Necromancer Lord? [E to confirm]',
-        ], () => {
-          this.startBattle('boss');
-        });
+          `You stand before ${de.name}. Dark energy seeps from within.`,
+          'The dungeon is sealed for now... perhaps in time it will open.',
+        ]);
         return;
       }
     }
 
-    // 5. Check NPC interaction
+    // 6. Check boss altar interaction
+    for (const altar of this.bossAltarPositions) {
+      const altarDist = Phaser.Math.Distance.Between(this.player.x, this.player.y, altar.x, altar.y);
+      if (altarDist < TILE_SIZE * 2.5) {
+        if (altar.bossKey === 'vranek') {
+          // Vranek Spire boss
+          const vranekDefeated = this.registry.get('vranekDefeated');
+          if (vranekDefeated) {
+            this.showDialogue(['The spire is quiet. The dark knight\'s forces have been routed.']);
+            return;
+          }
+          const roster = this.registry.get('roster');
+          const recruitedCount = Object.values(roster).filter(c => c.recruited).length;
+          if (recruitedCount < 4) { // Metz + 3 companions
+            this.showDialogue([
+              'Dark energy radiates from the spire. You need more allies before facing this threat.',
+              `Companions recruited: ${recruitedCount - 1}/6`,
+            ]);
+            return;
+          }
+          this.showDialogue([
+            'Vranek Spire pulses with necromantic power. A dark knight commands the dead within.',
+            'Do you wish to challenge the spire\'s guardians? [E to confirm]',
+          ], () => {
+            this.startBattle('vranek');
+          });
+          return;
+        } else {
+          // Atikesh altar
+          const bossDefeated = this.registry.get('bossDefeated');
+          if (bossDefeated) {
+            this.showDialogue(['The altar lies silent. Atikesh\'s power has been broken.']);
+            return;
+          }
+          const roster = this.registry.get('roster');
+          const recruitedCount = Object.values(roster).filter(c => c.recruited).length;
+          if (recruitedCount < 7) { // Metz + 6 companions
+            this.showDialogue([
+              'The altar is dormant. You sense a powerful presence, but it requires more allies to face this threat.',
+              `Companions recruited: ${recruitedCount - 1}/6`,
+            ]);
+            return;
+          }
+          this.showDialogue([
+            'The altar pulses with dark energy. Atikesh awaits...',
+            'Do you wish to challenge the Necromancer Lord? [E to confirm]',
+          ], () => {
+            this.startBattle('boss');
+          });
+          return;
+        }
+      }
+    }
+
+    // 7. Check NPC interaction
     let closest = null;
     let closestDist = Infinity;
 

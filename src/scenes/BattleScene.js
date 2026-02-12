@@ -31,6 +31,8 @@ export class BattleScene extends Phaser.Scene {
       farmland: 'bg_farmland',
       mountain_pass: 'bg_mountain_pass',
       mountain: 'bg_mountain',
+      forest: 'bg_forest',
+      dungeon: 'bg_cave',
     };
     const paths = {
       bg_cursed: 'assets/backgrounds/cursed.png',
@@ -55,6 +57,7 @@ export class BattleScene extends Phaser.Scene {
     const bgKeys = {
       cursed: 'bg_cursed', deep: 'bg_forest', boss: 'bg_cave',
       farmland: 'bg_farmland', mountain_pass: 'bg_mountain_pass', mountain: 'bg_mountain',
+      forest: 'bg_forest', dungeon: 'bg_cave',
     };
     const bgKey = bgKeys[this.zone];
     if (bgKey && this.textures.exists(bgKey)) {

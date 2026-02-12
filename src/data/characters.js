@@ -589,8 +589,34 @@ export const ENCOUNTER_TABLES = {
     { enemies: ['hellhound', 'hellhound'], weight: 6, xp: 65, gold: 55 },
     { enemies: ['corrupted_treant', 'necromancer'], weight: 5, xp: 65, gold: 55 },
   ],
-  boss: [  // tile 10 — boss fight
+  boss: [  // tile 10 — boss fight (Atikesh)
     { enemies: ['atikesh', 'dark_knight', 'necromancer'], weight: 100, xp: 200, gold: 300 },
+  ],
+  farmland: [  // tile 12 — easiest, early game
+    { enemies: ['plague_rat', 'plague_rat'], weight: 30, xp: 10, gold: 8 },
+    { enemies: ['dire_wolf'], weight: 25, xp: 12, gold: 10 },
+    { enemies: ['plague_rat', 'plague_rat', 'plague_rat'], weight: 20, xp: 15, gold: 12 },
+    { enemies: ['skeleton'], weight: 15, xp: 15, gold: 12 },
+    { enemies: ['dire_wolf', 'plague_rat'], weight: 10, xp: 18, gold: 15 },
+  ],
+  forest: [  // tile 13/17 — medium
+    { enemies: ['dire_wolf', 'dire_wolf'], weight: 25, xp: 25, gold: 20 },
+    { enemies: ['fell_spider', 'fell_spider'], weight: 20, xp: 28, gold: 22 },
+    { enemies: ['blood_bat', 'blood_bat', 'blood_bat'], weight: 15, xp: 22, gold: 18 },
+    { enemies: ['dire_wolf', 'skeleton'], weight: 15, xp: 25, gold: 20 },
+    { enemies: ['fell_spider', 'plague_rat', 'plague_rat'], weight: 10, xp: 28, gold: 22 },
+    { enemies: ['corrupted_treant'], weight: 5, xp: 35, gold: 30 },
+  ],
+  mountain_pass: [  // tile 15 — medium-hard
+    { enemies: ['skeleton', 'skeleton'], weight: 25, xp: 20, gold: 18 },
+    { enemies: ['skeleton', 'zombie'], weight: 20, xp: 25, gold: 22 },
+    { enemies: ['dire_wolf', 'dire_wolf', 'dire_wolf'], weight: 15, xp: 30, gold: 25 },
+    { enemies: ['dark_knight'], weight: 10, xp: 35, gold: 30 },
+    { enemies: ['cursed_archer', 'skeleton', 'skeleton'], weight: 15, xp: 35, gold: 30 },
+    { enemies: ['shadow_fiend'], weight: 5, xp: 40, gold: 35 },
+  ],
+  vranek: [  // Vranek Spire boss fight
+    { enemies: ['dark_knight', 'necromancer', 'wraith'], weight: 100, xp: 150, gold: 200 },
   ],
 };
 
