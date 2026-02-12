@@ -1,0 +1,82 @@
+// Portrait configuration — Defense of Rhaud
+// Slot draw orders, context visibility, body templates, character appearance
+
+export const PORTRAIT_SLOT_CONFIG = {
+  boots:        { drawOrder: 1, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: false } },
+  greaves:      { drawOrder: 2, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: false } },
+  belt:         { drawOrder: 3, contexts: { inventory: true, battle: true, cutscene: false, dialogue: false } },
+  breastplate:  { drawOrder: 4, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: true  } },
+  shoulderpads: { drawOrder: 5, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: true  } },
+  gloves:       { drawOrder: 6, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: false } },
+  leftHand:     { drawOrder: 7, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: false } },
+  rightHand:    { drawOrder: 8, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: false } },
+  helmet:       { drawOrder: 9, contexts: { inventory: true, battle: true, cutscene: true,  dialogue: true  } },
+};
+
+// Body templates for 64x80 canvas, keyed by bodyType
+export const BODY_TEMPLATES = {
+  large: {
+    headRadius: 8,
+    headY: 14,
+    neckY: 22,
+    torsoX: 22,
+    torsoW: 20,
+    torsoH: 24,
+    waistY: 46,
+    armW: 6,
+    armH: 22,
+    armOffsetX: 24,
+    legW: 8,
+    legH: 22,
+    legSpacing: 5,
+    kneeY: 52,
+    feetY: 74,
+    shoulderW: 12,
+  },
+  medium: {
+    headRadius: 7,
+    headY: 14,
+    neckY: 21,
+    torsoX: 24,
+    torsoW: 16,
+    torsoH: 22,
+    waistY: 43,
+    armW: 5,
+    armH: 20,
+    armOffsetX: 21,
+    legW: 6,
+    legH: 22,
+    legSpacing: 4,
+    kneeY: 50,
+    feetY: 72,
+    shoulderW: 10,
+  },
+  slim: {
+    headRadius: 7,
+    headY: 14,
+    neckY: 21,
+    torsoX: 25,
+    torsoW: 14,
+    torsoH: 20,
+    waistY: 41,
+    armW: 4,
+    armH: 19,
+    armOffsetX: 19,
+    legW: 5,
+    legH: 22,
+    legSpacing: 3,
+    kneeY: 48,
+    feetY: 70,
+    shoulderW: 8,
+  },
+};
+
+export const CHARACTER_APPEARANCE = {
+  metz:    { skin: '#d4a574', hair: '#332211', hairStyle: 'short' },
+  rivin:   { skin: '#c49060', hair: '#443322', hairStyle: 'shaved' },
+  lyra:    { skin: '#f0d0b0', hair: '#996633', hairStyle: 'long' },
+  fenton:  { skin: '#c49060', hair: '#554422', hairStyle: 'medium' },
+  rickets: { skin: '#e0c0a0', hair: '#666688', hairStyle: 'wild' },
+  hyla:    { skin: '#e8c8a0', hair: '#221133', hairStyle: 'tied' },
+  anuel:   { skin: '#f0d8c0', hair: '#CCBB88', hairStyle: 'long' },
+};
