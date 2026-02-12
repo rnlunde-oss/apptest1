@@ -737,9 +737,6 @@ export class OverworldScene extends Phaser.Scene {
       this.player.height * 0.62,
     );
 
-    this.playerLabel = this.add.text(x, y - SPRITE_DISPLAY_H / 2 - 4, 'Cpt. Metz', {
-      fontSize: '9px', color: '#ffdddd', fontStyle: 'bold',
-    }).setOrigin(0.5).setDepth(11);
     this.physics.add.collider(this.player, this.walls);
   }
 
@@ -960,7 +957,7 @@ export class OverworldScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, mapW, mapH);
     this.cameras.main.setBounds(0, 0, mapW, mapH);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-    this.cameras.main.setZoom(1.35);
+    this.cameras.main.setZoom(3.35);
   }
 
   // ──── Party HUD (top-left) ────
@@ -1205,7 +1202,7 @@ export class OverworldScene extends Phaser.Scene {
     this.player.body.setVelocity(vx, vy);
     this.updateViewportTiles(this.player.x, this.player.y);
 
-    this.playerLabel.setPosition(this.player.x, this.player.y - 22);
+
 
     const tx = Math.floor(this.player.x / TILE_SIZE);
     const ty = Math.floor(this.player.y / TILE_SIZE);
@@ -1451,7 +1448,7 @@ export class OverworldScene extends Phaser.Scene {
       if (c.recruited) { c.hp = c.maxHp; c.mp = c.maxMp; }
     }
     this.player.setPosition(this.playerSpawn.x, this.playerSpawn.y);
-    this.playerLabel.setPosition(this.playerSpawn.x, this.playerSpawn.y - 22);
+
     this.updateViewportTiles(this.playerSpawn.x, this.playerSpawn.y, true);
     this.drawPartyHUD();
     this.showDialogue(['You were overwhelmed... Your party retreats to camp and rests.']);
