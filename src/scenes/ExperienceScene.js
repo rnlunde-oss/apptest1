@@ -151,7 +151,7 @@ export class ExperienceScene extends Phaser.Scene {
     // Avatar
     if (char.id === 'metz' && this.textures.exists('metz_portrait_base')) {
       const avatar = this.add.image(50, 110, 'metz_portrait_base');
-      const targetH = 52;
+      const targetH = 156;
       avatar.setScale(targetH / avatar.height);
       this.leftContainer.add(avatar);
     } else {

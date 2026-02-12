@@ -21,7 +21,7 @@ const SLOT_LABELS = {
 
 // Paper-doll layout positions (relative to avatar center at 200, 300)
 const SLOT_POSITIONS = {
-  helmet:       { x: 200, y: 170 },
+  helmet:       { x: 280, y: 170 },
   shoulderpads: { x: 120, y: 220 },
   breastplate:  { x: 200, y: 260 },
   gloves:       { x: 280, y: 220 },
@@ -177,7 +177,7 @@ export class InventoryScene extends Phaser.Scene {
     // Character portrait
     if (char.id === 'metz' && this.textures.exists('metz_portrait_base')) {
       const avatarImage = this.add.image(200, 260, 'metz_portrait_base');
-      const targetH = 120;
+      const targetH = 360;
       avatarImage.setScale(targetH / avatarImage.height);
       this.leftContainer.add(avatarImage);
     } else {
@@ -194,7 +194,7 @@ export class InventoryScene extends Phaser.Scene {
     this.leftContainer.add(clsLabel);
 
     // Name + level
-    const nameLabel = this.add.text(200, 135, `${char.name} Lv.${char.level}`, {
+    const nameLabel = this.add.text(200, 90, `${char.name} Lv.${char.level}`, {
       fontSize: '12px', color: '#ffffff', fontStyle: 'bold',
     }).setOrigin(0.5);
     this.leftContainer.add(nameLabel);
