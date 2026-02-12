@@ -5,6 +5,7 @@
 
 import { EQUIPMENT, EQUIPMENT_SLOTS, CONSUMABLES, lookupItem } from '../data/equipment.js';
 import { equipItem, unequipItem, getEquipmentBonus } from '../data/characters.js';
+import { CharacterPortrait } from '../ui/CharacterPortrait.js';
 
 const SLOT_LABELS = {
   helmet: 'Helmet',
@@ -52,6 +53,7 @@ export class InventoryScene extends Phaser.Scene {
     this.rosterList = Object.values(this.roster).filter(c => c.recruited);
     this.selectedCharIdx = 0;
     this.modalOpen = false;
+    this.portrait = new CharacterPortrait(64, 80);
 
     // Background
     this.add.rectangle(400, 320, 800, 640, 0x0a0a12, 0.97).setDepth(0);
@@ -172,10 +174,18 @@ export class InventoryScene extends Phaser.Scene {
     this.leftContainer.removeAll(true);
     const char = this.getSelectedChar();
 
-    // Character avatar
-    const avatar = this.add.rectangle(200, 260, 44, 56, char.color)
-      .setStrokeStyle(1, 0xffffff, 0.3);
-    this.leftContainer.add(avatar);
+    // Character portrait
+    if (char.id === 'metz' && this.textures.exists('metz_portrait_base')) {
+      const avatarImage = this.add.image(200, 260, 'metz_portrait_base');
+      const targetH = 120;
+      avatarImage.setScale(targetH / avatarImage.height);
+      this.leftContainer.add(avatarImage);
+    } else {
+      const portraitKey = `portrait_${char.id}`;
+      this.portrait.renderToTexture(this, portraitKey, char, 'inventory');
+      const avatarImage = this.add.image(200, 260, portraitKey);
+      this.leftContainer.add(avatarImage);
+    }
 
     // Class label
     const clsLabel = this.add.text(200, 230, char.cls, {

@@ -149,9 +149,16 @@ export class ExperienceScene extends Phaser.Scene {
     this.leftContainer.add(panelBg);
 
     // Avatar
-    const avatar = this.add.rectangle(50, 110, 40, 52, char.color)
-      .setStrokeStyle(1, 0xffffff, 0.3);
-    this.leftContainer.add(avatar);
+    if (char.id === 'metz' && this.textures.exists('metz_portrait_base')) {
+      const avatar = this.add.image(50, 110, 'metz_portrait_base');
+      const targetH = 52;
+      avatar.setScale(targetH / avatar.height);
+      this.leftContainer.add(avatar);
+    } else {
+      const avatar = this.add.rectangle(50, 110, 40, 52, char.color)
+        .setStrokeStyle(1, 0xffffff, 0.3);
+      this.leftContainer.add(avatar);
+    }
 
     // Name
     const nameText = this.add.text(80, 90, char.name, {

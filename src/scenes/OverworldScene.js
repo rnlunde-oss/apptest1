@@ -174,6 +174,9 @@ export class OverworldScene extends Phaser.Scene {
         this.load.image(key, `assets/sprites/${key}.png`);
       }
     }
+    if (!this.textures.exists('metz_portrait_base')) {
+      this.load.image('metz_portrait_base', 'assets/sprites/metz_portrait_base.png');
+    }
   }
 
   create() {
