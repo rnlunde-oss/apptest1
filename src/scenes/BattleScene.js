@@ -175,7 +175,7 @@ export class BattleScene extends Phaser.Scene {
 
       if (enemySpriteKey && this.textures.exists(enemySpriteKey)) {
         sprite = this.add.image(x, y, enemySpriteKey).setDepth(5);
-        const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_skeleton' ? 256 : (enemy.isBoss ? 160 : 128);
+        const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_skeleton' ? 218 : (enemy.isBoss ? 160 : 128);
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
