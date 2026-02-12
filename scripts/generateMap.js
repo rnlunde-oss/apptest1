@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Map generator for Defense of Rhaud — 80x60 world map
+// Map generator for Defense of Rhaud — 200x200 world map
 // Run: node scripts/generateMap.js
 
-const COLS = 80;
-const ROWS = 60;
+const COLS = 200;
+const ROWS = 200;
 
 // Tile types:
 // 0=dirt, 1=wall, 2=cursed, 3=stone path, 4=water, 5=NPC spawn, 6=player spawn
@@ -39,6 +39,17 @@ function vRoad(c, r1, r2) {
   for (let r = start; r <= end; r++) setTile(r, c, 3);
 }
 
+// Wide road helpers for better visibility on larger map
+function wideHRoad(r, c1, c2) {
+  hRoad(r, c1, c2);
+  hRoad(r + 1, c1, c2);
+}
+
+function wideVRoad(c, r1, r2) {
+  vRoad(c, r1, r2);
+  vRoad(c + 1, r1, r2);
+}
+
 // ══════════════════════════════════════════════
 // Step 1: BASE — fill with dirt
 // (already done — all 0)
@@ -53,56 +64,56 @@ for (let r = 0; r < ROWS; r++) { map[r][0] = 1; map[r][COLS - 1] = 1; }
 // ══════════════════════════════════════════════
 // Step 3: REGIONS
 
-// Asvam Farmlands: cols 2-40, rows 36-57
-for (let r = 36; r <= 57; r++) {
-  for (let c = 2; c <= 40; c++) {
+// Asvam Farmlands: cols 5-100, rows 120-190
+for (let r = 120; r <= 190; r++) {
+  for (let c = 5; c <= 100; c++) {
     map[r][c] = 12; // farmland
     if (Math.random() < 0.08) map[r][c] = 0; // dirt patches
   }
 }
 
-// Fartheling Forest: cols 18-48, rows 17-30
-for (let r = 17; r <= 30; r++) {
-  for (let c = 18; c <= 48; c++) {
+// Fartheling Forest: cols 45-120, rows 57-100
+for (let r = 57; r <= 100; r++) {
+  for (let c = 45; c <= 120; c++) {
     map[r][c] = 13; // forest
     if (Math.random() < 0.15) map[r][c] = 17; // deep forest scatter
   }
 }
 
-// Thecundian Mountains: cols 6-48, rows 2-16
-for (let r = 2; r <= 16; r++) {
-  for (let c = 6; c <= 48; c++) {
+// Thecundian Mountains: cols 15-120, rows 7-53
+for (let r = 7; r <= 53; r++) {
+  for (let c = 15; c <= 120; c++) {
     map[r][c] = 14; // mountain rock (impassable)
     if (Math.random() < 0.12) map[r][c] = 15; // mountain pass
   }
 }
 
-// Harrowed Woodlands: cols 42-70, rows 2-16
-for (let r = 2; r <= 16; r++) {
-  for (let c = 42; c <= 70; c++) {
+// Harrowed Woodlands: cols 105-175, rows 7-53
+for (let r = 7; r <= 53; r++) {
+  for (let c = 105; c <= 175; c++) {
     map[r][c] = 9; // harrowed
     if (Math.random() < 0.2) map[r][c] = 2; // cursed scatter
   }
 }
 
-// Coastline: cols 66-78, rows 17-57 — sand and water
-for (let r = 17; r <= 57; r++) {
-  for (let c = 66; c <= 78; c++) {
-    if (c >= 74) map[r][c] = 4; // ocean water
-    else if (c >= 71) map[r][c] = 16; // sand
-    else if (c >= 68) map[r][c] = 16; // sand near coast
+// Coastline: cols 165-195, rows 57-190 — sand and water
+for (let r = 57; r <= 190; r++) {
+  for (let c = 165; c <= 195; c++) {
+    if (c >= 185) map[r][c] = 4; // ocean water
+    else if (c >= 178) map[r][c] = 16; // sand
+    else if (c >= 170) map[r][c] = 16; // sand near coast
   }
 }
 // Ocean on left edge (small)
-for (let r = 46; r <= 57; r++) {
-  for (let c = 1; c <= 3; c++) {
+for (let r = 153; r <= 190; r++) {
+  for (let c = 1; c <= 8; c++) {
     map[r][c] = 4;
   }
 }
 
 // Transition zones: dirt between farmlands and forest
-for (let r = 31; r <= 35; r++) {
-  for (let c = 2; c <= 48; c++) {
+for (let r = 103; r <= 117; r++) {
+  for (let c = 5; c <= 120; c++) {
     if (map[r][c] === 0) {
       if (Math.random() < 0.3) map[r][c] = 12;
       else if (Math.random() < 0.2) map[r][c] = 13;
@@ -110,95 +121,102 @@ for (let r = 31; r <= 35; r++) {
   }
 }
 
-// Transition: forest to mountain (rows 15-18)
-for (let r = 15; r <= 18; r++) {
-  for (let c = 18; c <= 48; c++) {
+// Transition: forest to mountain (rows 50-60)
+for (let r = 50; r <= 60; r++) {
+  for (let c = 45; c <= 120; c++) {
     if (map[r][c] === 14 && Math.random() < 0.3) map[r][c] = 15;
     if (map[r][c] === 0 && Math.random() < 0.4) map[r][c] = 13;
   }
 }
 
 // ══════════════════════════════════════════════
-// Step 4: RIVER — Ruah River from ~(col 4, row 32) curving to (col 66, row 34)
-// 2-3 tiles wide, gentle curve
+// Step 4: RIVER — Ruah River from ~(col 10, row 107) curving to (col 165, row 113)
+// 4-6 tiles wide, gentle curve
 const riverPoints = [];
-for (let c = 4; c <= 66; c++) {
+for (let c = 10; c <= 165; c++) {
   // Gentle sine curve
-  const t = (c - 4) / (66 - 4);
-  const baseRow = 32 + Math.sin(t * Math.PI * 1.5) * 3;
+  const t = (c - 10) / (165 - 10);
+  const baseRow = 107 + Math.sin(t * Math.PI * 1.5) * 10;
   const r = Math.round(baseRow);
   riverPoints.push({ c, r });
 }
 for (const { c, r } of riverPoints) {
   setTile(r, c, 4);
   setTile(r + 1, c, 4);
+  setTile(r + 2, c, 4);
+  setTile(r + 3, c, 4);
   if (Math.random() < 0.4) setTile(r - 1, c, 4);
+  if (Math.random() < 0.3) setTile(r + 4, c, 4);
 }
 
 // ══════════════════════════════════════════════
 // Step 5: MOUNTAIN PASSES — clear walkable corridors
 
-// Main east-west pass through mountains at row 10
-for (let c = 6; c <= 48; c++) {
-  setTile(10, c, 15);
-  setTile(11, c, 15);
+// Main east-west pass through mountains at rows 33-37 (5 wide)
+for (let c = 15; c <= 120; c++) {
+  for (let r = 33; r <= 37; r++) {
+    setTile(r, c, 15);
+  }
 }
-// North-south pass near col 14 (to reach Vranek Spire)
-for (let r = 2; r <= 16; r++) {
-  setTile(r, 14, 15);
-  setTile(r, 15, 15);
+// North-south pass near cols 35-38 (to reach Vranek Spire)
+for (let r = 7; r <= 53; r++) {
+  for (let c = 35; c <= 38; c++) {
+    setTile(r, c, 15);
+  }
 }
-// North-south pass near col 30 (connecting forest to mountains)
-for (let r = 2; r <= 18; r++) {
-  setTile(r, 30, 15);
-  setTile(r, 31, 15);
+// North-south pass near cols 75-78 (connecting forest to mountains)
+for (let r = 7; r <= 60; r++) {
+  for (let c = 75; c <= 78; c++) {
+    setTile(r, c, 15);
+  }
 }
-// Pass near col 44 connecting to harrowed woodlands
-for (let r = 2; r <= 16; r++) {
-  setTile(r, 44, 15);
-  setTile(r, 45, 15);
+// Pass near cols 110-113 connecting to harrowed woodlands
+for (let r = 7; r <= 53; r++) {
+  for (let c = 110; c <= 113; c++) {
+    setTile(r, c, 15);
+  }
 }
 
 // ══════════════════════════════════════════════
 // Step 6: ROADS — stone paths connecting towns
 
-// Verlan Farmstead (8, 53) to Yuelian Hamlet (14, 40)
-vRoad(8, 40, 53);
-hRoad(40, 8, 14);
+// Verlan Farmstead (20, 177) to Yuelian Hamlet (35, 133)
+wideVRoad(20, 133, 177);
+wideHRoad(133, 20, 35);
 
-// Yuelian Hamlet (14, 40) to Fort Bracken (20, 26)
-vRoad(14, 26, 40);
-hRoad(26, 14, 20);
+// Yuelian Hamlet (35, 133) to Fort Bracken (50, 87)
+wideVRoad(35, 87, 133);
+wideHRoad(87, 35, 50);
 
-// Fort Bracken (20, 26) road east to connect
-hRoad(26, 20, 35);
+// Fort Bracken (50, 87) road east to connect
+wideHRoad(87, 50, 88);
 // Fort Bracken south to farmlands
-vRoad(20, 26, 36);
+wideVRoad(50, 87, 120);
 
-// Road from Fort Bracken area to Wenden Cemetery (32, 22)
-hRoad(22, 20, 32);
-vRoad(32, 22, 26);
+// Road from Fort Bracken area to Wenden Cemetery (80, 73)
+wideHRoad(73, 50, 80);
+wideVRoad(80, 73, 87);
 
-// Wenden Cemetery (32, 22) to The Monastery (66, 10)
-hRoad(22, 32, 50);
-vRoad(50, 10, 22);
-hRoad(10, 50, 66);
+// Wenden Cemetery (80, 73) to The Monastery (165, 33)
+wideHRoad(73, 80, 125);
+wideVRoad(125, 33, 73);
+wideHRoad(33, 125, 165);
 
-// Road to Tavrish (64, 34) from main road
-vRoad(64, 22, 34);
-hRoad(34, 50, 64);
+// Road to Tavrish (160, 113) from main road
+wideVRoad(160, 73, 113);
+wideHRoad(113, 125, 160);
 
 // Road from Verlan Farmstead east
-hRoad(53, 8, 30);
+wideHRoad(177, 20, 75);
 
 // Main north-south road from forest to mountains
-vRoad(30, 10, 36);
+wideVRoad(75, 33, 120);
 
 // Road to Vranek Spire
-vRoad(14, 4, 18);
+wideVRoad(35, 13, 60);
 
-// Road to The Reliquary (46, 6)
-hRoad(6, 30, 46);
+// Road to The Reliquary (115, 20)
+wideHRoad(20, 75, 115);
 
 // ══════════════════════════════════════════════
 // Step 7: BRIDGES — where roads cross river
@@ -243,12 +261,21 @@ function buildTown(name, cx, cy, w, h, features) {
     setTile(r, cx + halfW, 3);
   }
 
-  // Internal path
+  // Internal paths — cross pattern
   hRoad(cy, cx - halfW, cx + halfW);
   vRoad(cx, cy - halfH, cy + halfH);
+  // Additional internal paths for larger towns
+  if (w >= 14) {
+    hRoad(cy - Math.floor(halfH / 2), cx - halfW, cx + halfW);
+    hRoad(cy + Math.floor(halfH / 2), cx - halfW, cx + halfW);
+  }
+  if (h >= 10) {
+    vRoad(cx - Math.floor(halfW / 3), cy - halfH, cy + halfH);
+    vRoad(cx + Math.floor(halfW / 3), cy - halfH, cy + halfH);
+  }
 
-  if (features.inn) setTile(cy - 1, cx + 2, 11);
-  if (features.shop) setTile(cy + 1, cx - 2, 8);
+  if (features.inn) setTile(cy - 2, cx + 4, 11);
+  if (features.shop) setTile(cy + 2, cx - 4, 8);
   if (features.playerSpawn) setTile(cy, cx, 6);
   if (features.walls) {
     // Stone wall perimeter
@@ -260,57 +287,63 @@ function buildTown(name, cx, cy, w, h, features) {
       setTile(r, cx - halfW, 1);
       setTile(r, cx + halfW, 1);
     }
-    // Gate openings
+    // Gate openings (wider for larger towns)
     setTile(cy, cx - halfW, 3);
+    setTile(cy, cx - halfW + 1, 3);
     setTile(cy, cx + halfW, 3);
+    setTile(cy, cx + halfW - 1, 3);
     setTile(cy - halfH, cx, 3);
+    setTile(cy - halfH, cx + 1, 3);
     setTile(cy + halfH, cx, 3);
+    setTile(cy + halfH, cx + 1, 3);
   }
 }
 
-// Verlan Farmstead (8, 53): 9x7, inn, shop, player spawn
-buildTown('Verlan', 8, 53, 9, 7, { inn: true, shop: true, playerSpawn: true });
+// Verlan Farmstead (20, 177): 18x14, inn, shop, player spawn
+buildTown('Verlan', 20, 177, 18, 14, { inn: true, shop: true, playerSpawn: true });
 
-// Yuelian Hamlet (14, 40): 7x5, inn
-buildTown('Yuelian', 14, 40, 7, 5, { inn: true, shop: false });
+// Yuelian Hamlet (35, 133): 14x10, inn
+buildTown('Yuelian', 35, 133, 14, 10, { inn: true, shop: false });
 
-// Fort Bracken (20, 26): 11x7, stone walls, inn, shop
-buildTown('FortBracken', 20, 26, 11, 7, { inn: true, shop: true, walls: true });
+// Fort Bracken (50, 87): 22x14, stone walls, inn, shop
+buildTown('FortBracken', 50, 87, 22, 14, { inn: true, shop: true, walls: true });
 
-// Wenden Cemetery (32, 22): 7x5, inn
-buildTown('Wenden', 32, 22, 7, 5, { inn: true, shop: false });
+// Wenden Cemetery (80, 73): 14x10, inn
+buildTown('Wenden', 80, 73, 14, 10, { inn: true, shop: false });
 
-// The Monastery (66, 10): 9x5, inn
-buildTown('Monastery', 66, 10, 9, 5, { inn: true, shop: false });
+// The Monastery (165, 33): 18x10, inn
+buildTown('Monastery', 165, 33, 18, 10, { inn: true, shop: false });
 
-// Tavrish (64, 34): 9x5, inn, shop
-buildTown('Tavrish', 64, 34, 9, 5, { inn: true, shop: true });
+// Tavrish (160, 113): 18x10, inn, shop
+buildTown('Tavrish', 160, 113, 18, 10, { inn: true, shop: true });
 
 // ══════════════════════════════════════════════
 // Step 9: DUNGEONS
 
-// Vranek Spire (14, 4) — boss altar
-setTile(4, 14, 10);
-setTile(4, 15, 18); // dungeon entrance nearby
-// Clear a small area around it
-fill(3, 13, 5, 16, 15); // mountain pass floor
-setTile(4, 14, 10); // boss altar
+// Vranek Spire (35, 13) — boss altar
+// Clear a larger area around it (7x7)
+fill(10, 32, 16, 38, 15); // mountain pass floor
+setTile(13, 35, 10); // boss altar
+setTile(13, 36, 18); // dungeon entrance nearby
 
-// The Reliquary (46, 6) — dungeon entrance
-fill(5, 45, 7, 47, 15); // clear area
-setTile(6, 46, 18); // dungeon entrance
+// The Reliquary (115, 20) — dungeon entrance
+fill(17, 112, 23, 118, 15); // clear area
+setTile(20, 115, 18); // dungeon entrance
 
 // ══════════════════════════════════════════════
 // Step 10: Ensure roads connect properly after town building
 // Re-lay key road segments that towns may have overwritten
 
 // Verlan to Yuelian
-vRoad(8, 50, 53); // short segment out of Verlan
-vRoad(8, 38, 42); // into Yuelian area
+wideVRoad(20, 170, 177); // short segment out of Verlan
+wideVRoad(20, 128, 138); // into Yuelian area
 
 // Yuelian to Fort Bracken
-vRoad(14, 38, 42); // out of Yuelian
-vRoad(14, 24, 30); // toward Fort Bracken
+wideVRoad(35, 128, 138); // out of Yuelian
+wideVRoad(35, 80, 94); // toward Fort Bracken
+
+// Fort Bracken connections
+wideHRoad(87, 39, 61); // through Fort Bracken east-west
 
 // ══════════════════════════════════════════════
 // Step 11: Ensure town areas have NPC spawn tiles cleared (they're just dirt/path)
