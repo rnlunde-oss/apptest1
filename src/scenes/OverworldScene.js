@@ -8,6 +8,8 @@ import { serializeGameState, saveToSlot, loadFromSlot, autoSave, getSlotSummarie
 import { isTouchDevice } from '../utils/touchDetect.js';
 
 const PLAYER_SPEED = 160;
+const VIEWPORT_BUFFER = 3;        // extra tiles beyond camera edge
+const VIEWPORT_UPDATE_THRESHOLD = 2; // tiles moved before re-eval
 
 const NPC_DIALOGUES = {
   rivin: {
@@ -103,16 +105,16 @@ const NPC_DIALOGUES = {
 
 // World item pickup definitions
 const WORLD_ITEMS = [
-  { id: 'pickup_1', x: 10, y: 53, itemId: 'iron_helm', label: 'Iron Helm' },
-  { id: 'pickup_2', x: 22, y: 24, itemId: 'frontier_blade', label: 'Frontier Blade' },
-  { id: 'pickup_3', x: 12, y: 44, itemId: 'scout_boots', label: 'Scout Boots' },
+  { id: 'pickup_1', x: 25, y: 177, itemId: 'iron_helm', label: 'Iron Helm' },
+  { id: 'pickup_2', x: 55, y: 80, itemId: 'frontier_blade', label: 'Frontier Blade' },
+  { id: 'pickup_3', x: 30, y: 147, itemId: 'scout_boots', label: 'Scout Boots' },
 ];
 
 // Overworld-visible enemy encounters
 const OVERWORLD_ENEMIES = [
   {
     id: 'ow_wolfpack',
-    tileX: 30, tileY: 45,
+    tileX: 75, tileY: 150,
     name: 'Wolf Pack',
     enemies: ['dire_wolf', 'dire_wolf', 'dire_wolf'],
     xp: 40, gold: 35,
@@ -122,7 +124,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_treant',
-    tileX: 35, tileY: 24,
+    tileX: 88, tileY: 80,
     name: 'Corrupted Treant',
     enemies: ['corrupted_treant', 'fell_spider', 'fell_spider'],
     xp: 55, gold: 45,
@@ -132,7 +134,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_skeleton_patrol',
-    tileX: 50, tileY: 10,
+    tileX: 125, tileY: 33,
     name: 'Skeleton Patrol',
     enemies: ['skeleton', 'skeleton', 'cursed_archer'],
     xp: 50, gold: 40,
@@ -142,7 +144,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_mountain_bandits',
-    tileX: 25, tileY: 10,
+    tileX: 63, tileY: 33,
     name: 'Mountain Bandits',
     enemies: ['dark_knight', 'skeleton', 'skeleton'],
     xp: 55, gold: 50,
@@ -230,187 +232,331 @@ export class OverworldScene extends Phaser.Scene {
 
   buildMap() {
     this.walls = this.physics.add.staticGroup();
+    this.renderedTiles = new Map();
+    this.renderedRange = null;
+
+    this.prescanSpecialTiles();
+
+    const spawn = this.loadedPos || this.playerSpawn || { x: 272, y: 336 };
+    this.updateViewportTiles(spawn.x, spawn.y, true);
+  }
+
+  prescanSpecialTiles() {
     this.campfireTiles = [];
     this.innTiles = [];
-    this.bossAltarPositions = []; // track all boss altars
-    this.dungeonEntrances = []; // track dungeon entrance positions
+    this.bossAltarPositions = [];
+    this.dungeonEntrances = [];
+    this.playerSpawn = null;
+    this.bossAltarPos = null;
 
     for (let row = 0; row < MAP_ROWS; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
         const tile = OVERWORLD_MAP[row][col];
         const x = col * TILE_SIZE + TILE_SIZE / 2;
         const y = row * TILE_SIZE + TILE_SIZE / 2;
-        const color = TILE_COLORS[tile] ?? 0x000000;
 
-        this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color).setDepth(0);
-        this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE)
-          .setStrokeStyle(1, 0x000000, 0.08).setDepth(1);
-
-        // Impassable tiles
-        if (tile === 1 || tile === 4 || tile === 7 || tile === 11 || tile === 14 || tile === 21) {
-          const wall = this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color);
-          this.physics.add.existing(wall, true);
-          this.walls.add(wall);
-          wall.setDepth(0);
-        }
-
-        // Cursed ground particles
-        if (tile === 2 && Math.random() < 0.3) {
-          const p = this.add.circle(
-            x - 8 + Math.random() * 16, y - 8 + Math.random() * 16,
-            1.5, 0x9944cc, 0.4
-          ).setDepth(2);
-          this.tweens.add({
-            targets: p, alpha: 0.1, y: p.y - 6,
-            duration: 1500 + Math.random() * 1000,
-            yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-          });
-        }
-
-        // Deep cursed ground
-        if (tile === 9 && Math.random() < 0.5) {
-          const dp = this.add.circle(
-            x - 8 + Math.random() * 16, y - 8 + Math.random() * 16,
-            2.5, 0xbb55ee, 0.5
-          ).setDepth(2);
-          this.tweens.add({
-            targets: dp, alpha: 0.1, y: dp.y - 10,
-            duration: 1000 + Math.random() * 800,
-            yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-          });
-        }
-
-        // Farmland — wheat tufts
-        if (tile === 12 && Math.random() < 0.15) {
-          this.add.circle(
-            x - 6 + Math.random() * 12, y - 6 + Math.random() * 12,
-            2, 0xccaa44, 0.5
-          ).setDepth(2);
-        }
-
-        // Forest — tree sprites
-        if (tile === 13 && Math.random() < 0.3) {
-          const tx = x - 6 + Math.random() * 12;
-          const ty = y - 6 + Math.random() * 12;
-          this.add.circle(tx, ty - 4, 5, 0x227722, 0.6).setDepth(2);
-          this.add.rectangle(tx, ty + 2, 2, 6, 0x553311, 0.5).setDepth(2);
-        }
-
-        // Deep forest — denser decorations
-        if (tile === 17 && Math.random() < 0.4) {
-          const tx = x - 6 + Math.random() * 12;
-          const ty = y - 6 + Math.random() * 12;
-          this.add.circle(tx, ty - 4, 6, 0x114411, 0.7).setDepth(2);
-          this.add.rectangle(tx, ty + 3, 2, 7, 0x442200, 0.5).setDepth(2);
-        }
-
-        // Mountain pass — rock particles
-        if (tile === 15 && Math.random() < 0.15) {
-          this.add.rectangle(
-            x - 8 + Math.random() * 16, y - 8 + Math.random() * 16,
-            3, 2, 0x777766, 0.4
-          ).setDepth(2);
-        }
-
-        // Bridge — wood plank lines
-        if (tile === 19) {
-          this.add.rectangle(x, y - 4, TILE_SIZE - 4, 2, 0x664422, 0.4).setDepth(2);
-          this.add.rectangle(x, y + 4, TILE_SIZE - 4, 2, 0x664422, 0.4).setDepth(2);
-        }
-
-        // Boss altar
-        if (tile === 10) {
-          const glow = this.add.circle(x, y, 14, 0xff0033, 0.2).setDepth(2);
-          this.tweens.add({
-            targets: glow, scaleX: 1.5, scaleY: 1.5, alpha: 0.05,
-            duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-          });
-          const core = this.add.circle(x, y, 5, 0xff2244, 0.6).setDepth(3);
-          this.tweens.add({
-            targets: core, alpha: 0.3,
-            duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-          });
-
-          // Determine which boss altar this is based on position
-          const isVranekSpire = col <= 20 && row <= 10;
-          const altarName = isVranekSpire ? 'Vranek Spire' : 'Altar of Atikesh';
-          const bossKey = isVranekSpire ? 'vranek' : 'atikesh';
-
-          this.add.text(x, y + 18, altarName, {
-            fontSize: '7px', color: '#cc4466',
-          }).setOrigin(0.5).setDepth(3);
-          this.add.text(x, y + 27, '[E]', {
-            fontSize: '7px', color: '#882233',
-          }).setOrigin(0.5).setDepth(3);
-
-          this.bossAltarPositions.push({ x, y, bossKey, name: altarName });
-          // Keep backward compat for the original Atikesh altar
-          if (!isVranekSpire) this.bossAltarPos = { x, y };
-        }
-
-        // Dungeon entrance — purple glow
-        if (tile === 18) {
-          const glow = this.add.circle(x, y, 12, 0x6622aa, 0.2).setDepth(2);
-          this.tweens.add({
-            targets: glow, scaleX: 1.4, scaleY: 1.4, alpha: 0.05,
-            duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-          });
-          const core = this.add.circle(x, y, 4, 0x8833cc, 0.5).setDepth(3);
-          this.tweens.add({
-            targets: core, alpha: 0.2,
-            duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-          });
-
-          const entranceName = col <= 48 ? 'The Reliquary' : 'Dungeon';
-          this.add.text(x, y + 18, entranceName, {
-            fontSize: '7px', color: '#8844cc',
-          }).setOrigin(0.5).setDepth(3);
-          this.add.text(x, y + 27, '[E]', {
-            fontSize: '7px', color: '#553388',
-          }).setOrigin(0.5).setDepth(3);
-          this.dungeonEntrances.push({ x, y, name: entranceName });
-        }
-
-        // Campfire / shop
         if (tile === 8) {
-          const wall = this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color);
-          this.physics.add.existing(wall, true);
-          this.walls.add(wall);
-          wall.setDepth(0);
-          const fire = this.add.circle(x, y - 4, 6, 0xff6600, 0.9).setDepth(3);
-          this.add.circle(x, y - 4, 12, 0xff4400, 0.15).setDepth(2);
-          this.tweens.add({
-            targets: fire, scaleX: 1.3, scaleY: 1.4, alpha: 0.6,
-            duration: 400, yoyo: true, repeat: -1,
-          });
-          this.add.text(x, y + 18, 'Shop', {
-            fontSize: '8px', color: '#ffaa44',
-          }).setOrigin(0.5).setDepth(3);
-          this.add.text(x, y + 27, '[E]', {
-            fontSize: '7px', color: '#886633',
-          }).setOrigin(0.5).setDepth(3);
           this.campfireTiles.push({ x, y });
         }
 
-        // Inn
         if (tile === 11) {
-          const glow = this.add.circle(x, y, 14, 0xffaa44, 0.15).setDepth(2);
-          this.tweens.add({
-            targets: glow, scaleX: 1.3, scaleY: 1.3, alpha: 0.05,
-            duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-          });
-          this.add.text(x, y + 18, 'Inn', {
-            fontSize: '8px', color: '#ffaa44',
-          }).setOrigin(0.5).setDepth(3);
-          this.add.text(x, y + 27, '[E] Rest', {
-            fontSize: '7px', color: '#886633',
-          }).setOrigin(0.5).setDepth(3);
           this.innTiles.push({ x, y });
         }
 
-        if (tile === 6) this.playerSpawn = { x, y };
+        if (tile === 10) {
+          const isVranekSpire = col <= 50 && row <= 33;
+          const altarName = isVranekSpire ? 'Vranek Spire' : 'Altar of Atikesh';
+          const bossKey = isVranekSpire ? 'vranek' : 'atikesh';
+          this.bossAltarPositions.push({ x, y, bossKey, name: altarName });
+          if (!isVranekSpire) this.bossAltarPos = { x, y };
+        }
+
+        if (tile === 18) {
+          const entranceName = col <= 120 ? 'The Reliquary' : 'Dungeon';
+          this.dungeonEntrances.push({ x, y, name: entranceName });
+        }
+
+        if (tile === 6) {
+          this.playerSpawn = { x, y };
+        }
       }
     }
+  }
+
+  _tileRandom(col, row, seed) {
+    let h = (col * 374761393 + row * 668265263 + seed * 1274126177) | 0;
+    h = ((h ^ (h >> 13)) * 1103515245) | 0;
+    return ((h & 0x7fffffff) % 10000) / 10000;
+  }
+
+  renderTile(col, row) {
+    const key = `${col},${row}`;
+    if (this.renderedTiles.has(key)) return;
+
+    const tile = OVERWORLD_MAP[row][col];
+    const x = col * TILE_SIZE + TILE_SIZE / 2;
+    const y = row * TILE_SIZE + TILE_SIZE / 2;
+    const color = TILE_COLORS[tile] ?? 0x000000;
+
+    const objects = [];
+    const tweens = [];
+    let wall = null;
+
+    // Base tile
+    objects.push(this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color).setDepth(0));
+    objects.push(this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE)
+      .setStrokeStyle(1, 0x000000, 0.08).setDepth(1));
+
+    // Impassable tiles
+    if (tile === 1 || tile === 4 || tile === 7 || tile === 11 || tile === 14 || tile === 21) {
+      wall = this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color);
+      this.physics.add.existing(wall, true);
+      this.walls.add(wall);
+      wall.setDepth(0);
+      objects.push(wall);
+    }
+
+    // Deterministic random values for decorations
+    const r0 = this._tileRandom(col, row, 0);
+    const r1 = this._tileRandom(col, row, 1);
+    const r2 = this._tileRandom(col, row, 2);
+    const r3 = this._tileRandom(col, row, 3);
+
+    // Cursed ground particles
+    if (tile === 2 && r0 < 0.3) {
+      const p = this.add.circle(
+        x - 8 + r1 * 16, y - 8 + r2 * 16,
+        1.5, 0x9944cc, 0.4
+      ).setDepth(2);
+      objects.push(p);
+      tweens.push(this.tweens.add({
+        targets: p, alpha: 0.1, y: p.y - 6,
+        duration: 1500 + r3 * 1000,
+        yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      }));
+    }
+
+    // Deep cursed ground
+    if (tile === 9 && r0 < 0.5) {
+      const dp = this.add.circle(
+        x - 8 + r1 * 16, y - 8 + r2 * 16,
+        2.5, 0xbb55ee, 0.5
+      ).setDepth(2);
+      objects.push(dp);
+      tweens.push(this.tweens.add({
+        targets: dp, alpha: 0.1, y: dp.y - 10,
+        duration: 1000 + r3 * 800,
+        yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      }));
+    }
+
+    // Farmland — wheat tufts
+    if (tile === 12 && r0 < 0.15) {
+      objects.push(this.add.circle(
+        x - 6 + r1 * 12, y - 6 + r2 * 12,
+        2, 0xccaa44, 0.5
+      ).setDepth(2));
+    }
+
+    // Forest — tree sprites
+    if (tile === 13 && r0 < 0.3) {
+      const tx = x - 6 + r1 * 12;
+      const ty = y - 6 + r2 * 12;
+      objects.push(this.add.circle(tx, ty - 4, 5, 0x227722, 0.6).setDepth(2));
+      objects.push(this.add.rectangle(tx, ty + 2, 2, 6, 0x553311, 0.5).setDepth(2));
+    }
+
+    // Deep forest — denser decorations
+    if (tile === 17 && r0 < 0.4) {
+      const tx = x - 6 + r1 * 12;
+      const ty = y - 6 + r2 * 12;
+      objects.push(this.add.circle(tx, ty - 4, 6, 0x114411, 0.7).setDepth(2));
+      objects.push(this.add.rectangle(tx, ty + 3, 2, 7, 0x442200, 0.5).setDepth(2));
+    }
+
+    // Mountain pass — rock particles
+    if (tile === 15 && r0 < 0.15) {
+      objects.push(this.add.rectangle(
+        x - 8 + r1 * 16, y - 8 + r2 * 16,
+        3, 2, 0x777766, 0.4
+      ).setDepth(2));
+    }
+
+    // Bridge — wood plank lines
+    if (tile === 19) {
+      objects.push(this.add.rectangle(x, y - 4, TILE_SIZE - 4, 2, 0x664422, 0.4).setDepth(2));
+      objects.push(this.add.rectangle(x, y + 4, TILE_SIZE - 4, 2, 0x664422, 0.4).setDepth(2));
+    }
+
+    // Boss altar
+    if (tile === 10) {
+      const glow = this.add.circle(x, y, 14, 0xff0033, 0.2).setDepth(2);
+      objects.push(glow);
+      tweens.push(this.tweens.add({
+        targets: glow, scaleX: 1.5, scaleY: 1.5, alpha: 0.05,
+        duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      }));
+      const core = this.add.circle(x, y, 5, 0xff2244, 0.6).setDepth(3);
+      objects.push(core);
+      tweens.push(this.tweens.add({
+        targets: core, alpha: 0.3,
+        duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      }));
+
+      const isVranekSpire = col <= 50 && row <= 33;
+      const altarName = isVranekSpire ? 'Vranek Spire' : 'Altar of Atikesh';
+
+      objects.push(this.add.text(x, y + 18, altarName, {
+        fontSize: '7px', color: '#cc4466',
+      }).setOrigin(0.5).setDepth(3));
+      objects.push(this.add.text(x, y + 27, '[E]', {
+        fontSize: '7px', color: '#882233',
+      }).setOrigin(0.5).setDepth(3));
+    }
+
+    // Dungeon entrance — purple glow
+    if (tile === 18) {
+      const glow = this.add.circle(x, y, 12, 0x6622aa, 0.2).setDepth(2);
+      objects.push(glow);
+      tweens.push(this.tweens.add({
+        targets: glow, scaleX: 1.4, scaleY: 1.4, alpha: 0.05,
+        duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      }));
+      const core = this.add.circle(x, y, 4, 0x8833cc, 0.5).setDepth(3);
+      objects.push(core);
+      tweens.push(this.tweens.add({
+        targets: core, alpha: 0.2,
+        duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      }));
+
+      const entranceName = col <= 120 ? 'The Reliquary' : 'Dungeon';
+      objects.push(this.add.text(x, y + 18, entranceName, {
+        fontSize: '7px', color: '#8844cc',
+      }).setOrigin(0.5).setDepth(3));
+      objects.push(this.add.text(x, y + 27, '[E]', {
+        fontSize: '7px', color: '#553388',
+      }).setOrigin(0.5).setDepth(3));
+    }
+
+    // Campfire / shop
+    if (tile === 8) {
+      wall = this.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, color);
+      this.physics.add.existing(wall, true);
+      this.walls.add(wall);
+      wall.setDepth(0);
+      objects.push(wall);
+
+      const fire = this.add.circle(x, y - 4, 6, 0xff6600, 0.9).setDepth(3);
+      objects.push(fire);
+      objects.push(this.add.circle(x, y - 4, 12, 0xff4400, 0.15).setDepth(2));
+      tweens.push(this.tweens.add({
+        targets: fire, scaleX: 1.3, scaleY: 1.4, alpha: 0.6,
+        duration: 400, yoyo: true, repeat: -1,
+      }));
+      objects.push(this.add.text(x, y + 18, 'Shop', {
+        fontSize: '8px', color: '#ffaa44',
+      }).setOrigin(0.5).setDepth(3));
+      objects.push(this.add.text(x, y + 27, '[E]', {
+        fontSize: '7px', color: '#886633',
+      }).setOrigin(0.5).setDepth(3));
+    }
+
+    // Inn
+    if (tile === 11) {
+      const glow = this.add.circle(x, y, 14, 0xffaa44, 0.15).setDepth(2);
+      objects.push(glow);
+      tweens.push(this.tweens.add({
+        targets: glow, scaleX: 1.3, scaleY: 1.3, alpha: 0.05,
+        duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      }));
+      objects.push(this.add.text(x, y + 18, 'Inn', {
+        fontSize: '8px', color: '#ffaa44',
+      }).setOrigin(0.5).setDepth(3));
+      objects.push(this.add.text(x, y + 27, '[E] Rest', {
+        fontSize: '7px', color: '#886633',
+      }).setOrigin(0.5).setDepth(3));
+    }
+
+    this.renderedTiles.set(key, { objects, tweens, wall });
+  }
+
+  destroyTile(col, row) {
+    const key = `${col},${row}`;
+    const entry = this.renderedTiles.get(key);
+    if (!entry) return;
+
+    for (const tw of entry.tweens) {
+      tw.stop();
+      tw.remove();
+    }
+
+    if (entry.wall) {
+      this.walls.remove(entry.wall);
+    }
+
+    for (const obj of entry.objects) {
+      obj.destroy();
+    }
+
+    this.renderedTiles.delete(key);
+  }
+
+  getVisibleRange(centerX, centerY) {
+    const cam = this.cameras.main;
+    const halfW = cam.width / 2;
+    const halfH = cam.height / 2;
+
+    return {
+      minCol: Math.max(0, Math.floor((centerX - halfW) / TILE_SIZE) - VIEWPORT_BUFFER),
+      maxCol: Math.min(MAP_COLS - 1, Math.ceil((centerX + halfW) / TILE_SIZE) + VIEWPORT_BUFFER),
+      minRow: Math.max(0, Math.floor((centerY - halfH) / TILE_SIZE) - VIEWPORT_BUFFER),
+      maxRow: Math.min(MAP_ROWS - 1, Math.ceil((centerY + halfH) / TILE_SIZE) + VIEWPORT_BUFFER),
+    };
+  }
+
+  updateViewportTiles(centerX, centerY, force = false) {
+    const newRange = this.getVisibleRange(centerX, centerY);
+    const old = this.renderedRange;
+
+    if (!force && old &&
+        Math.abs(newRange.minCol - old.minCol) < VIEWPORT_UPDATE_THRESHOLD &&
+        Math.abs(newRange.maxCol - old.maxCol) < VIEWPORT_UPDATE_THRESHOLD &&
+        Math.abs(newRange.minRow - old.minRow) < VIEWPORT_UPDATE_THRESHOLD &&
+        Math.abs(newRange.maxRow - old.maxRow) < VIEWPORT_UPDATE_THRESHOLD) {
+      return;
+    }
+
+    let changed = false;
+
+    // Destroy tiles that left the range
+    if (old) {
+      for (let row = old.minRow; row <= old.maxRow; row++) {
+        for (let col = old.minCol; col <= old.maxCol; col++) {
+          if (row >= newRange.minRow && row <= newRange.maxRow &&
+              col >= newRange.minCol && col <= newRange.maxCol) continue;
+          if (this.renderedTiles.has(`${col},${row}`)) {
+            this.destroyTile(col, row);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    // Create tiles that entered the range
+    for (let row = newRange.minRow; row <= newRange.maxRow; row++) {
+      for (let col = newRange.minCol; col <= newRange.maxCol; col++) {
+        if (old && row >= old.minRow && row <= old.maxRow &&
+            col >= old.minCol && col <= old.maxCol) continue;
+        this.renderTile(col, row);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.walls.refresh();
+    }
+
+    this.renderedRange = newRange;
   }
 
   // ──── Player ────
@@ -435,12 +581,12 @@ export class OverworldScene extends Phaser.Scene {
 
     // NPC placement data: id, pixel position, name color, detail color
     const NPC_DEFS = [
-      { id: 'rivin',  x: 22 * TILE_SIZE + 16, y: 26 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
-      { id: 'lyra',   x: 20 * TILE_SIZE + 16, y: 28 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
-      { id: 'fenton', x: 14 * TILE_SIZE + 16, y: 41 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
-      { id: 'rickets',x: 33 * TILE_SIZE + 16, y: 22 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
-      { id: 'hyla',   x: 65 * TILE_SIZE + 16, y: 35 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
-      { id: 'anuel',  x: 67 * TILE_SIZE + 16, y: 10 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
+      { id: 'rivin',  x: 55 * TILE_SIZE + 16, y: 87 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
+      { id: 'lyra',   x: 50 * TILE_SIZE + 16, y: 93 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
+      { id: 'fenton', x: 35 * TILE_SIZE + 16, y: 137 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
+      { id: 'rickets',x: 83 * TILE_SIZE + 16, y: 73 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
+      { id: 'hyla',   x: 163 * TILE_SIZE + 16, y: 117 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
+      { id: 'anuel',  x: 168 * TILE_SIZE + 16, y: 33 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
     ];
 
     this.npcs = [];
@@ -696,11 +842,11 @@ export class OverworldScene extends Phaser.Scene {
   // ──── Mini-Map ────
 
   buildMiniMap() {
-    const MINI_SCALE = 2;
-    const mapW = MAP_COLS * MINI_SCALE; // 160
-    const mapH = MAP_ROWS * MINI_SCALE; // 120
+    const MINI_SCALE = 1;
+    const mapW = MAP_COLS * MINI_SCALE; // 200
+    const mapH = MAP_ROWS * MINI_SCALE; // 200
 
-    this.minimapContainer = this.add.container(630, 36)
+    this.minimapContainer = this.add.container(590, 36)
       .setScrollFactor(0).setDepth(150);
     this.minimapVisible = true;
 
@@ -812,7 +958,7 @@ export class OverworldScene extends Phaser.Scene {
   updateMiniMap() {
     if (!this.minimapVisible) return;
 
-    const MINI_SCALE = 2;
+    const MINI_SCALE = 1;
 
     // Update player dot position
     this.minimapPlayerDot.setPosition(
@@ -871,6 +1017,7 @@ export class OverworldScene extends Phaser.Scene {
       if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
     }
     this.player.body.setVelocity(vx, vy);
+    this.updateViewportTiles(this.player.x, this.player.y);
 
     this.playerDetail.setPosition(this.player.x, this.player.y - 4);
     this.playerLabel.setPosition(this.player.x, this.player.y - 22);
@@ -1121,6 +1268,7 @@ export class OverworldScene extends Phaser.Scene {
     this.player.setPosition(this.playerSpawn.x, this.playerSpawn.y);
     this.playerDetail.setPosition(this.playerSpawn.x, this.playerSpawn.y - 4);
     this.playerLabel.setPosition(this.playerSpawn.x, this.playerSpawn.y - 22);
+    this.updateViewportTiles(this.playerSpawn.x, this.playerSpawn.y, true);
     this.drawPartyHUD();
     this.showDialogue(['You were overwhelmed... Your party retreats to camp and rests.']);
   }
