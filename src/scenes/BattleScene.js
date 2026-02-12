@@ -25,14 +25,20 @@ export class BattleScene extends Phaser.Scene {
 
   preload() {
     const backgrounds = {
-      cursed: 'bg_farmland',
+      cursed: 'bg_cursed',
       deep: 'bg_forest',
       boss: 'bg_cave',
+      farmland: 'bg_farmland',
+      mountain_pass: 'bg_mountain_pass',
+      mountain: 'bg_mountain',
     };
     const paths = {
+      bg_cursed: 'assets/backgrounds/cursed.png',
       bg_farmland: 'assets/backgrounds/farmland.png',
       bg_forest: 'assets/backgrounds/forest.png',
       bg_cave: 'assets/backgrounds/cave.png',
+      bg_mountain_pass: 'assets/backgrounds/mountain_pass.png',
+      bg_mountain: 'assets/backgrounds/mountain.png',
     };
     const key = backgrounds[this.zone];
     if (key && !this.textures.exists(key)) {
@@ -46,7 +52,10 @@ export class BattleScene extends Phaser.Scene {
     this._generateAtikeshTexture();
 
     // Battlefield background
-    const bgKeys = { cursed: 'bg_farmland', deep: 'bg_forest', boss: 'bg_cave' };
+    const bgKeys = {
+      cursed: 'bg_cursed', deep: 'bg_forest', boss: 'bg_cave',
+      farmland: 'bg_farmland', mountain_pass: 'bg_mountain_pass', mountain: 'bg_mountain',
+    };
     const bgKey = bgKeys[this.zone];
     if (bgKey && this.textures.exists(bgKey)) {
       const bg = this.add.image(400, 320, bgKey);
