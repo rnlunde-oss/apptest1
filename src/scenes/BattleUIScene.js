@@ -156,7 +156,7 @@ export class BattleUIScene extends Phaser.Scene {
   // ──── Enemy Panel (top-right) ────
 
   drawEnemyPanel() {
-    this.enemyPanel = this.add.container(250, 30).setDepth(50);
+    this.enemyPanel = this.add.container(490, 30).setDepth(50);
     const h = 20 + this.enemies.length * 26;
     this.enemyPanel.add(
       this.add.rectangle(155, h / 2, 300, h, 0x000000, 0.8)

@@ -72,6 +72,7 @@ export class BattleScene extends Phaser.Scene {
 
     this._generateAtikeshTexture();
     this._generateDagvarTexture();
+    this._removeWhiteBackgrounds();
 
     // Battlefield background
     const bgKeys = {
@@ -88,8 +89,8 @@ export class BattleScene extends Phaser.Scene {
     } else {
       this.add.rectangle(400, 320, 800, 640, 0x111118);
     }
-    this.add.ellipse(400, 350, 760, 400, 0x1a1a28, 0.6).setDepth(0);
-    this.add.rectangle(400, 320, 2, 640, 0x332244, 0.3).setDepth(0);
+    this.add.ellipse(400, 420, 760, 200, 0x1a1a28, 0.5).setDepth(0);
+    this.add.rectangle(400, 300, 800, 2, 0x332244, 0.2).setDepth(0);
 
     this.drawCombatants();
 
@@ -106,14 +107,14 @@ export class BattleScene extends Phaser.Scene {
     this.partySprites = [];
     this.enemySprites = [];
 
-    // Party — vertical left column
+    // Party — horizontal row, bottom-left
     const partyCount = this.party.length;
-    const partyStartY = 270 - (partyCount - 1) * 60;
+    const partyStartX = 200 - (partyCount - 1) * 50;
 
     this.party.forEach((member, i) => {
       if (member.hp <= 0) return;
-      const x = 170;
-      const y = partyStartY + i * 120;
+      const x = partyStartX + i * 100;
+      const y = 380;
 
       this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
 
@@ -122,7 +123,7 @@ export class BattleScene extends Phaser.Scene {
       let sprite;
       if (spriteKey && this.textures.exists(spriteKey)) {
         sprite = this.add.image(x, y, spriteKey).setDepth(5);
-        const targetH = 128;
+        const targetH = spriteKey === 'spr_metz' ? 147 : 128;
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
@@ -155,13 +156,13 @@ export class BattleScene extends Phaser.Scene {
       this.partySprites.push({ sprite, character: member, baseX: x, baseY: y });
     });
 
-    // Enemies — vertical right column
+    // Enemies — horizontal row, middle-right
     const enemyCount = this.enemies.length;
-    const enemyStartY = 270 - (enemyCount - 1) * 60;
+    const enemyStartX = 600 - (enemyCount - 1) * 50;
 
     this.enemies.forEach((enemy, i) => {
-      const x = 630;
-      const y = enemyStartY + i * 120;
+      const x = enemyStartX + i * 100;
+      const y = 290;
 
       // Boss enemies get larger sprites
       const spriteW = enemy.isBoss ? 100 : 76;
@@ -174,7 +175,7 @@ export class BattleScene extends Phaser.Scene {
 
       if (enemySpriteKey && this.textures.exists(enemySpriteKey)) {
         sprite = this.add.image(x, y, enemySpriteKey).setDepth(5);
-        const targetH = enemy.isBoss ? 160 : 128;
+        const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_skeleton' ? 256 : (enemy.isBoss ? 160 : 128);
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
@@ -478,6 +479,35 @@ export class BattleScene extends Phaser.Scene {
 
     g.generateTexture('dagvar_boss', W, H);
     g.destroy();
+  }
+
+  _removeWhiteBackgrounds() {
+    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar'];
+    for (const key of keys) {
+      if (!this.textures.exists(key)) continue;
+      const src = this.textures.get(key).getSourceImage();
+      const canvas = document.createElement('canvas');
+      canvas.width = src.width;
+      canvas.height = src.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(src, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imageData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        // Fully transparent for near-white pixels
+        if (r > 240 && g > 240 && b > 240) {
+          d[i + 3] = 0;
+        // Fade out semi-white pixels for smooth edges
+        } else if (r > 220 && g > 220 && b > 220) {
+          const avg = (r + g + b) / 3;
+          d[i + 3] = Math.floor(255 * (1 - (avg - 220) / 35));
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+      this.textures.remove(key);
+      this.textures.addCanvas(key, canvas);
+    }
   }
 
   // ──── Turn System ────
@@ -1226,12 +1256,12 @@ export class BattleScene extends Phaser.Scene {
     for (const es of this.enemySprites) {
       if (es.character.hp <= 0 && es.sprite.alpha > 0) {
         this.sfx.playEnemyDeath();
-        this.tweens.add({ targets: es.sprite, alpha: 0, x: es.sprite.x + 50, duration: 500 });
+        this.tweens.add({ targets: es.sprite, alpha: 0, x: es.sprite.x + 40, y: es.sprite.y - 20, duration: 500 });
       }
     }
     for (const ps of this.partySprites) {
       if (ps.character.hp <= 0 && ps.sprite.alpha > 0) {
-        this.tweens.add({ targets: ps.sprite, alpha: 0, x: ps.sprite.x - 50, duration: 500 });
+        this.tweens.add({ targets: ps.sprite, alpha: 0, y: ps.sprite.y + 30, duration: 500 });
       }
     }
 
@@ -1358,20 +1388,20 @@ export class BattleScene extends Phaser.Scene {
   addAllyMidBattle(allyChar) {
     this.party.push(allyChar);
 
-    // Create sprite at next party position (vertical left column)
+    // Create sprite at next party position (horizontal bottom-left row)
     const i = this.party.length - 1;
     const partyCount = this.party.length;
-    const partyStartY = 270 - (partyCount - 1) * 60;
+    const partyStartX = 200 - (partyCount - 1) * 50;
 
-    // Reposition existing party sprites for even vertical spacing
+    // Reposition existing party sprites for even horizontal spacing
     this.partySprites.forEach((ps, idx) => {
-      const newY = partyStartY + idx * 120;
-      ps.baseY = newY;
-      this.tweens.add({ targets: ps.sprite, y: newY, duration: 400, ease: 'Sine.easeInOut' });
+      const newX = partyStartX + idx * 100;
+      ps.baseX = newX;
+      this.tweens.add({ targets: ps.sprite, x: newX, duration: 400, ease: 'Sine.easeInOut' });
     });
 
-    const x = 170;
-    const y = partyStartY + i * 120;
+    const x = partyStartX + i * 100;
+    const y = 380;
 
     this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
 
@@ -1379,7 +1409,7 @@ export class BattleScene extends Phaser.Scene {
     let sprite;
     if (spriteKey && this.textures.exists(spriteKey)) {
       sprite = this.add.image(x, y, spriteKey).setDepth(5);
-      const targetH = 128;
+      const targetH = spriteKey === 'spr_metz' ? 147 : 128;
       const scale = targetH / sprite.height;
       sprite.setScale(scale);
       sprite.setOrigin(0.5, 0.5);
