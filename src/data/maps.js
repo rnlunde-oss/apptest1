@@ -241,7 +241,7 @@ export const TILE_COLORS = {
   9: 0x2a1a30,  // deep cursed ground
   10: 0x660022, // boss altar
   11: 0x8b6b3a, // inn
-  12: 0xa08850, // farmland (golden wheat)
+  12: 0x4a8a2a, // farmland (grass green)
   13: 0x2d5a1e, // forest (green)
   14: 0x6a6a6a, // mountain rock (dark gray)
   15: 0x8a8a7a, // mountain pass (lighter gray)

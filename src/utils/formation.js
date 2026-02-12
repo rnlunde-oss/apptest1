@@ -47,61 +47,60 @@ export function applyFormationDR(rawDamage, group, defenderIndex) {
 }
 
 /**
- * Get diamond/wedge formation positions for the party (left side of battlefield).
+ * Get diamond formation positions for the party (bottom-left of battlefield).
+ * Diamond is angled so Front points upper-right toward the enemy team.
  * @param {number} count - number of party members (1-4)
  * @returns {Array<{x: number, y: number}>} positions
  */
 export function getPartyFormationPositions(count) {
-  // Diamond/wedge layout with front closest to enemies (right side)
-  // Party is on the left, so front = higher x, rear = lower x
-  const centerX = 180;
+  const centerX = 190;
   const centerY = 380;
 
   if (count === 1) return [{ x: centerX, y: centerY }];
   if (count === 2) return [
-    { x: centerX + 40, y: centerY },       // Front
-    { x: centerX - 40, y: centerY },        // Back
+    { x: centerX + 35, y: centerY - 30 },    // Front (upper-right, toward enemies)
+    { x: centerX - 35, y: centerY + 30 },     // Back (lower-left)
   ];
   if (count === 3) return [
-    { x: centerX + 40, y: centerY },        // Front
-    { x: centerX - 30, y: centerY - 50 },   // Back-left
-    { x: centerX - 30, y: centerY + 50 },   // Back-right
+    { x: centerX + 40, y: centerY - 35 },     // Front (upper-right)
+    { x: centerX - 40, y: centerY - 20 },     // Back-left (upper-left)
+    { x: centerX + 10, y: centerY + 40 },     // Back-right (lower-right)
   ];
-  // count >= 4: full diamond
+  // count >= 4: full diamond angled toward upper-right
   return [
-    { x: centerX + 50, y: centerY },        // Front (closest to enemies)
-    { x: centerX, y: centerY - 55 },        // Back-left
-    { x: centerX, y: centerY + 55 },        // Back-right
-    { x: centerX - 60, y: centerY },        // Rear (furthest from enemies)
+    { x: centerX + 50, y: centerY - 40 },     // Front (upper-right, closest to enemies)
+    { x: centerX - 20, y: centerY - 40 },     // Back-left (upper-left wing)
+    { x: centerX + 50, y: centerY + 30 },     // Back-right (lower-right wing)
+    { x: centerX - 20, y: centerY + 30 },     // Rear (lower-left, furthest from enemies)
   ];
 }
 
 /**
- * Get mirrored diamond formation positions for enemies (right side of battlefield).
+ * Get diamond formation positions for enemies (top-right of battlefield).
+ * Diamond is angled so Front points lower-left toward the player team.
  * @param {number} count - number of enemies (1-4)
  * @returns {Array<{x: number, y: number}>} positions
  */
 export function getEnemyFormationPositions(count) {
-  // Mirrored: front = lower x (closest to party), rear = higher x
-  const centerX = 600;
-  const centerY = 290;
+  const centerX = 580;
+  const centerY = 280;
 
   if (count === 1) return [{ x: centerX, y: centerY }];
   if (count === 2) return [
-    { x: centerX - 40, y: centerY },       // Front
-    { x: centerX + 40, y: centerY },        // Back
+    { x: centerX - 35, y: centerY + 30 },     // Front (lower-left, toward party)
+    { x: centerX + 35, y: centerY - 30 },      // Back (upper-right)
   ];
   if (count === 3) return [
-    { x: centerX - 40, y: centerY },        // Front
-    { x: centerX + 30, y: centerY - 50 },   // Back-left
-    { x: centerX + 30, y: centerY + 50 },   // Back-right
+    { x: centerX - 40, y: centerY + 35 },      // Front (lower-left)
+    { x: centerX - 10, y: centerY - 40 },      // Back-left (upper-left)
+    { x: centerX + 40, y: centerY + 20 },      // Back-right (lower-right)
   ];
-  // count >= 4: full diamond
+  // count >= 4: full diamond angled toward lower-left
   return [
-    { x: centerX - 50, y: centerY },        // Front (closest to party)
-    { x: centerX, y: centerY - 55 },        // Back-left
-    { x: centerX, y: centerY + 55 },        // Back-right
-    { x: centerX + 60, y: centerY },        // Rear (furthest from party)
+    { x: centerX - 50, y: centerY + 40 },      // Front (lower-left, closest to party)
+    { x: centerX - 50, y: centerY - 30 },      // Back-left (upper-left wing)
+    { x: centerX + 20, y: centerY + 40 },      // Back-right (lower-right wing)
+    { x: centerX + 20, y: centerY - 30 },      // Rear (upper-right, furthest from party)
   ];
 }
 

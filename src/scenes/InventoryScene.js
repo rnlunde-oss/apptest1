@@ -175,8 +175,9 @@ export class InventoryScene extends Phaser.Scene {
     const char = this.getSelectedChar();
 
     // Character portrait
-    if (char.id === 'metz' && this.textures.exists('metz_portrait_base')) {
-      const avatarImage = this.add.image(200, 260, 'metz_portrait_base');
+    const portraitBaseKey = `${char.id}_portrait_base`;
+    if (this.textures.exists(portraitBaseKey)) {
+      const avatarImage = this.add.image(200, 260, portraitBaseKey);
       const targetH = 360;
       avatarImage.setScale(targetH / avatarImage.height);
       this.leftContainer.add(avatarImage);

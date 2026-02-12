@@ -20,6 +20,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 25,
     sellPrice: 12,
+    portraitColor: 0x8B6914,
   },
   iron_helm: {
     id: 'iron_helm',
@@ -31,6 +32,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 80,
     sellPrice: 40,
+    portraitColor: 0x888899,
   },
   arcane_circlet: {
     id: 'arcane_circlet',
@@ -42,6 +44,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 90,
     sellPrice: 45,
+    portraitColor: 0xBBBBDD,
   },
   warden_helm: {
     id: 'warden_helm',
@@ -53,6 +56,7 @@ export const EQUIPMENT = {
     rarity: 'Rare',
     buyPrice: 180,
     sellPrice: 90,
+    portraitColor: 0xAAA077,
   },
 
   // ──── Shoulderpads ────
@@ -66,6 +70,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 30,
     sellPrice: 15,
+    portraitColor: 0x7A5C2E,
   },
   chainmail_shoulders: {
     id: 'chainmail_shoulders',
@@ -77,6 +82,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 75,
     sellPrice: 37,
+    portraitColor: 0x708090,
   },
   blessed_mantle: {
     id: 'blessed_mantle',
@@ -88,6 +94,7 @@ export const EQUIPMENT = {
     rarity: 'Rare',
     buyPrice: 160,
     sellPrice: 80,
+    portraitColor: 0xEEDDAA,
   },
 
   // ──── Gloves ────
@@ -101,6 +108,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 20,
     sellPrice: 10,
+    portraitColor: 0xCCBB99,
   },
   gauntlets_of_might: {
     id: 'gauntlets_of_might',
@@ -112,6 +120,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 85,
     sellPrice: 42,
+    portraitColor: 0x777788,
   },
   ranger_bracers: {
     id: 'ranger_bracers',
@@ -123,6 +132,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 70,
     sellPrice: 35,
+    portraitColor: 0x6B4E2A,
   },
 
   // ──── Breastplates ────
@@ -136,6 +146,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 35,
     sellPrice: 17,
+    portraitColor: 0x8B7355,
   },
   chainmail_hauberk: {
     id: 'chainmail_hauberk',
@@ -147,6 +158,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 100,
     sellPrice: 50,
+    portraitColor: 0x708090,
   },
   runed_robe: {
     id: 'runed_robe',
@@ -158,6 +170,7 @@ export const EQUIPMENT = {
     rarity: 'Rare',
     buyPrice: 200,
     sellPrice: 100,
+    portraitColor: 0x4444AA,
   },
   commander_plate: {
     id: 'commander_plate',
@@ -169,6 +182,7 @@ export const EQUIPMENT = {
     rarity: 'Rare',
     buyPrice: 250,
     sellPrice: 125,
+    portraitColor: 0x999977,
   },
 
   // ──── Greaves ────
@@ -182,6 +196,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 25,
     sellPrice: 12,
+    portraitColor: 0x8B6914,
   },
   iron_greaves: {
     id: 'iron_greaves',
@@ -193,6 +208,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 65,
     sellPrice: 32,
+    portraitColor: 0x888899,
   },
 
   // ──── Boots ────
@@ -206,6 +222,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 20,
     sellPrice: 10,
+    portraitColor: 0x5C4033,
   },
   scout_boots: {
     id: 'scout_boots',
@@ -217,6 +234,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 60,
     sellPrice: 30,
+    portraitColor: 0x4A3520,
   },
   ironshod_boots: {
     id: 'ironshod_boots',
@@ -228,6 +246,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 70,
     sellPrice: 35,
+    portraitColor: 0x666677,
   },
 
   // ──── Belts ────
@@ -241,6 +260,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 20,
     sellPrice: 10,
+    portraitColor: 0xAA9966,
   },
   war_belt: {
     id: 'war_belt',
@@ -252,6 +272,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 65,
     sellPrice: 32,
+    portraitColor: 0x6B4E2A,
   },
   sash_of_focus: {
     id: 'sash_of_focus',
@@ -263,6 +284,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 75,
     sellPrice: 37,
+    portraitColor: 0x8866AA,
   },
 
   // ──── Right Hand (weapons) ────
@@ -276,6 +298,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 30,
     sellPrice: 15,
+    portraitColor: 0x998877,
   },
   frontier_blade: {
     id: 'frontier_blade',
@@ -287,6 +310,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 90,
     sellPrice: 45,
+    portraitColor: 0xC0C0C0,
   },
   hunter_bow: {
     id: 'hunter_bow',
@@ -298,6 +322,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 85,
     sellPrice: 42,
+    portraitColor: 0x8B6914,
   },
   staff_of_embers: {
     id: 'staff_of_embers',
@@ -309,6 +334,7 @@ export const EQUIPMENT = {
     rarity: 'Rare',
     buyPrice: 170,
     sellPrice: 85,
+    portraitColor: 0x664422,
   },
   holy_mace: {
     id: 'holy_mace',
@@ -320,6 +346,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 95,
     sellPrice: 47,
+    portraitColor: 0xDDDDBB,
   },
   executioner_axe: {
     id: 'executioner_axe',
@@ -331,6 +358,8 @@ export const EQUIPMENT = {
     rarity: 'Rare',
     buyPrice: 220,
     sellPrice: 110,
+    portraitColor: 0x555555,
+    twoHanded: true,
   },
 
   // ──── Left Hand (shields, off-hand) ────
@@ -344,6 +373,7 @@ export const EQUIPMENT = {
     rarity: 'Common',
     buyPrice: 25,
     sellPrice: 12,
+    portraitColor: 0x8B6914,
   },
   iron_shield: {
     id: 'iron_shield',
@@ -355,6 +385,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 80,
     sellPrice: 40,
+    portraitColor: 0x888899,
   },
   tome_of_wisdom: {
     id: 'tome_of_wisdom',
@@ -366,6 +397,7 @@ export const EQUIPMENT = {
     rarity: 'Uncommon',
     buyPrice: 75,
     sellPrice: 37,
+    portraitColor: 0x553322,
   },
 };
 
