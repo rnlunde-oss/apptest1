@@ -66,6 +66,9 @@ export class BattleScene extends Phaser.Scene {
     if (!this.textures.exists('spr_dagvar')) {
       this.load.image('spr_dagvar', 'assets/sprites/dagvar_battle.png');
     }
+    if (!this.textures.exists('spr_havrifyn')) {
+      this.load.image('spr_havrifyn', 'assets/sprites/havrifyn_battle.png');
+    }
   }
 
   create() {
@@ -185,7 +188,7 @@ export class BattleScene extends Phaser.Scene {
 
       if (enemySpriteKey && this.textures.exists(enemySpriteKey)) {
         sprite = this.add.image(x, y, enemySpriteKey).setDepth(baseD);
-        const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_skeleton' ? 218 : (enemy.isBoss ? 160 : 128);
+        const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_havrifyn' ? 280 : enemySpriteKey === 'spr_skeleton' ? 218 : (enemy.isBoss ? 160 : 128);
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
@@ -591,7 +594,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   _removeWhiteBackgrounds() {
-    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar'];
+    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn'];
     for (const key of keys) {
       if (!this.textures.exists(key)) continue;
       const src = this.textures.get(key).getSourceImage();
@@ -1590,6 +1593,7 @@ export class BattleScene extends Phaser.Scene {
       farmer_alan: 'spr_farmer_alan',
       skeleton: 'spr_skeleton',
       dagvar: 'spr_dagvar',
+      havrifyn: 'spr_havrifyn',
     };
     // Exact match first, then match base id (before '_' suffix for enemies)
     if (spriteMap[character.id]) return spriteMap[character.id];

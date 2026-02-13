@@ -83,7 +83,7 @@ export function getPartyFormationPositions(count) {
  */
 export function getEnemyFormationPositions(count) {
   const centerX = 580;
-  const centerY = 280;
+  const centerY = 340;
 
   if (count === 1) return [{ x: centerX, y: centerY }];
   if (count === 2) return [

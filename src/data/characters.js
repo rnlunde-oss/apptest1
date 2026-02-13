@@ -244,6 +244,22 @@ export const ENEMY_DEFS = {
     phase2Abilities: ['dagvar_darkslash', 'dagvar_drain', 'dagvar_curse'],
     desc: 'A fallen knight consumed by dark power. Guardian of the Catacombs.',
   },
+  havrifyn: {
+    id: 'havrifyn',
+    name: 'Havrifyn',
+    cls: 'Boss',
+    color: 0x442244,
+    maxHp: 300,
+    maxMp: 100,
+    atk: 26,
+    def: 20,
+    spd: 14,
+    abilities: ['necrotic_blast', 'dark_wave', 'life_siphon'],
+    aiWeights: [40, 35, 25],
+    isBoss: true,
+    phase2Abilities: ['doom_curse', 'undying_will', 'dark_wave'],
+    desc: 'A horned demon lord wreathed in dark magic.',
+  },
 
   // ──── Beasts (corrupted by Atikesh's magic) ────
   plague_rat: {
