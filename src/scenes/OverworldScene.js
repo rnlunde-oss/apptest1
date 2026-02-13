@@ -249,6 +249,7 @@ export class OverworldScene extends Phaser.Scene {
     this.loadedPos = data?.playerPos || null;
     this.pendingPostCutscene = data?.postCutsceneDialogue || false;
     this.pendingFarmlandReturn = data?.fromFarmlandCutscene || false;
+    this.pendingRivinRecruit = data?.fromRivinRecruit || false;
   }
 
   preload() {
@@ -417,6 +418,14 @@ export class OverworldScene extends Phaser.Scene {
         this.checkLocationObjectives(tx, ty);
 
         this.triggerAutoSave();
+      });
+    }
+
+    // Return from Rivin Recruit cutscene — recruit Rivin
+    if (this.pendingRivinRecruit) {
+      this.pendingRivinRecruit = false;
+      this.time.delayedCall(300, () => {
+        this.recruitAfterBoss('rivin');
       });
     }
   }
@@ -1520,6 +1529,16 @@ export class OverworldScene extends Phaser.Scene {
           this.triggerRivinRecruit();
         }
       }
+
+      if (this.registry.get('rivinRecruitPlayed') && !this.registry.get('captainApproachPlayed')
+          && isQuestActive(this.registry, 'act1_retake_bracken')) {
+        const dx = tx - 55, dy = ty - 83;
+        if (Math.sqrt(dx * dx + dy * dy) <= 3) {
+          this.registry.set('captainApproachPlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerCaptainApproach();
+        }
+      }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
@@ -2224,12 +2243,24 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   triggerRivinRecruit() {
+    this.registry.set('rivinRecruitPlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('RivinRecruitCutscene');
+    });
+  }
+
+  triggerCaptainApproach() {
     this.showDialogue([
-      'Rivin: "You cleared the town. I\'m impressed, Captain."',
-      'Rivin: "A deal\'s a deal — my axe is yours."',
-      '[ Rivin the Warrior has joined your party! ]',
+      'Rivin: "There it is."',
+      'Lyra: "The gate\'s been drawn up."',
+      'Rivin: "Aye. Captain Tertullian sounded the retreat to the garrison after the gate was breached."',
+      'Metz: "How many men does he have with him?"',
+      'Rivin: "Not many. The King don\'t seem to mind the east too much."',
+      'Lyra: "If we can break through perhaps we\'ll be able to save the town."',
+      'Metz: "Follow me."',
     ], () => {
-      this.recruitAfterBoss('rivin');
+      this.triggerAutoSave();
     });
   }
 
