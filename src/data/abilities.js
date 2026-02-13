@@ -808,6 +808,15 @@ export const ABILITIES = {
   dagvar_drain:     { name: 'Soul Reave',      type: 'magic',    target: 'enemy',       power: 35, mpCost: 0,  accuracy: 90, desc: 'Rips life force from the target. Heals the caster.', healAmount: 20 },
   dagvar_curse:     { name: 'Death Mark',      type: 'debuff',   target: 'enemy',       power: 20, mpCost: 0,  accuracy: 88, desc: 'Marks a foe for death. Drains life over time.', effect: { type: 'dot', stat: 'hp', amount: 10, turns: 3 } },
 
+  // ──── Bone Reaper (Farmlands Mini-Boss) ────
+  reaper_cleave:     { name: 'Reaper Cleave',    type: 'physical', target: 'enemy',       power: 38, mpCost: 0,  accuracy: 90, desc: 'A brutal chop with a bone-forged axe.' },
+  reaper_sweep:      { name: 'Bone Sweep',       type: 'physical', target: 'all_enemies', power: 25, mpCost: 0,  accuracy: 85, desc: 'Sweeps the axe in a wide arc, striking all foes.' },
+  reaper_bonewall:   { name: 'Bone Wall',        type: 'buff',     target: 'self',        power: 0,  mpCost: 0,  accuracy: 100, desc: 'Raises a wall of bones. Boosts defense.', effect: { type: 'shield', stat: 'def', amount: 0.4, turns: 3 } },
+  // Phase 2 (below 50% HP):
+  reaper_deathcleave: { name: 'Death Cleave',    type: 'physical', target: 'all_enemies', power: 32, mpCost: 0,  accuracy: 85, desc: 'A devastating cleave that shatters armor.', effect: { type: 'debuff', stat: 'def', amount: 0.2, turns: 3 } },
+  reaper_drain:      { name: 'Marrow Drain',     type: 'magic',    target: 'enemy',       power: 30, mpCost: 0,  accuracy: 90, desc: 'Drains life force through the axe. Heals the caster.', healAmount: 15 },
+  reaper_frenzy:     { name: 'Reaper Frenzy',    type: 'buff',     target: 'self',        power: 0,  mpCost: 0,  accuracy: 100, desc: 'Enters a frenzied rage. Greatly boosts attack.', effect: { type: 'buff', stat: 'atk', amount: 0.35, turns: 3 } },
+
   // ──── Boss: Atikesh abilities ────
   necrotic_blast: {
     name: 'Necrotic Blast',

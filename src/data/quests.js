@@ -4,6 +4,25 @@
 export const QUEST_DEFS = {
   // ──── Act I Main Quests ────
 
+  act1_defend_frontier: {
+    id: 'act1_defend_frontier',
+    name: 'Defend the Frontier',
+    act: 1,
+    type: 'main',
+    giver: 'metz',
+    giverName: 'Captain Metz',
+    description: 'The frontier is under siege. Defeat 5 skeleton patrols in the farmlands to secure the area.',
+    objectives: [
+      { id: 'defeat_skeleton_patrols', type: 'defeat_count', target: 'skeleton_group', description: 'Defeat skeleton patrols', required: 5 },
+    ],
+    prereqs: [],
+    rewards: { gold: 50, xp: 40, items: [], unlocks: [] },
+    acceptDialogue: ['The farmlands are crawling with skeleton patrols. We need to drive them back.'],
+    completeDialogue: ['Five patrols routed. The farmlands are safer, but the fight is far from over.'],
+    tracked: true,
+    sortOrder: 50,
+  },
+
   act1_secure_farmlands: {
     id: 'act1_secure_farmlands',
     name: 'Secure the Asvam Farmlands',
@@ -15,7 +34,7 @@ export const QUEST_DEFS = {
     objectives: [
       { id: 'reach_farmlands', type: 'reach_location', target: 'asvam_farmlands', description: 'Reach the Asvam Farmlands', required: 1 },
       { id: 'talk_lyra', type: 'talk_npc', target: 'lyra', description: 'Speak with Lyra', required: 1 },
-      { id: 'defeat_bone_reaper', type: 'defeat_enemy', target: 'bone_reaper', description: 'Defeat the Bone Reaper', required: 1 },
+      { id: 'defeat_bone_reaper', type: 'defeat_enemy', target: 'ow_bone_reaper', description: 'Defeat the Bone Reaper', required: 1 },
     ],
     prereqs: [],
     rewards: { gold: 80, xp: 50, items: [], unlocks: [] },

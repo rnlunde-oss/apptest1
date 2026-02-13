@@ -261,6 +261,23 @@ export const ENEMY_DEFS = {
     desc: 'A horned demon lord wreathed in dark magic.',
   },
 
+  bone_reaper: {
+    id: 'bone_reaper',
+    name: 'Bone Reaper',
+    cls: 'Boss',
+    color: 0xccccaa,
+    maxHp: 150,
+    maxMp: 0,
+    atk: 16,
+    def: 14,
+    spd: 10,
+    abilities: ['reaper_cleave', 'reaper_sweep', 'reaper_bonewall'],
+    aiWeights: [45, 30, 25],
+    isBoss: true,
+    phase2Abilities: ['reaper_deathcleave', 'reaper_drain', 'reaper_frenzy'],
+    desc: 'An undead axe-wielder risen from the farmland graves. Its cleaving strikes shatter bone and steel alike.',
+  },
+
   // ──── Beasts (corrupted by Atikesh's magic) ────
   plague_rat: {
     id: 'plague_rat',

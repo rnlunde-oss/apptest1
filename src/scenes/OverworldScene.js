@@ -11,10 +11,19 @@ import {
   getTrackedQuest, getActiveQuests,
   findDefeatEnemyObjectives, findDefeatCountObjectives, findTalkNPCObjectives,
   checkReachLocationObjectives, progressObjective, completeQuest,
+  acceptQuest, isQuestActive,
 } from '../utils/QuestManager.js';
 import { QUEST_DEFS } from '../data/quests.js';
 
 const PLAYER_SPEED = 160;
+
+// Skeleton-only encounter table for "Defend the Frontier" quest
+const FARMLAND_SKELETON_TABLE = [
+  { enemies: ['skeleton'], weight: 20, xp: 15, gold: 12 },
+  { enemies: ['skeleton', 'skeleton'], weight: 35, xp: 22, gold: 18 },
+  { enemies: ['skeleton', 'skeleton', 'skeleton'], weight: 30, xp: 32, gold: 28 },
+  { enemies: ['skeleton', 'skeleton', 'skeleton', 'skeleton'], weight: 15, xp: 42, gold: 35 },
+];
 const VIEWPORT_BUFFER = 3;        // extra tiles beyond camera edge
 const VIEWPORT_UPDATE_THRESHOLD = 2; // tiles moved before re-eval
 
@@ -117,6 +126,22 @@ const NPC_DIALOGUES = {
   },
 };
 
+const SPEAKER_PORTRAITS = {
+  'Metz': 'metz_portrait_base',
+  'Cpt. Metz': 'metz_portrait_base',
+  'Rivin': 'rivin_portrait_base',
+  'Lyra': 'lyra_portrait_base',
+  'Fenton': 'fenton_portrait_base',
+  'Rickets': 'rickets_portrait_base',
+  'Hela': 'hela_portrait_base',
+  'Anuel': 'anuel_portrait_base',
+  // NPC-only speakers — add portrait keys here when assets are added:
+  // 'Vivian': 'vivian_portrait_base',
+  // 'Makar': 'makar_portrait_base',
+  // 'Kelea': 'kelea_portrait_base',
+  // 'Farmer': 'farmer_portrait_base',
+};
+
 // World item pickup definitions
 const WORLD_ITEMS = [
   { id: 'pickup_1', x: 25, y: 177, itemId: 'iron_helm', label: 'Iron Helm' },
@@ -166,6 +191,22 @@ const OVERWORLD_ENEMIES = [
     preDialogue: ['A dark knight and his skeletal minions guard the mountain pass.'],
     postDialogue: ['The mountain bandits have been defeated. The pass is clear.'],
   },
+  {
+    id: 'ow_bone_reaper',
+    tileX: 20, tileY: 185,
+    name: 'Bone Reaper',
+    enemies: ['bone_reaper'],
+    xp: 60, gold: 50,
+    color: 0xccccaa,
+    preDialogue: [
+      'A towering undead figure rises from the scorched earth, a bone-forged axe dragging behind it.',
+      'The Bone Reaper has claimed these farmlands. It will not yield them willingly.',
+    ],
+    postDialogue: [
+      'The Bone Reaper collapses, its axe shattering into dust.',
+      'The farmlands are free of its terror — for now.',
+    ],
+  },
 ];
 
 export class OverworldScene extends Phaser.Scene {
@@ -175,6 +216,7 @@ export class OverworldScene extends Phaser.Scene {
 
   init(data) {
     this.loadedPos = data?.playerPos || null;
+    this.pendingPostCutscene = data?.postCutsceneDialogue || false;
   }
 
   preload() {
@@ -278,6 +320,47 @@ export class OverworldScene extends Phaser.Scene {
       fontSize: '12px', color: '#ddccaa', fontStyle: 'bold',
       backgroundColor: '#00000066', padding: { x: 10, y: 3 },
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100));
+
+    // Post-cutscene dialogue after Dagvar battle / Alan's death
+    if (this.pendingPostCutscene) {
+      this.pendingPostCutscene = false;
+      this.time.delayedCall(500, () => {
+        this.showDialogue([
+          'Vivian: "Alan no!!"',
+          'She weeps uncontrollably.',
+          'Makar: "Daddy!!"',
+          'Kelea: "Papa!!"',
+          'Metz: "I - I am sorry\u2026"',
+          'Farmer: "Pray tell, sir! The country is aflame! The undead rise everywhere!"',
+          'Metz: "Where have they come from?"',
+          'Farmer: "None can tell, only that they began the attack this morning. They say Bracken is already burning\u2026"',
+          'Metz: "Then I must make for Fort Bracken at once! Attend to this family for me."',
+          'Farmer: "It will be done, sir! For Alan and for us all\u2026"',
+          'Metz mounts his horse.',
+          'Makar: "S-sir\u2026? Please don\'t leave\u2026"',
+          'Farmer: "Son, he fights for us all. He is needed ahead."',
+          'Metz: "What\'s your name, son?"',
+          'Makar: "Makar."',
+          'Metz: "Your father was a valiant man, Makar. Your mother and sister need you to be the same for them now."',
+          'Makar sniffles but hesitantly nods his head.',
+          'Metz: "I promise you, Makar, your father\'s sacrifice will not be for nothing. I will bring justice to the one who did this to you."',
+          'Makar: "Then go, sir\u2026 Though I do not know your name."',
+          'Metz: "Metz."',
+          'Makar: "Metz."',
+        ], () => {
+          acceptQuest(this.registry, 'act1_defend_frontier');
+          const toast = this._addUI(this.add.text(400, 560, 'New Quest: Defend the Frontier', {
+            fontSize: '12px', color: '#ffdd44', fontStyle: 'bold',
+            backgroundColor: '#00000099', padding: { x: 12, y: 5 },
+          }).setOrigin(0.5).setScrollFactor(0).setDepth(400));
+          this.tweens.add({
+            targets: toast, alpha: 0, y: 540,
+            delay: 3000, duration: 600,
+            onComplete: () => toast.destroy(),
+          });
+        });
+      });
+    }
   }
 
   // ──── Map ────
@@ -1515,6 +1598,20 @@ export class OverworldScene extends Phaser.Scene {
         }
       }
     }
+
+    // Synthetic group counts — for each unique enemy type present, progress {type}_group by 1
+    for (const enemyType of Object.keys(counts)) {
+      const groupMatches = findDefeatCountObjectives(this.registry, `${enemyType}_group`);
+      for (const { questId, objectiveId } of groupMatches) {
+        const result = progressObjective(this.registry, questId, objectiveId, 1);
+        if (result) {
+          this.showQuestProgressToast(questId, result);
+          if (result.questComplete) {
+            this.autoCompleteQuest(questId);
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -1660,8 +1757,19 @@ export class OverworldScene extends Phaser.Scene {
     };
 
     const entry = ZONE_MAP[tile];
-    if (entry && Math.random() < entry.rate) {
-      this.startBattle(entry.zone);
+    if (!entry) return;
+
+    let zone = entry.zone;
+    let rate = entry.rate;
+
+    // During "Defend the Frontier" quest, farmland spawns only skeletons at higher rate
+    if (tile === 12 && isQuestActive(this.registry, 'act1_defend_frontier')) {
+      zone = 'farmland_skeleton';
+      rate = 0.20;
+    }
+
+    if (Math.random() < rate) {
+      this.startBattle(zone);
     }
   }
 
@@ -1672,7 +1780,9 @@ export class OverworldScene extends Phaser.Scene {
     this._hideTouchControls();
 
     // Pick encounter from zone table
-    const table = ENCOUNTER_TABLES[zone] || ENCOUNTER_TABLES.cursed;
+    const table = zone === 'farmland_skeleton'
+      ? FARMLAND_SKELETON_TABLE
+      : (ENCOUNTER_TABLES[zone] || ENCOUNTER_TABLES.cursed);
     const total = table.reduce((s, e) => s + e.weight, 0);
     let roll = Math.random() * total;
     let picked = table[0];
@@ -2118,20 +2228,50 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
-    const text = this.dialogueQueue.shift();
+    const line = this.dialogueQueue.shift();
     if (this.dBox) this.dBox.destroy();
     if (this.dText) this.dText.destroy();
     if (this.dHint) this.dHint.destroy();
+    if (this.dName) { this.dName.destroy(); this.dName = null; }
+    if (this.dPortrait) { this.dPortrait.destroy(); this.dPortrait = null; }
 
     const hintStr = this.touchControls ? '[Tap]' : '[E]';
+    const speakerMatch = line.match(/^(.+?):\s*["']/);
 
-    this.dBox = this._addUI(this.add.rectangle(400, 580, 720, 70, 0x000000, 0.9)
+    this.dBox = this._addUI(this.add.rectangle(400, 575, 720, 90, 0x000000, 0.9)
       .setStrokeStyle(2, 0xaa8844).setScrollFactor(0).setDepth(200));
-    this.dText = this._addUI(this.add.text(60, 555, text, {
-      fontSize: '14px', color: '#ffe8cc',
-      wordWrap: { width: 640 }, lineSpacing: 4,
-    }).setScrollFactor(0).setDepth(201));
-    this.dHint = this._addUI(this.add.text(740, 595, hintStr, {
+
+    if (speakerMatch) {
+      const speaker = speakerMatch[1];
+      const dialogue = line.slice(speakerMatch[0].length - 1);
+
+      // Show portrait if texture exists for this speaker
+      const portraitKey = SPEAKER_PORTRAITS[speaker];
+      let textWrapWidth = 640;
+      if (portraitKey && this.textures.exists(portraitKey)) {
+        const tex = this.textures.get(portraitKey).getSourceImage();
+        const scale = 80 / tex.height;
+        this.dPortrait = this._addUI(this.add.image(720, 575, portraitKey)
+          .setOrigin(0.5).setScale(scale)
+          .setScrollFactor(0).setDepth(201));
+        textWrapWidth = 570;
+      }
+
+      this.dName = this._addUI(this.add.text(60, 540, speaker, {
+        fontSize: '12px', color: '#ffcc44', fontStyle: 'bold',
+      }).setScrollFactor(0).setDepth(201));
+      this.dText = this._addUI(this.add.text(60, 558, dialogue, {
+        fontSize: '14px', color: '#ffffff',
+        wordWrap: { width: textWrapWidth }, lineSpacing: 4,
+      }).setScrollFactor(0).setDepth(201));
+    } else {
+      this.dText = this._addUI(this.add.text(60, 550, line, {
+        fontSize: '14px', color: '#ffe8cc',
+        wordWrap: { width: 640 }, lineSpacing: 4,
+      }).setScrollFactor(0).setDepth(201));
+    }
+
+    this.dHint = this._addUI(this.add.text(740, 605, hintStr, {
       fontSize: '10px', color: '#887755',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(201));
 
@@ -2151,6 +2291,8 @@ export class OverworldScene extends Phaser.Scene {
       this.dBox.destroy();
       this.dText.destroy();
       this.dHint.destroy();
+      if (this.dName) { this.dName.destroy(); this.dName = null; }
+      if (this.dPortrait) { this.dPortrait.destroy(); this.dPortrait = null; }
       this.showNextLine();
     };
 
