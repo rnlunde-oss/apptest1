@@ -30,7 +30,13 @@ export class BattleUIScene extends Phaser.Scene {
       : enemyNames.join(' and ');
 
     this.showMessage(`${label} emerged from the cursed ground!`, () => {
-      this.battleScene.buildTurnQueue();
+      if (this.battleScene.isTutorial) {
+        this.showMessage('Tip: Position matters! The front fighter takes full damage, while allies behind them are protected. Keep your strongest defender in front.', () => {
+          this.battleScene.buildTurnQueue();
+        });
+      } else {
+        this.battleScene.buildTurnQueue();
+      }
     });
   }
 

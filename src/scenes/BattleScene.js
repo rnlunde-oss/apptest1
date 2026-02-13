@@ -27,6 +27,7 @@ export class BattleScene extends Phaser.Scene {
     this.isTutorial = data.isTutorial || false;
     this.tutorialCallbacks = data.tutorialCallbacks || {};
     this.firstKillFired = false;
+    this.tutorialFirstTurnShown = false;
   }
 
   preload() {
@@ -712,7 +713,14 @@ export class BattleScene extends Phaser.Scene {
     uiScene.highlightTurn(turn);
 
     if (turn.side === 'party') {
-      uiScene.startPlayerTurn(turn.character);
+      if (this.isTutorial && !this.tutorialFirstTurnShown && this.roundNumber === 1) {
+        this.tutorialFirstTurnShown = true;
+        uiScene.showMessage('Tip: Use Defend to double your defense for one round, or Charge to double the power of your next attack. Choose wisely!', () => {
+          uiScene.startPlayerTurn(turn.character);
+        });
+      } else {
+        uiScene.startPlayerTurn(turn.character);
+      }
     } else {
       this.time.delayedCall(400, () => this.doEnemyAI(turn.character));
     }
@@ -1422,6 +1430,7 @@ export class BattleScene extends Phaser.Scene {
       if (anyDead) {
         this.firstKillFired = true;
         this.tutorialCallbacks.onFirstEnemyKill(this);
+        return true; // Pause normal flow — tutorial callback resumes via nextTurn()
       }
     }
 

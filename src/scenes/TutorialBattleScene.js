@@ -53,8 +53,13 @@ export class TutorialBattleScene extends Phaser.Scene {
     const tutorialCallbacks = {
       onFirstEnemyKill: (battleScene) => {
         const uiScene = battleScene.scene.get('BattleUI');
-        uiScene.showMessage('Farmer Alan: "I won\'t let these bones take my farm!"', () => {
-          battleScene.addAllyMidBattle(farmerAlan);
+        uiScene.showMessage('Farmer Alan: "Captain! I won\'t let these bones take my farm!"', () => {
+          uiScene.showMessage('Farmer Alan rushes into the fray, pitchfork in hand!', () => {
+            battleScene.addAllyMidBattle(farmerAlan);
+            uiScene.showMessage('Tip: Alan has joined the fight! With two fighters, Metz takes point in the Front position while Alan gains damage reduction from behind.', () => {
+              battleScene.nextTurn();
+            });
+          });
         });
       },
     };
