@@ -209,35 +209,58 @@ export class PostTutorialVictory extends Phaser.Scene {
     super('PostTutorialCutscene_Victory');
   }
 
+  preload() {
+    this.load.image('3cut1', 'assets/cutscenes/3CUT1.png');
+    this.load.image('3cut2', 'assets/cutscenes/3CUT2.png');
+  }
+
   create() {
     this.sfx = this.registry.get('soundManager');
-    this.add.rectangle(400, 320, 800, 640, 0x000000);
 
+    // Black background (behind everything)
+    const blackBg = this.add.rectangle(400, 320, 800, 640, 0x000000);
+
+    // Each line maps to an image key (or null for black bg)
     const lines = [
-      'Dagvar staggers back, his dark armor cracking.',
-      'Dagvar: "This... changes nothing. The dead do not rest, Captain."',
-      'The lieutenant retreats into the cursed mist.',
-      'Alan collapses to his knees. Dark veins spread from a wound in his side.',
-      'Metz: "Alan! Stay with me—"',
-      'Alan: "It\'s too late, Captain. The poison... from his blade."',
-      'A boy runs from the farmhouse. Makar, Alan\'s son.',
-      'Makar: "Papa! Papa, get up!"',
-      'Alan: "Makar... be brave, son. Be brave for your mother."',
-      'Alan: "Captain... promise me. Promise me you\'ll look after him."',
-      'Metz: "I swear it, Alan. On my life."',
-      'Alan smiles. His hand goes still. Farmer Alan is dead.',
-      'Makar sobs against his father\'s chest. Metz kneels beside them.',
-      'Metz: "...I won\'t let this be for nothing."',
-      'Metz: "The frontier must be secured. There are towns east that still stand."',
-      'Metz stands, gripping his sword. The road ahead is long.',
+      // Scene 1: Battlefield standoff (3CUT1)
+      { text: 'Metz and Alan fought against the Dark Knight tirelessly. Exchanging blow for blow.', image: '3cut1' },
+      { text: 'Against the cresting sunlight of late afternoon, the three combatants stood silently staring at each other.', image: '3cut1' },
+      { text: 'The eerie silence was broken by Dagvar\'s wretched voice, "You protect the weak, Captain. Admirable... but inefficient."', image: '3cut1' },
+      { text: '"Then I will be inefficient," Metz replied. "You mistake cruelty for strength."', image: '3cut1' },
+      // Scene 2: Dagvar closeup (3CUT2)
+      { text: '"You call it cruelty because you cannot bear the cost. I call it correction."', image: '3cut2' },
+      { text: '"Besides, if I were cruel... you would already be fighting alone."', image: '3cut2' },
+      // Scene 3: Alan death — black background
+      { text: 'Dagvar staggers back, his dark armor cracking.', image: null },
+      { text: 'Dagvar: "This... changes nothing. The dead do not rest, Captain."', image: null },
+      { text: 'The lieutenant retreats into the cursed mist.', image: null },
+      { text: 'Alan collapses to his knees. Dark veins spread from a wound in his side.', image: null },
+      { text: 'Metz: "Alan! Stay with me\u2014"', image: null },
+      { text: 'Alan: "It\'s too late, Captain. The poison... from his blade."', image: null },
+      { text: 'A boy runs from the farmhouse. Makar, Alan\'s son.', image: null },
+      { text: 'Makar: "Papa! Papa, get up!"', image: null },
+      { text: 'Alan: "Makar... be brave, son. Be brave for your mother."', image: null },
+      { text: 'Alan: "Captain... promise me. Promise me you\'ll look after him."', image: null },
+      { text: 'Metz: "I swear it, Alan. On my life."', image: null },
+      { text: 'Alan smiles. His hand goes still. Farmer Alan is dead.', image: null },
+      { text: 'Makar sobs against his father\'s chest. Metz kneels beside them.', image: null },
+      { text: 'Metz: "...I won\'t let this be for nothing."', image: null },
+      { text: 'Metz: "The frontier must be secured. There are towns east that still stand."', image: null },
+      { text: 'Metz stands, gripping his sword. The road ahead is long.', image: null },
     ];
+
+    // Cutscene image display (swapped per-line)
+    const cutsceneImage = this.add.image(400, 320, '3cut1');
+    this._scaleCover(cutsceneImage);
+    let currentImageKey = '3cut1';
 
     let idx = 0;
     let ready = false;
+    let transitioning = false;
 
     const textBg = this.add.rectangle(400, 520, 760, 80, 0x000000, 0.85)
       .setStrokeStyle(1, 0x886633);
-    const text = this.add.text(400, 510, '', {
+    const dialogueText = this.add.text(400, 510, '', {
       fontFamily: 'monospace', fontSize: '14px', color: '#ffe8cc',
       align: 'center', wordWrap: { width: 700 }, lineSpacing: 4,
     }).setOrigin(0.5);
@@ -258,13 +281,48 @@ export class PostTutorialVictory extends Phaser.Scene {
         });
         return;
       }
-      text.setText(lines[idx]);
+
+      const line = lines[idx];
+      const needsImageChange = line.image !== currentImageKey;
+
+      if (needsImageChange) {
+        transitioning = true;
+        this.tweens.add({
+          targets: cutsceneImage,
+          alpha: 0,
+          duration: 400,
+          onComplete: () => {
+            currentImageKey = line.image;
+            if (line.image) {
+              cutsceneImage.setTexture(line.image);
+              this._scaleCover(cutsceneImage);
+              this.tweens.add({
+                targets: cutsceneImage,
+                alpha: 1,
+                duration: 400,
+                onComplete: () => {
+                  dialogueText.setText(line.text);
+                  idx++;
+                  transitioning = false;
+                },
+              });
+            } else {
+              dialogueText.setText(line.text);
+              idx++;
+              transitioning = false;
+            }
+          },
+        });
+        return;
+      }
+
+      dialogueText.setText(line.text);
       idx++;
     };
     showLine();
 
     const advance = () => {
-      if (!ready) return;
+      if (!ready || transitioning) return;
       if (this.sfx) this.sfx.playDialogueAdvance();
       showLine();
     };
@@ -275,6 +333,12 @@ export class PostTutorialVictory extends Phaser.Scene {
       this.input.keyboard.on('keydown-SPACE', advance);
       this.input.on('pointerdown', advance);
     });
+  }
+
+  _scaleCover(image) {
+    const scaleX = 800 / image.width;
+    const scaleY = 640 / image.height;
+    image.setScale(Math.max(scaleX, scaleY));
   }
 }
 
