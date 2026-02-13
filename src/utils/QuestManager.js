@@ -10,6 +10,9 @@ export const LOCATION_COORDS = {
   bracken:         { x: 55, y: 87, radius: 5 },
   catacombs:       { x: 83, y: 73, radius: 5 },
   dungeon:         { x: 115, y: 20, radius: 5 },
+  bjorn_hideout:   { x: 80, y: 110, radius: 5 },
+  harolds_farm:    { x: 30, y: 90, radius: 5 },
+  old_nans_farm:   { x: 35, y: 65, radius: 5 },
 };
 
 // ──── Initialization ────
@@ -274,6 +277,13 @@ export function findCollectItemObjectives(registry, itemId) {
  */
 export function findTalkNPCObjectives(registry, npcId) {
   return _findMatchingObjectives(registry, 'talk_npc', npcId);
+}
+
+/**
+ * Find objectives for completing a quest (parent quest tracking sub-quest completion).
+ */
+export function findCompleteQuestObjectives(registry, completedQuestId) {
+  return _findMatchingObjectives(registry, 'complete_quest', completedQuestId);
 }
 
 /**

@@ -34,6 +34,9 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('catacombsCutscenePlayed', this.loadData.catacombsCutscenePlayed || false);
       this.registry.set('halBattleTriggered', this.loadData.halBattleTriggered || false);
       this.registry.set('newsOfAtikeshCutscenePlayed', this.loadData.newsOfAtikeshCutscenePlayed || false);
+      this.registry.set('fromTheAshesDialoguePlayed', this.loadData.fromTheAshesDialoguePlayed || false);
+      this.registry.set('makarFarewellPlayed', this.loadData.makarFarewellPlayed || false);
+      this.registry.set('tertullianShieldPlayed', this.loadData.tertullianShieldPlayed || false);
 
       // Restore quest state (or init fresh for old saves without it)
       if (this.loadData.questState) {
@@ -70,6 +73,9 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('catacombsCutscenePlayed', false);
       this.registry.set('halBattleTriggered', false);
       this.registry.set('newsOfAtikeshCutscenePlayed', false);
+      this.registry.set('fromTheAshesDialoguePlayed', false);
+      this.registry.set('makarFarewellPlayed', false);
+      this.registry.set('tertullianShieldPlayed', false);
 
       initQuestState(this.registry);
 

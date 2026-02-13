@@ -399,6 +399,18 @@ export const EQUIPMENT = {
     sellPrice: 37,
     portraitColor: 0x553322,
   },
+  dandaron_shield: {
+    id: 'dandaron_shield',
+    name: 'Shield of House Dandaron',
+    slot: 'leftHand',
+    stats: { atk: 0, def: 6, spd: 0, hp: 10, mp: 5 },
+    classBonus: { Commander: { def: 3, hp: 5 }, Warrior: { def: 2 } },
+    desc: 'An ancient shield bearing the crest of House Dandaron. Powerful seals are woven into the metal.',
+    rarity: 'Rare',
+    buyPrice: 0,
+    sellPrice: 0,
+    portraitColor: 0xccaa55,
+  },
 };
 
 // ──── Consumable Items ────
@@ -446,6 +458,17 @@ export const CONSUMABLES = {
     rarity: 'Common',
     buyPrice: 15,
     sellPrice: 7,
+  },
+  old_nans_honey: {
+    id: 'old_nans_honey',
+    name: "Old Nan's Honey",
+    type: 'quest',
+    target: 'none',
+    amount: 0,
+    desc: 'A jar of golden honey from Old Nan\'s apiary. Innkeeper Twill needs this to reopen the inn.',
+    rarity: 'Uncommon',
+    buyPrice: 0,
+    sellPrice: 0,
   },
 };
 

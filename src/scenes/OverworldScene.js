@@ -10,6 +10,7 @@ import { isTouchDevice } from '../utils/touchDetect.js';
 import {
   getTrackedQuest, getActiveQuests,
   findDefeatEnemyObjectives, findDefeatCountObjectives, findTalkNPCObjectives,
+  findCollectItemObjectives, findCompleteQuestObjectives,
   checkReachLocationObjectives, progressObjective, completeQuest,
   acceptQuest, isQuestActive, isQuestComplete,
   LOCATION_COORDS, getActiveQuestLocations,
@@ -146,18 +147,109 @@ const SPEAKER_PORTRAITS = {
   'Anuel': 'anuel_portrait_base',
   'Captain Tertullian': null,
   'Vampirling Hal': null,
+  'Garren': null,
+  'Fillian': null,
+  'Harold': null,
+  'Veera': null,
+  'Twill': null,
+  'Bjorn': null,
+  'Guardsman': null,
+  'Sivin': null,
+  'Makar': null,
+  'Vivian': null,
+  'Dhan': null,
   // NPC-only speakers — add portrait keys here when assets are added:
-  // 'Vivian': 'vivian_portrait_base',
-  // 'Makar': 'makar_portrait_base',
   // 'Kelea': 'kelea_portrait_base',
   // 'Farmer': 'farmer_portrait_base',
 };
+
+// ──── Quest NPC Definitions ────
+const QUEST_NPC_DEFS = [
+  { id: 'garren',  name: 'Garren Brightone', tileX: 53, tileY: 85, color: 0xccaa44, nameColor: '#ffdd66', questId: 'act1_what_goes_around' },
+  { id: 'fillian', name: 'Sgt. Fillian',     tileX: 58, tileY: 85, color: 0x889999, nameColor: '#aaccdd', questId: 'act1_at_the_ready' },
+  { id: 'harold',  name: 'Farmer Harold',    tileX: 50, tileY: 90, color: 0x886644, nameColor: '#ccaa77', questId: 'act1_bought_with_blood' },
+  { id: 'veera',   name: 'Ranger Veera',     tileX: 60, tileY: 89, color: 0x448844, nameColor: '#88cc88', questId: 'act1_not_so_lone_wolf' },
+  { id: 'twill',   name: 'Innkeeper Twill',  tileX: 54, tileY: 88, color: 0x996644, nameColor: '#ccaa88', questId: 'act1_old_nans' },
+];
+
+const QUEST_NPC_DIALOGUES = {
+  garren: {
+    quest: [
+      'Garren: "Captain! Thank the stars you\'re here. A band of brigands ransacked my storehouse while the town was under siege."',
+      'Garren: "Their leader — a brute called Bjorn — took my strongbox southeast of town. Everything I had was in there."',
+      'Garren: "Without those goods, I can\'t supply the rebuilding effort. Please, deal with him."',
+    ],
+    idle: [
+      'Garren: "Any luck with Bjorn? His hideout is to the southeast."',
+      'Garren: "The rebuilding effort depends on those supplies, captain."',
+      'Garren: "I hear Bjorn has a small gang with him. Be careful."',
+    ],
+  },
+  fillian: {
+    quest: [
+      'Fillian: "Captain Metz, sir! Sgt. Fillian, acting watch commander."',
+      'Fillian: "We\'ve got fresh recruits posted around town, but they can barely hold a blade straight."',
+      'Fillian: "Would you drill some of the lads? Fifteen trained men would make all the difference."',
+    ],
+    idle: [
+      'Fillian: "Still got guardsmen around town that need training, sir."',
+      'Fillian: "Look for the green recruits posted around Bracken."',
+      'Fillian: "A sharp sword is nothing without a trained hand to wield it."',
+    ],
+  },
+  harold: {
+    quest: [
+      'Harold: "You look like a man who\'s fought a thing or two."',
+      'Harold: "My farm\'s west of here. Wolves moved in during the siege — big ones, mean ones."',
+      'Harold: "I can\'t go back until they\'re cleared out. My whole livelihood is in that soil."',
+    ],
+    idle: [
+      'Harold: "The wolves are still out at my farm, west of town."',
+      'Harold: "Can\'t plant a single seed with those beasts prowling about."',
+      'Harold: "I appreciate what you\'re doing for Bracken, captain."',
+    ],
+  },
+  veera: {
+    quest: [
+      'Veera: "You must be Metz. Word of your deeds has spread."',
+      'Veera: "The dire wolves are getting bolder. Packs of them prowl the roads at night."',
+      'Veera: "I need someone to thin the pack. Ten kills should break their nerve and send them back to the deep woods."',
+    ],
+    idle: [
+      'Veera: "Keep hunting those dire wolves. We need ten down to break the pack."',
+      'Veera: "They roam the farmlands and forest roads. Stay sharp."',
+      'Veera: "Every wolf you drop makes Bracken a little safer."',
+    ],
+  },
+  twill: {
+    quest: [
+      'Twill: "Captain! The inn\'s still standing, but the larder is bare."',
+      'Twill: "Old Nan used to keep bees at her farmstead northwest of here. Best honey in the frontier."',
+      'Twill: "If you could fetch a jar, I\'d have the inn serving warm mead by nightfall."',
+    ],
+    idle: [
+      'Twill: "Old Nan\'s place is northwest of town. Should be a jar of honey there still."',
+      'Twill: "Can\'t run an inn without something to serve, captain."',
+      'Twill: "That honey would do wonders for morale around here."',
+    ],
+  },
+};
+
+// Guardsman positions around Bracken for "At the Ready!" quest
+const GUARDSMAN_POSITIONS = [
+  { tileX: 52, tileY: 83 }, { tileX: 56, tileY: 83 }, { tileX: 59, tileY: 84 },
+  { tileX: 51, tileY: 86 }, { tileX: 57, tileY: 86 }, { tileX: 60, tileY: 87 },
+  { tileX: 53, tileY: 89 }, { tileX: 56, tileY: 90 }, { tileX: 59, tileY: 91 },
+  { tileX: 51, tileY: 92 }, { tileX: 54, tileY: 92 }, { tileX: 57, tileY: 93 },
+  { tileX: 52, tileY: 95 }, { tileX: 55, tileY: 95 }, { tileX: 58, tileY: 96 },
+];
 
 // World item pickup definitions
 const WORLD_ITEMS = [
   { id: 'pickup_1', x: 25, y: 177, itemId: 'iron_helm', label: 'Iron Helm' },
   { id: 'pickup_2', x: 55, y: 80, itemId: 'frontier_blade', label: 'Frontier Blade' },
   { id: 'pickup_3', x: 30, y: 147, itemId: 'scout_boots', label: 'Scout Boots' },
+  { id: 'pickup_old_nans_honey', x: 35, y: 65, itemId: 'old_nans_honey', label: "Old Nan's Honey" },
 ];
 
 // Overworld-visible enemy encounters
@@ -253,6 +345,37 @@ const OVERWORLD_ENEMIES = [
     ],
     postDialogue: [],
   },
+  {
+    id: 'bandit_chief_bjorn',
+    tileX: 80, tileY: 110,
+    name: 'Bandit Chief Bjorn',
+    enemies: ['bandit_chief', 'bandit_henchman', 'bandit_thief', 'bandit_henchman'],
+    xp: 65, gold: 55,
+    color: 0x775533,
+    preDialogue: [
+      'A grizzled bandit blocks the path, a stolen strongbox at his feet.',
+      'Bjorn: "You want it back? Come and take it."',
+    ],
+    postDialogue: [
+      'Bjorn collapses. The strongbox lies among the scattered loot.',
+      'Garren\'s goods are recovered. Time to report back to Bracken.',
+    ],
+  },
+  {
+    id: 'ow_wolf_pack_harold',
+    tileX: 30, tileY: 90,
+    name: 'Feral Wolf Pack',
+    enemies: ['dire_wolf', 'dire_wolf', 'dire_wolf', 'dire_wolf'],
+    xp: 50, gold: 40,
+    color: 0x666655,
+    preDialogue: [
+      'A pack of wolves snarls among the ruined fences of Harold\'s farm.',
+      'The alpha bares its teeth. They won\'t leave without a fight.',
+    ],
+    postDialogue: [
+      'The last wolf flees into the trees. Harold\'s farm is secure.',
+    ],
+  },
 ];
 
 export class OverworldScene extends Phaser.Scene {
@@ -311,6 +434,8 @@ export class OverworldScene extends Phaser.Scene {
     this.buildMap();
     this.spawnPlayer();
     this.spawnNPC();
+    this.spawnQuestNPCs();
+    this.spawnGuardsmen();
     this.spawnWorldItems();
     this.spawnOverworldEnemies();
     this.setupCamera();
@@ -344,6 +469,7 @@ export class OverworldScene extends Phaser.Scene {
     this.experienceOpen = false;
     this.saveMenuOpen = false;
     this.questLogOpen = false;
+    this.postMakarSteps = 0;
 
     this.drawPartyHUD();
     this.buildMiniMap();
@@ -1040,6 +1166,63 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  // ──── Quest NPCs ────
+
+  spawnQuestNPCs() {
+    this.questNpcs = [];
+
+    for (const def of QUEST_NPC_DEFS) {
+      // Only spawn if associated quest is active
+      if (!isQuestActive(this.registry, def.questId)) continue;
+
+      const px = def.tileX * TILE_SIZE + TILE_SIZE / 2;
+      const py = def.tileY * TILE_SIZE + TILE_SIZE / 2;
+
+      const body = this.add.rectangle(px, py, 20, 26, def.color).setDepth(10);
+      this.physics.add.existing(body, true);
+
+      this.add.text(px, py - 20, def.name, {
+        fontSize: '8px', color: def.nameColor, fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(11);
+
+      // "!" quest marker
+      const marker = this.add.text(px, py - 30, '!', {
+        fontSize: '14px', fontStyle: 'bold', color: '#ffff00',
+      }).setOrigin(0.5).setDepth(12);
+      this.tweens.add({
+        targets: marker, y: py - 34,
+        duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+
+      this.physics.add.collider(this.player, body);
+      this.questNpcs.push({ id: def.id, questId: def.questId, body, marker, x: px, y: py, talked: false });
+    }
+  }
+
+  // ──── Town Guardsmen ────
+
+  spawnGuardsmen() {
+    this.guardsmen = [];
+
+    if (!isQuestActive(this.registry, 'act1_at_the_ready')) return;
+
+    for (let i = 0; i < GUARDSMAN_POSITIONS.length; i++) {
+      const pos = GUARDSMAN_POSITIONS[i];
+      const px = pos.tileX * TILE_SIZE + TILE_SIZE / 2;
+      const py = pos.tileY * TILE_SIZE + TILE_SIZE / 2;
+
+      const body = this.add.rectangle(px, py, 16, 22, 0x557755).setDepth(10);
+      this.physics.add.existing(body, true);
+
+      this.add.text(px, py - 16, 'G', {
+        fontSize: '9px', fontStyle: 'bold', color: '#88bb88',
+      }).setOrigin(0.5).setDepth(11);
+
+      this.physics.add.collider(this.player, body);
+      this.guardsmen.push({ id: `guardsman_${i}`, body, x: px, y: py, trained: false });
+    }
+  }
+
   // ──── World Item Pickups ────
 
   spawnWorldItems() {
@@ -1655,6 +1838,80 @@ export class OverworldScene extends Phaser.Scene {
           this.triggerNewsOfAtikeshCutscene();
         }
       }
+
+      // From the Ashes completion — "First Importance" dialogue near Bracken center
+      if (!this.registry.get('fromTheAshesDialoguePlayed')
+          && isQuestComplete(this.registry, 'act1_from_the_ashes')) {
+        const dx = tx - 55, dy = ty - 87;
+        if (Math.sqrt(dx * dx + dy * dy) <= 10) {
+          this.registry.set('fromTheAshesDialoguePlayed', true);
+          this.player.body.setVelocity(0);
+          this.showDialogue([
+            'Captain Tertullian: "Captain Metz. Your presence is needed."',
+            'Metz: "We came as quickly as we could."',
+            'Makar: "Metz!"',
+            'Vivian: "Makar, sh!"',
+            'Metz: "Makar! I see you\'re well."',
+            'Makar: "Aye, sir! Watched over my mom and sis just like you said."',
+            'Metz: "Well done, lad."',
+            'Sivin: "This family speaks of your encounter with a Dark Knight south of Asvam."',
+            'Metz: "Yes, my lord. Their father fought valiantly."',
+            'Captain Tertullian: "We\'ve heard reports of this knight from some of our scouts before. We believe that he may know more of this\u2026 Atikesh."',
+            'Metz: "I would relish the opportunity to ask him, sir."',
+            'Sivin: "Captain Tertullian assures me that our forces are capable of manning the defenses should we be attacked again, but we cannot wait idly while our unknown enemy regains strength."',
+            'Captain Tertullian: "We suspect that the ruins of Fort Ritker to the north of here would be a likely stronghold for this\u2026 dark knight. I have already dispatched Lieutenant Dhan and a small forward attack guard to rendezvous with you on the outskirts of the forest road leading there."',
+            'Rivin: "Fort Ritker\u2026 but that lies in the heart of Craven Forest."',
+            'Lyra: "Of course it does."',
+            'Rivin: "You don\'t expect us to survive this venture, do you my lord?"',
+            'Sivin: "If you cannot, who can?"',
+            'Rickets: "Everything burns, Rivin\u2026 especially trees\u2026"',
+            'Rivin grunts.',
+            'Metz: "Sirs, with your permission we will make haste for Fort Ritker at once."',
+            'Sivin: "Of course."',
+            'Sivin: "And Metz\u2026"',
+            'Sivin: "\u2026 be careful."',
+          ], () => {
+            this.triggerAutoSave();
+          });
+        }
+      // Makar farewell — triggers 1 tile after First Importance dialogue
+      } else if (this.registry.get('fromTheAshesDialoguePlayed')
+          && !this.registry.get('makarFarewellPlayed')) {
+        this.registry.set('makarFarewellPlayed', true);
+        this.player.body.setVelocity(0);
+        this.showDialogue([
+          'Makar: "Captain Metz!"',
+          'Metz: "Yes, my boy?"',
+          'Makar: "Thank you\u2026"',
+          'Metz: "Of course, Makar. Your father deserves justice."',
+          'Vivian: "Come along, Makar."',
+          'Metz: "Go with your mother, now Makar. Remember \u2013 they need you."',
+        ], () => {
+          this.triggerAutoSave();
+        });
+      // Tertullian shield gift — triggers 10 tiles after Makar farewell
+      } else if (this.registry.get('makarFarewellPlayed')
+          && !this.registry.get('tertullianShieldPlayed')) {
+        this.postMakarSteps++;
+        if (this.postMakarSteps >= 10) {
+          this.registry.set('tertullianShieldPlayed', true);
+          this.player.body.setVelocity(0);
+          this.showDialogue([
+            'Captain Tertullian: "Captain Metz!"',
+            'Captain Tertullian: "I almost forgot. Please \u2013 take this shield. It was given to me years ago in the Intraterra\u2026 it has served me well all these years. Me thinks you\'ll have greater need of it than I."',
+            'Metz: "This is the crest of House Dandaron!"',
+            'Rickets: "I sense powerful seals across that shield\u2026"',
+            'Metz: "You cannot mean to \u2013"',
+            'Captain Tertullian: "I do. Please\u2026 it\'s the least I can do."',
+          ], () => {
+            const inventory = this.registry.get('inventory');
+            inventory.push('dandaron_shield');
+            this.showDialogue(['Received Shield of House Dandaron!'], () => {
+              this.triggerAutoSave();
+            });
+          });
+        }
+      }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
@@ -1917,6 +2174,38 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   /**
+   * When player collects a world item, check collect_item objectives.
+   */
+  checkCollectItemObjectives(itemId) {
+    const matches = findCollectItemObjectives(this.registry, itemId);
+    for (const { questId, objectiveId } of matches) {
+      const result = progressObjective(this.registry, questId, objectiveId, 1);
+      if (result) {
+        this.showQuestProgressToast(questId, result);
+        if (result.questComplete) {
+          this.autoCompleteQuest(questId);
+        }
+      }
+    }
+  }
+
+  /**
+   * When a quest completes, check if any active quest has a complete_quest objective targeting it.
+   */
+  checkCompleteQuestObjectives(completedQuestId) {
+    const matches = findCompleteQuestObjectives(this.registry, completedQuestId);
+    for (const { questId, objectiveId } of matches) {
+      const result = progressObjective(this.registry, questId, objectiveId, 1);
+      if (result) {
+        this.showQuestProgressToast(questId, result);
+        if (result.questComplete) {
+          this.autoCompleteQuest(questId);
+        }
+      }
+    }
+  }
+
+  /**
    * Auto-complete a quest (for quests with giver: 'auto').
    * NPC-giver quests would be turned in via dialogue instead.
    */
@@ -1951,6 +2240,9 @@ export class OverworldScene extends Phaser.Scene {
           }
         }
       }
+
+      // Cascade: check if completing this quest progresses any complete_quest objectives
+      this.checkCompleteQuestObjectives(questId);
     }
   }
 
@@ -2248,7 +2540,51 @@ export class OverworldScene extends Phaser.Scene {
       }
     }
 
-    // 7. Check NPC interaction
+    // 7. Check quest NPC interaction
+    for (const qnpc of this.questNpcs) {
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, qnpc.x, qnpc.y);
+      if (dist < TILE_SIZE * 2.5) {
+        const dialogues = QUEST_NPC_DIALOGUES[qnpc.id];
+        if (!dialogues) return;
+
+        // Check if this NPC has an incomplete talk_npc objective
+        const talkMatches = findTalkNPCObjectives(this.registry, qnpc.id);
+        if (talkMatches.length > 0) {
+          this.showDialogue(dialogues.quest, () => {
+            this.checkQuestNPCTalk(qnpc.id);
+            if (qnpc.marker) {
+              qnpc.marker.destroy();
+              qnpc.marker = null;
+            }
+          });
+        } else {
+          const lines = dialogues.idle;
+          this.showDialogue([lines[Math.floor(Math.random() * lines.length)]]);
+        }
+        return;
+      }
+    }
+
+    // 8. Check guardsman interaction
+    for (const guard of this.guardsmen) {
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, guard.x, guard.y);
+      if (dist < TILE_SIZE * 2) {
+        if (!guard.trained) {
+          guard.trained = true;
+          this.showDialogue([
+            'The guardsman squares up, grip uncertain on the hilt.',
+            'You demonstrate a defensive stance. The recruit mimics it with growing confidence.',
+          ], () => {
+            this.checkQuestNPCTalk('town_guardsman');
+          });
+        } else {
+          this.showDialogue(['This guardsman has completed training.']);
+        }
+        return;
+      }
+    }
+
+    // 9. Check NPC interaction
     let closest = null;
     let closestDist = Infinity;
 
@@ -2471,6 +2807,7 @@ export class OverworldScene extends Phaser.Scene {
     collected[wi.id] = true;
 
     this.showDialogue([`Found ${wi.itemLabel}! Added to inventory.`]);
+    this.checkCollectItemObjectives(wi.itemId);
   }
 
   // ──── Save System ────
