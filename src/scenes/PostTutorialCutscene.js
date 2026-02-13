@@ -245,23 +245,7 @@ export class PostTutorialVictory extends Phaser.Scene {
       { text: 'If he was not to have today\'s victory - no one would.', image: '3cut5' },
       { text: 'But few things command a man\'s heart more than family. It was at the last that Farmer Alan threw his body in desperate love to protect those for whom he had lived and died.', image: null },
       { text: 'Though a man may have no martial prowess, it is the strength of his spirit that commands bravery. And so the farmer absorbed the terrible magic for the sake of his wife and children.', image: null },
-      // Scene 6: Alan death — black background
-      { text: 'Dagvar staggers back, his dark armor cracking.', image: null },
-      { text: 'Dagvar: "This... changes nothing. The dead do not rest, Captain."', image: null },
-      { text: 'The lieutenant retreats into the cursed mist.', image: null },
-      { text: 'Alan collapses to his knees. Dark veins spread from a wound in his side.', image: null },
-      { text: 'Metz: "Alan! Stay with me\u2014"', image: null },
-      { text: 'Alan: "It\'s too late, Captain. The poison... from his blade."', image: null },
-      { text: 'A boy runs from the farmhouse. Makar, Alan\'s son.', image: null },
-      { text: 'Makar: "Papa! Papa, get up!"', image: null },
-      { text: 'Alan: "Makar... be brave, son. Be brave for your mother."', image: null },
-      { text: 'Alan: "Captain... promise me. Promise me you\'ll look after him."', image: null },
-      { text: 'Metz: "I swear it, Alan. On my life."', image: null },
-      { text: 'Alan smiles. His hand goes still. Farmer Alan is dead.', image: null },
-      { text: 'Makar sobs against his father\'s chest. Metz kneels beside them.', image: null },
-      { text: 'Metz: "...I won\'t let this be for nothing."', image: null },
-      { text: 'Metz: "The frontier must be secured. There are towns east that still stand."', image: null },
-      { text: 'Metz stands, gripping his sword. The road ahead is long.', image: null },
+      // Scene 8: Alan death — black background (to be filled in)
     ];
 
     // Cutscene image display (swapped per-line)
