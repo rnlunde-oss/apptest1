@@ -122,6 +122,25 @@ export const QUEST_DEFS = {
     sortOrder: 300,
   },
 
+  act1_news_of_atikesh: {
+    id: 'act1_news_of_atikesh',
+    name: 'News of Atikesh',
+    act: 1,
+    type: 'main',
+    giver: 'auto',
+    giverName: 'Captain Metz',
+    description: 'Return to Captain Tertullian at Fort Bracken with news of the vampire lord Atikesh.',
+    objectives: [
+      { id: 'return_to_tertullian', type: 'reach_location', target: 'bracken', description: 'Return to Captain Tertullian', required: 1 },
+    ],
+    prereqs: ['act1_liberate_catacombs'],
+    rewards: { gold: 80, xp: 60, items: [], unlocks: [] },
+    acceptDialogue: ['We must report back to Captain Tertullian with what we\'ve learned about Atikesh.'],
+    completeDialogue: ['Captain Tertullian has been informed of the vampire lord Atikesh.'],
+    tracked: true,
+    sortOrder: 350,
+  },
+
   act1_running_from_fate: {
     id: 'act1_running_from_fate',
     name: 'Running from Fate',
@@ -135,7 +154,7 @@ export const QUEST_DEFS = {
       { id: 'talk_sivin', type: 'talk_npc', target: 'sivin', description: 'Speak with Sivin', required: 1 },
       { id: 'reach_dungeon', type: 'reach_location', target: 'dungeon', description: 'Enter the dungeon', required: 1 },
     ],
-    prereqs: ['act1_liberate_catacombs'],
+    prereqs: ['act1_news_of_atikesh'],
     rewards: { gold: 100, xp: 80, items: [], unlocks: [] },
     acceptDialogue: ['We need answers. There are people out there who know more about this curse than we do.'],
     completeDialogue: ['The path forward is clear. The real fight begins now.'],

@@ -244,21 +244,14 @@ const OVERWORLD_ENEMIES = [
     id: 'vampirling_hal',
     tileX: 85, tileY: 70,
     name: 'Vampirling Hal',
-    enemies: ['vampirling_hal', 'skeleton', 'skeleton', 'skeleton'],
+    enemies: ['skeletal_champion', 'skeleton', 'skeleton', 'vampirling_hal'],
     xp: 90, gold: 80,
     color: 0x662244,
     preDialogue: [
       'A pale figure in tattered robes stands amid the catacomb ruins, dark energy swirling around skeletal servants.',
       'Vampirling Hal: "More lambs for the slaughter. How generous."',
     ],
-    postDialogue: [
-      'Vampirling Hal collapses, his dark magic unraveling as the necrotic energy dissipates.',
-      'The catacombs fall silent. The source of the undead reinforcements is no more.',
-      'Rickets: "Impressive! I thought I\'d be trapped down here forever."',
-      'Rickets: "The name\'s Rickets. Long story. Involves a cursed chair."',
-      'Rickets: "I can throw fireballs and shield myself with raw mana. Mostly without exploding."',
-      '[ Rickets the Wizard has joined your party! ]',
-    ],
+    postDialogue: [],
   },
 ];
 
@@ -274,6 +267,7 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingRivinRecruit = data?.fromRivinRecruit || false;
     this.pendingBrackenVictory = data?.fromBrackenVictory || false;
     this.pendingCatacombsReturn = data?.fromCatacombsCutscene || false;
+    this.pendingHalVictory = data?.fromHalVictory || false;
   }
 
   preload() {
@@ -470,6 +464,17 @@ export class OverworldScene extends Phaser.Scene {
           this.checkQuestNPCTalk('rickets');
         }
         this.triggerAutoSave();
+      });
+    }
+
+    // Return from Hal Victory cutscene — recruit Rickets, play overworld dialogue, accept quest
+    if (this.pendingHalVictory) {
+      this.pendingHalVictory = false;
+      this.time.delayedCall(300, () => {
+        this.recruitAfterBoss('rickets');
+        this.time.delayedCall(500, () => {
+          this.triggerHalPostDialogue();
+        });
       });
     }
   }
@@ -1177,9 +1182,9 @@ export class OverworldScene extends Phaser.Scene {
                 if (oe.id === 'skeletal_captain') {
                   this.triggerBrackenVictoryCutscene();
                 }
-                // Special: recruit Rickets after Vampirling Hal defeat
+                // Special: launch Hal Victory cutscene after Vampirling Hal defeat
                 if (oe.id === 'vampirling_hal') {
-                  this.recruitAfterBoss('rickets');
+                  this.triggerHalVictoryCutscene();
                 }
               });
               this.checkQuestOverworldEnemyDefeat(oe.id);
@@ -1613,6 +1618,20 @@ export class OverworldScene extends Phaser.Scene {
           this.registry.set('ricketsProximityPlayed', true);
           this.checkQuestNPCTalk('rickets');
           this.triggerAutoSave();
+        }
+      }
+
+      // Vampirling Hal proximity trigger — 5 tiles
+      if (!this.registry.get('halBattleTriggered')
+          && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
+        const dx = tx - 85, dy = ty - 70;
+        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
+          const halOe = this.overworldEnemies.find(e => e.id === 'vampirling_hal' && !e.defeated);
+          if (halOe) {
+            this.registry.set('halBattleTriggered', true);
+            this.player.body.setVelocity(0);
+            this.startOverworldEnemyBattle(halOe);
+          }
         }
       }
     }
@@ -2323,6 +2342,27 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('RivinRecruitCutscene');
+    });
+  }
+
+  triggerHalVictoryCutscene() {
+    this.registry.set('halVictoryPlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('HalVictoryCutscene');
+    });
+  }
+
+  triggerHalPostDialogue() {
+    this.showDialogue([
+      'As the cultist\'s head rolled across the crypt floor, the rest of the party quietly contemplated what they\'d heard. In the silence, Rickets idly ignited the rest of the vampiric corpse.',
+      'Rivin: "Yeck! Let\'s head out of here."',
+      'Metz: "Aye. We\'ll need to report back to Captain Tertullian all that we\'ve heard."',
+      'Lyra: "Atikesh\u2026 I have never heard that name before."',
+      'Rivin: "Neither \'ave I."',
+      'Metz: "Clearly he\'s not one for savory friends. Rivin\'s right. Let\'s make a move on it."',
+    ], () => {
+      this.triggerAutoSave();
     });
   }
 
