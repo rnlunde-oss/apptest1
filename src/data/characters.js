@@ -364,6 +364,80 @@ export const ENEMY_DEFS = {
     aiWeights: [40, 30, 30],
     desc: 'An ancient tree twisted by Atikesh\'s corruption. Slow but nearly indestructible.',
   },
+
+  // ──── Bandits (human outlaws along roads and farmlands) ────
+  bandit_thief: {
+    id: 'bandit_thief',
+    name: 'Bandit Thief',
+    cls: 'Ranged',
+    color: 0x665544,
+    maxHp: 28,
+    maxMp: 0,
+    atk: 11,
+    def: 5,
+    spd: 15,
+    abilities: ['dagger_throw', 'pocket_sand', 'pilfer'],
+    aiWeights: [40, 30, 30],
+    desc: 'A quick-fingered cutpurse. Fast and evasive but fragile.',
+  },
+  bandit_henchman: {
+    id: 'bandit_henchman',
+    name: 'Bandit Henchman',
+    cls: 'Armored',
+    color: 0x776655,
+    maxHp: 48,
+    maxMp: 0,
+    atk: 14,
+    def: 10,
+    spd: 9,
+    abilities: ['club_smash', 'intimidate', 'shove'],
+    aiWeights: [45, 30, 25],
+    desc: 'A brutish enforcer wielding a heavy club. Tough and mean.',
+  },
+  bandit_chief: {
+    id: 'bandit_chief',
+    name: 'Bandit Chief',
+    cls: 'Armored',
+    color: 0x885533,
+    maxHp: 75,
+    maxMp: 10,
+    atk: 17,
+    def: 13,
+    spd: 11,
+    abilities: ['brigand_slash', 'rally_gang', 'dirty_trick'],
+    aiWeights: [40, 30, 30],
+    desc: 'The ruthless leader of a bandit gang. Commands respect through violence.',
+  },
+
+  // ──── Pirates (coastal raiders) ────
+  pirate: {
+    id: 'pirate',
+    name: 'Pirate',
+    cls: 'Ranged',
+    color: 0x556688,
+    maxHp: 40,
+    maxMp: 0,
+    atk: 13,
+    def: 7,
+    spd: 12,
+    abilities: ['cutlass_slash', 'pistol_shot', 'grog_toss'],
+    aiWeights: [35, 35, 30],
+    desc: 'A seasoned sailor turned raider. Fights with cutlass and pistol.',
+  },
+  pirate_captain: {
+    id: 'pirate_captain',
+    name: 'Pirate Captain',
+    cls: 'Armored',
+    color: 0x334466,
+    maxHp: 85,
+    maxMp: 15,
+    atk: 19,
+    def: 14,
+    spd: 13,
+    abilities: ['captain_saber', 'broadside_bark', 'sea_dogs_fury'],
+    aiWeights: [40, 30, 30],
+    desc: 'A fearsome pirate lord. Commands the coast with an iron fist.',
+  },
 };
 
 // ──── Equipment helpers ────
@@ -638,6 +712,9 @@ export const ENCOUNTER_TABLES = {
     { enemies: ['plague_rat', 'plague_rat', 'plague_rat'], weight: 20, xp: 15, gold: 12 },
     { enemies: ['skeleton'], weight: 15, xp: 15, gold: 12 },
     { enemies: ['dire_wolf', 'plague_rat'], weight: 10, xp: 18, gold: 15 },
+    // Rare bandit encounters
+    { enemies: ['bandit_thief'], weight: 4, xp: 12, gold: 15 },
+    { enemies: ['bandit_thief', 'bandit_thief'], weight: 2, xp: 18, gold: 22 },
   ],
   forest: [  // tile 13/17 — medium
     { enemies: ['dire_wolf', 'dire_wolf'], weight: 25, xp: 25, gold: 20 },
@@ -646,6 +723,9 @@ export const ENCOUNTER_TABLES = {
     { enemies: ['dire_wolf', 'skeleton'], weight: 15, xp: 25, gold: 20 },
     { enemies: ['fell_spider', 'plague_rat', 'plague_rat'], weight: 10, xp: 28, gold: 22 },
     { enemies: ['corrupted_treant'], weight: 5, xp: 35, gold: 30 },
+    // Rare bandit ambush
+    { enemies: ['bandit_henchman', 'bandit_thief'], weight: 4, xp: 22, gold: 28 },
+    { enemies: ['bandit_chief', 'bandit_thief', 'bandit_thief'], weight: 2, xp: 38, gold: 45 },
   ],
   mountain_pass: [  // tile 15 — medium-hard
     { enemies: ['skeleton', 'skeleton'], weight: 25, xp: 20, gold: 18 },
@@ -657,6 +737,24 @@ export const ENCOUNTER_TABLES = {
   ],
   vranek: [  // Vranek Spire boss fight
     { enemies: ['dark_knight', 'necromancer', 'wraith'], weight: 100, xp: 150, gold: 200 },
+  ],
+  road: [  // tile 3 — stone path, lower encounter rate
+    { enemies: ['bandit_thief', 'bandit_thief'], weight: 25, xp: 18, gold: 20 },
+    { enemies: ['bandit_henchman', 'bandit_thief'], weight: 25, xp: 22, gold: 25 },
+    { enemies: ['bandit_henchman', 'bandit_henchman'], weight: 15, xp: 28, gold: 30 },
+    { enemies: ['bandit_chief', 'bandit_henchman', 'bandit_thief'], weight: 10, xp: 40, gold: 50 },
+    { enemies: ['bandit_chief', 'bandit_henchman', 'bandit_thief', 'bandit_thief'], weight: 5, xp: 55, gold: 65 },
+    { enemies: ['dire_wolf', 'dire_wolf'], weight: 10, xp: 20, gold: 15 },
+    { enemies: ['plague_rat', 'plague_rat', 'plague_rat'], weight: 10, xp: 12, gold: 10 },
+  ],
+  coastline: [  // tile 16 — sand/coastline, pirate encounters
+    { enemies: ['pirate', 'pirate'], weight: 25, xp: 22, gold: 25 },
+    { enemies: ['pirate', 'pirate', 'pirate'], weight: 20, xp: 35, gold: 40 },
+    { enemies: ['pirate_captain', 'pirate', 'pirate'], weight: 15, xp: 50, gold: 60 },
+    { enemies: ['pirate_captain', 'pirate'], weight: 15, xp: 40, gold: 50 },
+    { enemies: ['pirate_captain', 'pirate', 'pirate', 'pirate'], weight: 5, xp: 65, gold: 75 },
+    { enemies: ['bandit_thief', 'pirate'], weight: 10, xp: 25, gold: 30 },
+    { enemies: ['pirate'], weight: 10, xp: 15, gold: 18 },
   ],
 };
 

@@ -258,3 +258,5 @@ export const ENCOUNTER_RATE_FARM = 0.06;
 export const ENCOUNTER_RATE_FOREST = 0.08;
 export const ENCOUNTER_RATE_DEEP_FOREST = 0.12;
 export const ENCOUNTER_RATE_MT_PASS = 0.10;
+export const ENCOUNTER_RATE_ROAD = 0.04;
+export const ENCOUNTER_RATE_COAST = 0.05;

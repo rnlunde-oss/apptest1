@@ -2,6 +2,7 @@ import {
   OVERWORLD_MAP, TILE_SIZE, TILE_COLORS,
   MAP_COLS, MAP_ROWS, ENCOUNTER_RATE, ENCOUNTER_RATE_DEEP,
   ENCOUNTER_RATE_FARM, ENCOUNTER_RATE_FOREST, ENCOUNTER_RATE_DEEP_FOREST, ENCOUNTER_RATE_MT_PASS,
+  ENCOUNTER_RATE_ROAD, ENCOUNTER_RATE_COAST,
 } from '../data/maps.js';
 import { ENCOUNTER_TABLE, ENCOUNTER_TABLES, createEnemy } from '../data/characters.js';
 import { serializeGameState, saveToSlot, loadFromSlot, autoSave, getSlotSummaries } from '../data/saveManager.js';
@@ -1414,10 +1415,12 @@ export class OverworldScene extends Phaser.Scene {
 
     const ZONE_MAP = {
       2:  { zone: 'cursed', rate: ENCOUNTER_RATE },
+      3:  { zone: 'road', rate: ENCOUNTER_RATE_ROAD },
       9:  { zone: 'deep', rate: ENCOUNTER_RATE_DEEP },
       12: { zone: 'farmland', rate: ENCOUNTER_RATE_FARM },
       13: { zone: 'forest', rate: ENCOUNTER_RATE_FOREST },
       15: { zone: 'mountain_pass', rate: ENCOUNTER_RATE_MT_PASS },
+      16: { zone: 'coastline', rate: ENCOUNTER_RATE_COAST },
       17: { zone: 'forest', rate: ENCOUNTER_RATE_DEEP_FOREST },
     };
 
