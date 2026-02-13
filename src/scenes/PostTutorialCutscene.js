@@ -232,7 +232,7 @@ export class PostTutorialVictory extends Phaser.Scene {
       { text: '"You call it cruelty because you cannot bear the cost. I call it correction."', image: '3cut2' },
       { text: '"Besides, if I were cruel... you would already be fighting alone."', image: '3cut2' },
       // Scene 3: Metz closeup (3CUT3)
-      { text: 'For all of Metz\'s training, he had never seen a knight like this before. What was he?', image: '3cut3' },
+      { text: 'For all of Metz\'s training, he had never seen a knight like this before. Where had this man come from?', image: '3cut3' },
       { text: '"Whose correction? Yours or someone else\'s?"', image: '3cut3' },
       // Scene 4: Alan death — black background
       { text: 'Dagvar staggers back, his dark armor cracking.', image: null },
