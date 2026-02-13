@@ -1477,6 +1477,15 @@ export class OverworldScene extends Phaser.Scene {
           this.triggerBrackenCutscene();
         }
       }
+
+      if (this.registry.get('brackenCutscenePlayed') && !this.registry.get('rivinDialoguePlayed')) {
+        const dx = tx - 55, dy = ty - 87;
+        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
+          this.registry.set('rivinDialoguePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerRivinDialogue();
+        }
+      }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
@@ -2123,6 +2132,27 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('BrackenCutscene');
+    });
+  }
+
+  triggerRivinDialogue() {
+    this.showDialogue([
+      'Rivin: "Die you wretches!"',
+      'Jocee: "Praise the dawn, Rivin. We would have died without you."',
+      'Rivin: "You won\'t be dyin\' before me, Jocee."',
+      'Naman: "Look! Reinforcements have arrived!"',
+      'Lyra: "I wouldn\'t oversell it, kid."',
+      'Metz: "I am Captain Metz of His Majesty\'s forces. Has the garrison been defeated?"',
+      'Rivin: "The town is taken, sir. Few remain to fight. Seems like the mayor and captain are held up in the fort. Elsewise the dead wouldn\'t be banging so loudly against the gate."',
+      'Metz: "We\'ll need to fight our way in. If Bracken is taken the entire frontier collapses."',
+      'Rivin: "Aye. Clear the town for me and I\'ll join you in that fight, sir."',
+    ], () => {
+      this.checkQuestNPCTalk('rivin');
+      this.checkLocationObjectives(
+        Math.floor(this.player.x / TILE_SIZE),
+        Math.floor(this.player.y / TILE_SIZE)
+      );
+      this.triggerAutoSave();
     });
   }
 
