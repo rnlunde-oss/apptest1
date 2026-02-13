@@ -273,6 +273,7 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingFarmlandReturn = data?.fromFarmlandCutscene || false;
     this.pendingRivinRecruit = data?.fromRivinRecruit || false;
     this.pendingBrackenVictory = data?.fromBrackenVictory || false;
+    this.pendingCatacombsReturn = data?.fromCatacombsCutscene || false;
   }
 
   preload() {
@@ -457,6 +458,18 @@ export class OverworldScene extends Phaser.Scene {
       this.pendingBrackenVictory = false;
       this.time.delayedCall(300, () => {
         this.triggerTertullianDialogue();
+      });
+    }
+
+    // Return from Catacombs cutscene — progress Rickets proximity
+    if (this.pendingCatacombsReturn) {
+      this.pendingCatacombsReturn = false;
+      this.time.delayedCall(300, () => {
+        if (!this.registry.get('ricketsProximityPlayed')) {
+          this.registry.set('ricketsProximityPlayed', true);
+          this.checkQuestNPCTalk('rickets');
+        }
+        this.triggerAutoSave();
       });
     }
   }
@@ -1580,8 +1593,20 @@ export class OverworldScene extends Phaser.Scene {
         }
       }
 
-      // Rickets proximity — search for survivors objective
-      if (!this.registry.get('ricketsProximityPlayed')
+      // Catacombs approach cutscene
+      if (!this.registry.get('catacombsCutscenePlayed')
+          && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
+        const dx = tx - 83, dy = ty - 73;
+        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
+          this.registry.set('catacombsCutscenePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerCatacombsCutscene();
+        }
+      }
+
+      // Rickets proximity — search for survivors objective (after cutscene)
+      if (this.registry.get('catacombsCutscenePlayed')
+          && !this.registry.get('ricketsProximityPlayed')
           && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
         const dx = tx - 83, dy = ty - 73;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
@@ -2298,6 +2323,14 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('RivinRecruitCutscene');
+    });
+  }
+
+  triggerCatacombsCutscene() {
+    this.registry.set('catacombsCutscenePlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('CatacombsCutscene');
     });
   }
 
