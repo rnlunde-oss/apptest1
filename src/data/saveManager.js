@@ -50,6 +50,7 @@ export function serializeGameState(registry, playerPos) {
     defeatedOverworldEnemies: { ...(registry.get('defeatedOverworldEnemies') || {}) },
     partyOrder: [...(registry.get('partyOrder') || [])],
     farmlandCutscenePlayed: registry.get('farmlandCutscenePlayed') || false,
+    brackenCutscenePlayed: registry.get('brackenCutscenePlayed') || false,
     questState: JSON.parse(JSON.stringify(registry.get('questState') || { active: {}, completed: [], trackedQuestId: null })),
     playerPos: { x: playerPos.x, y: playerPos.y },
     saveTime: new Date().toISOString(),

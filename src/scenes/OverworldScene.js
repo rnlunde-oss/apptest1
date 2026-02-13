@@ -1468,6 +1468,15 @@ export class OverworldScene extends Phaser.Scene {
           this.triggerFarmlandCutscene();
         }
       }
+
+      if (!this.registry.get('brackenCutscenePlayed')) {
+        const dx = tx - 55, dy = ty - 87;
+        if (Math.sqrt(dx * dx + dy * dy) <= 50) {
+          this.registry.set('brackenCutscenePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerBrackenCutscene();
+        }
+      }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
@@ -2106,6 +2115,14 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('FarmlandCutscene');
+    });
+  }
+
+  triggerBrackenCutscene() {
+    this.registry.set('brackenCutscenePlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('BrackenCutscene');
     });
   }
 

@@ -26,6 +26,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('partyOrder', this.loadData.partyOrder || []);
 
       this.registry.set('farmlandCutscenePlayed', this.loadData.farmlandCutscenePlayed || false);
+      this.registry.set('brackenCutscenePlayed', this.loadData.brackenCutscenePlayed || false);
 
       // Restore quest state (or init fresh for old saves without it)
       if (this.loadData.questState) {
@@ -54,6 +55,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('activeSlot', null);
       this.registry.set('partyOrder', ['metz']);
       this.registry.set('farmlandCutscenePlayed', false);
+      this.registry.set('brackenCutscenePlayed', false);
 
       initQuestState(this.registry);
 
