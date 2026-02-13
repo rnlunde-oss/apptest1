@@ -94,6 +94,9 @@ export class BattleScene extends Phaser.Scene {
     if (!this.textures.exists('spr_shadow_fiend')) {
       this.load.image('spr_shadow_fiend', 'assets/sprites/shadow_fiend_battle.png');
     }
+    if (!this.textures.exists('spr_bone_reaper')) {
+      this.load.image('spr_bone_reaper', 'assets/sprites/bone_reaper_battle.png');
+    }
   }
 
   create() {
@@ -213,7 +216,7 @@ export class BattleScene extends Phaser.Scene {
 
       if (enemySpriteKey && this.textures.exists(enemySpriteKey)) {
         sprite = this.add.image(x, y, enemySpriteKey).setDepth(baseD);
-        const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_havrifyn' ? 280 : enemySpriteKey === 'spr_skeleton' ? 218 : (enemy.isBoss ? 160 : 128);
+        const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_havrifyn' ? 280 : enemySpriteKey === 'spr_bone_reaper' ? 260 : enemySpriteKey === 'spr_skeleton' ? 218 : (enemy.isBoss ? 160 : 128);
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
@@ -619,7 +622,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   _removeWhiteBackgrounds() {
-    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn', 'spr_zombie', 'spr_dire_wolf', 'spr_plague_rat', 'spr_corrupted_treant', 'spr_bandit_thief', 'spr_bandit_henchman', 'spr_bandit_chief', 'spr_shadow_fiend'];
+    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn', 'spr_zombie', 'spr_dire_wolf', 'spr_plague_rat', 'spr_corrupted_treant', 'spr_bandit_thief', 'spr_bandit_henchman', 'spr_bandit_chief', 'spr_shadow_fiend', 'spr_bone_reaper'];
     for (const key of keys) {
       if (!this.textures.exists(key)) continue;
       const src = this.textures.get(key).getSourceImage();
@@ -1635,6 +1638,7 @@ export class BattleScene extends Phaser.Scene {
       bandit_henchman: 'spr_bandit_henchman',
       bandit_chief: 'spr_bandit_chief',
       shadow_fiend: 'spr_shadow_fiend',
+      bone_reaper: 'spr_bone_reaper',
     };
     // Exact match first, then match base id (before '_' suffix for enemies)
     if (spriteMap[character.id]) return spriteMap[character.id];
