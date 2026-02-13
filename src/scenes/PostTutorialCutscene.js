@@ -212,6 +212,7 @@ export class PostTutorialVictory extends Phaser.Scene {
   preload() {
     this.load.image('3cut1', 'assets/cutscenes/3CUT1.png');
     this.load.image('3cut2', 'assets/cutscenes/3CUT2.png');
+    this.load.image('3cut3', 'assets/cutscenes/3CUT3.png');
   }
 
   create() {
@@ -230,7 +231,9 @@ export class PostTutorialVictory extends Phaser.Scene {
       // Scene 2: Dagvar closeup (3CUT2)
       { text: '"You call it cruelty because you cannot bear the cost. I call it correction."', image: '3cut2' },
       { text: '"Besides, if I were cruel... you would already be fighting alone."', image: '3cut2' },
-      // Scene 3: Alan death — black background
+      // Scene 3: Metz closeup (3CUT3)
+      { text: '"Whose correction? Yours or someone else\'s?"', image: '3cut3' },
+      // Scene 4: Alan death — black background
       { text: 'Dagvar staggers back, his dark armor cracking.', image: null },
       { text: 'Dagvar: "This... changes nothing. The dead do not rest, Captain."', image: null },
       { text: 'The lieutenant retreats into the cursed mist.', image: null },
