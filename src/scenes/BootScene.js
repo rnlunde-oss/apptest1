@@ -30,6 +30,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('rivinDialoguePlayed', this.loadData.rivinDialoguePlayed || false);
       this.registry.set('rivinRecruitPlayed', this.loadData.rivinRecruitPlayed || false);
       this.registry.set('captainApproachPlayed', this.loadData.captainApproachPlayed || false);
+      this.registry.set('ricketsProximityPlayed', this.loadData.ricketsProximityPlayed || false);
 
       // Restore quest state (or init fresh for old saves without it)
       if (this.loadData.questState) {
@@ -62,6 +63,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('rivinDialoguePlayed', false);
       this.registry.set('rivinRecruitPlayed', false);
       this.registry.set('captainApproachPlayed', false);
+      this.registry.set('ricketsProximityPlayed', false);
 
       initQuestState(this.registry);
 

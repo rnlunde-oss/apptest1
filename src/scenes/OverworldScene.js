@@ -144,6 +144,8 @@ const SPEAKER_PORTRAITS = {
   'Rickets': 'rickets_portrait_base',
   'Hela': 'hela_portrait_base',
   'Anuel': 'anuel_portrait_base',
+  'Captain Tertullian': null,
+  'Vampirling Hal': null,
   // NPC-only speakers — add portrait keys here when assets are added:
   // 'Vivian': 'vivian_portrait_base',
   // 'Makar': 'makar_portrait_base',
@@ -238,6 +240,26 @@ const OVERWORLD_ENEMIES = [
       'The gate to Fort Bracken is open.',
     ],
   },
+  {
+    id: 'vampirling_hal',
+    tileX: 85, tileY: 70,
+    name: 'Vampirling Hal',
+    enemies: ['vampirling_hal', 'skeleton', 'skeleton', 'skeleton'],
+    xp: 90, gold: 80,
+    color: 0x662244,
+    preDialogue: [
+      'A pale figure in tattered robes stands amid the catacomb ruins, dark energy swirling around skeletal servants.',
+      'Vampirling Hal: "More lambs for the slaughter. How generous."',
+    ],
+    postDialogue: [
+      'Vampirling Hal collapses, his dark magic unraveling as the necrotic energy dissipates.',
+      'The catacombs fall silent. The source of the undead reinforcements is no more.',
+      'Rickets: "Impressive! I thought I\'d be trapped down here forever."',
+      'Rickets: "The name\'s Rickets. Long story. Involves a cursed chair."',
+      'Rickets: "I can throw fireballs and shield myself with raw mana. Mostly without exploding."',
+      '[ Rickets the Wizard has joined your party! ]',
+    ],
+  },
 ];
 
 export class OverworldScene extends Phaser.Scene {
@@ -250,6 +272,7 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingPostCutscene = data?.postCutsceneDialogue || false;
     this.pendingFarmlandReturn = data?.fromFarmlandCutscene || false;
     this.pendingRivinRecruit = data?.fromRivinRecruit || false;
+    this.pendingBrackenVictory = data?.fromBrackenVictory || false;
   }
 
   preload() {
@@ -426,6 +449,14 @@ export class OverworldScene extends Phaser.Scene {
       this.pendingRivinRecruit = false;
       this.time.delayedCall(300, () => {
         this.recruitAfterBoss('rivin');
+      });
+    }
+
+    // Return from Bracken Victory cutscene — play Tertullian dialogue
+    if (this.pendingBrackenVictory) {
+      this.pendingBrackenVictory = false;
+      this.time.delayedCall(300, () => {
+        this.triggerTertullianDialogue();
       });
     }
   }
@@ -1128,7 +1159,16 @@ export class OverworldScene extends Phaser.Scene {
               defeatedMap[oe.id] = true;
               this.registry.set('defeatedOverworldEnemies', defeatedMap);
 
-              this.showDialogue(oe.def.postDialogue);
+              this.showDialogue(oe.def.postDialogue, () => {
+                // Special: launch Bracken Victory cutscene after Skeletal Captain
+                if (oe.id === 'skeletal_captain') {
+                  this.triggerBrackenVictoryCutscene();
+                }
+                // Special: recruit Rickets after Vampirling Hal defeat
+                if (oe.id === 'vampirling_hal') {
+                  this.recruitAfterBoss('rickets');
+                }
+              });
               this.checkQuestOverworldEnemyDefeat(oe.id);
               this.checkQuestBattleEnd(oe.def.enemies);
               this.triggerAutoSave();
@@ -1537,6 +1577,17 @@ export class OverworldScene extends Phaser.Scene {
           this.registry.set('captainApproachPlayed', true);
           this.player.body.setVelocity(0);
           this.triggerCaptainApproach();
+        }
+      }
+
+      // Rickets proximity — search for survivors objective
+      if (!this.registry.get('ricketsProximityPlayed')
+          && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
+        const dx = tx - 83, dy = ty - 73;
+        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
+          this.registry.set('ricketsProximityPlayed', true);
+          this.checkQuestNPCTalk('rickets');
+          this.triggerAutoSave();
         }
       }
     }
@@ -2247,6 +2298,40 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('RivinRecruitCutscene');
+    });
+  }
+
+  triggerBrackenVictoryCutscene() {
+    this.registry.set('brackenVictoryPlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('BrackenVictoryCutscene');
+    });
+  }
+
+  triggerTertullianDialogue() {
+    this.showDialogue([
+      'Captain Tertullian: "Hail, captain."',
+      'Metz: "Hail."',
+      'Captain Tertullian: "I am Captain Tertullian, tasked with the garrison of Fort Bracken. By the Song, we are grateful you\'ve come."',
+      'Rivin: "And not a moment too soon."',
+      'Captain Tertullian: "Do you bring reinforcements with you?"',
+      'Metz: "None save for these."',
+      'Lyra: "Aren\'t you impressed?"',
+      'Captain Tertullian: "Curses! What does His Majesty propose we do with so few?"',
+      'Metz: "Send a missive to Izgera. I assure you he has no knowledge of the situation at hand."',
+      'Captain Tertullian: "At once. I will dispatch a courier. However, you should know we are scarcely safe still."',
+      'Metz: "Are there more forces?"',
+      'Captain Tertullian: "Aye. The skeletons stormed the gates from the east. We think they crossed the river crossing from the side of\u2026"',
+      'Rivin: "\u2026the Catacombs."',
+      'Captain Tertullian: "Aye. \'Tis the only explanation for their numbers."',
+      'Lyra: "Then we must secure the Catacombs."',
+      'Captain Tertullian: "Indeed. I can scarcely afford a man given our breached defenses. But you\'ve already proven how capable fighters you are. Perhaps you can go on ahead."',
+      'Rivin: "Appreciate the confidence, sir."',
+      'Captain Tertullian: "Believe me. I wish it were not this way."',
+      'Metz: "It will be done."',
+    ], () => {
+      this.triggerAutoSave();
     });
   }
 

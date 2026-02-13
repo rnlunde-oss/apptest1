@@ -295,6 +295,23 @@ export const ENEMY_DEFS = {
     desc: 'An armored undead commander guarding the gate of Fort Bracken. Its cursed blade commands the skeleton horde.',
   },
 
+  vampirling_hal: {
+    id: 'vampirling_hal',
+    name: 'Vampirling Hal',
+    cls: 'Boss',
+    color: 0x662244,
+    maxHp: 200,
+    maxMp: 60,
+    atk: 14,
+    def: 12,
+    spd: 13,
+    abilities: ['hal_drain', 'hal_shadow_bolt', 'hal_raise_dead'],
+    aiWeights: [30, 40, 30],
+    isBoss: true,
+    phase2Abilities: ['hal_soul_rend', 'hal_dark_pact', 'hal_necrotic_wave'],
+    desc: 'A vampiric necromancer lurking in the catacombs. He commands the dead with dark rituals and feeds on the living to sustain his unholy power.',
+  },
+
   // ──── Beasts (corrupted by Atikesh's magic) ────
   plague_rat: {
     id: 'plague_rat',

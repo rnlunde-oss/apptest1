@@ -826,6 +826,14 @@ export const ABILITIES = {
   captain_warcry:    { name: 'War Cry',          type: 'physical', target: 'all_enemies', power: 28, mpCost: 0,  accuracy: 85, desc: 'A terrifying shout that strikes all foes.', effect: { type: 'debuff', stat: 'def', amount: 0.15, turns: 3 } },
   captain_crush:     { name: 'Shield Crush',     type: 'physical', target: 'enemy',       power: 35, mpCost: 0,  accuracy: 90, desc: 'Smashes with the shield, stunning the target.', effect: { type: 'debuff', stat: 'spd', amount: 0.3, turns: 2 } },
 
+  // ──── Boss: Vampirling Hal abilities ────
+  hal_drain:         { name: 'Life Drain',       type: 'magic',    target: 'enemy',       power: 35, mpCost: 8,  accuracy: 95, desc: 'Drains life force from a target, healing the caster.', effect: { type: 'drain', amount: 0.5 } },
+  hal_shadow_bolt:   { name: 'Shadow Bolt',      type: 'magic',    target: 'enemy',       power: 42, mpCost: 10, accuracy: 90, desc: 'Hurls a bolt of concentrated shadow energy.' },
+  hal_raise_dead:    { name: 'Raise Dead',       type: 'buff',     target: 'all_allies',  power: 0,  mpCost: 12, accuracy: 100, desc: 'Dark magic invigorates undead allies, boosting their attack.', effect: { type: 'buff', stat: 'atk', amount: 0.3, turns: 3 } },
+  hal_soul_rend:     { name: 'Soul Rend',        type: 'magic',    target: 'enemy',       power: 50, mpCost: 15, accuracy: 85, desc: 'Tears at the soul, dealing heavy magic damage.' },
+  hal_dark_pact:     { name: 'Dark Pact',        type: 'buff',     target: 'self',        power: 0,  mpCost: 10, accuracy: 100, desc: 'Sacrifices health to massively boost magic power.', effect: { type: 'buff', stat: 'atk', amount: 0.5, turns: 3 } },
+  hal_necrotic_wave: { name: 'Necrotic Wave',    type: 'magic',    target: 'all_enemies', power: 30, mpCost: 14, accuracy: 85, desc: 'Unleashes a wave of necrotic energy that hits all enemies.', effect: { type: 'debuff', stat: 'def', amount: 0.2, turns: 2 } },
+
   // ──── Boss: Atikesh abilities ────
   necrotic_blast: {
     name: 'Necrotic Blast',
