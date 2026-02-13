@@ -1,5 +1,6 @@
 import { PARTY_DEFS, createCharacter } from '../data/characters.js';
 import { deserializeRoster } from '../data/saveManager.js';
+import { initQuestState } from '../utils/QuestManager.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -24,6 +25,13 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('activeSlot', this.loadData.activeSlot || null);
       this.registry.set('partyOrder', this.loadData.partyOrder || []);
 
+      // Restore quest state (or init fresh for old saves without it)
+      if (this.loadData.questState) {
+        this.registry.set('questState', this.loadData.questState);
+      } else {
+        initQuestState(this.registry);
+      }
+
       this.scene.start('Overworld', { playerPos: this.loadData.playerPos });
     } else {
       // ── New game ──
@@ -43,6 +51,8 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('defeatedOverworldEnemies', {});
       this.registry.set('activeSlot', null);
       this.registry.set('partyOrder', ['metz']);
+
+      initQuestState(this.registry);
 
       this.scene.start('Cutscene');
     }

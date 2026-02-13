@@ -7,6 +7,12 @@ import {
 import { ENCOUNTER_TABLE, ENCOUNTER_TABLES, createEnemy } from '../data/characters.js';
 import { serializeGameState, saveToSlot, loadFromSlot, autoSave, getSlotSummaries } from '../data/saveManager.js';
 import { isTouchDevice } from '../utils/touchDetect.js';
+import {
+  getTrackedQuest, getActiveQuests,
+  findDefeatEnemyObjectives, findDefeatCountObjectives, findTalkNPCObjectives,
+  checkReachLocationObjectives, progressObjective, completeQuest,
+} from '../utils/QuestManager.js';
+import { QUEST_DEFS } from '../data/quests.js';
 
 const PLAYER_SPEED = 160;
 const VIEWPORT_BUFFER = 3;        // extra tiles beyond camera edge
@@ -222,6 +228,7 @@ export class OverworldScene extends Phaser.Scene {
     this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.muteKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.mapKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
+    this.questKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 
     this.lastTileX = Math.floor(this.player.x / TILE_SIZE);
     this.lastTileY = Math.floor(this.player.y / TILE_SIZE);
@@ -234,13 +241,14 @@ export class OverworldScene extends Phaser.Scene {
     this.innOpen = false;
     this.experienceOpen = false;
     this.saveMenuOpen = false;
+    this.questLogOpen = false;
 
     this.drawPartyHUD();
     this.buildMiniMap();
 
     // Instructions
     const inst = this._addUI(this.add.text(400, 620,
-      'WASD: Move | E: Interact/Shop | P: Party | I: Inv | X: Exp | N: Map | ESC: Save', {
+      'WASD: Move | E: Interact | P: Party | I: Inv | X: Exp | Q: Quests | N: Map | ESC: Save', {
       fontSize: '11px', color: '#ffffff',
       backgroundColor: '#00000088', padding: { x: 8, y: 4 },
     }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100));
@@ -964,6 +972,8 @@ export class OverworldScene extends Phaser.Scene {
               this.registry.set('defeatedOverworldEnemies', defeatedMap);
 
               this.showDialogue(oe.def.postDialogue);
+              this.checkQuestOverworldEnemyDefeat(oe.id);
+              this.checkQuestBattleEnd(oe.def.enemies);
               this.triggerAutoSave();
             } else if (result === 'lose') {
               this.handleDefeat();
@@ -1033,7 +1043,7 @@ export class OverworldScene extends Phaser.Scene {
     const unspentPts = allRoster.some(c => c.talentPoints > 0);
     const ptIndicator = unspentPts ? '  \u2605 Talent Pts!' : '';
     this.hudContainer.add(
-      this.add.text(0, activeParty.length * 28 + 4, `Gold: ${gold}  [P] Party  [I] Inv  [X] Exp`, {
+      this.add.text(0, activeParty.length * 28 + 4, `Gold: ${gold}  [P] Party  [I] Inv  [X] Exp  [Q] Quest`, {
         fontSize: '8px', color: '#666666',
       })
     );
@@ -1043,6 +1053,30 @@ export class OverworldScene extends Phaser.Scene {
           fontSize: '8px', color: '#ffcc44', fontStyle: 'bold',
         })
       );
+    }
+
+    // Quest tracker
+    const tracked = getTrackedQuest(this.registry);
+    if (tracked) {
+      const qY = activeParty.length * 28 + (unspentPts ? 30 : 18);
+      this.hudContainer.add(
+        this.add.text(0, qY, tracked.def.name, {
+          fontSize: '9px', color: '#ccaa44', fontStyle: 'bold',
+        })
+      );
+      // Show first incomplete objective
+      for (const obj of tracked.def.objectives) {
+        const progress = tracked.state.objectiveProgress[obj.id] || 0;
+        if (progress < obj.required) {
+          const progressStr = obj.required > 1 ? ` (${progress}/${obj.required})` : '';
+          this.hudContainer.add(
+            this.add.text(6, qY + 13, `${obj.description}${progressStr}`, {
+              fontSize: '8px', color: '#888877',
+            })
+          );
+          break;
+        }
+      }
     }
   }
 
@@ -1212,7 +1246,7 @@ export class OverworldScene extends Phaser.Scene {
   // ──── Update ────
 
   update() {
-    if (this.inBattle || this.dialogueActive || this.partyOpen || this.inventoryOpen || this.shopOpen || this.innOpen || this.experienceOpen || this.saveMenuOpen) {
+    if (this.inBattle || this.dialogueActive || this.partyOpen || this.inventoryOpen || this.shopOpen || this.innOpen || this.experienceOpen || this.saveMenuOpen || this.questLogOpen) {
       this.player.body.setVelocity(0);
       return;
     }
@@ -1261,6 +1295,7 @@ export class OverworldScene extends Phaser.Scene {
       this.lastTileX = tx;
       this.lastTileY = ty;
       this.checkEncounter(tx, ty);
+      this.checkLocationObjectives(tx, ty);
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
@@ -1280,6 +1315,10 @@ export class OverworldScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.experienceKey)) {
       this.openExperienceScreen();
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.questKey)) {
+      this.openQuestLog();
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
@@ -1407,6 +1446,178 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
+  // ──── Quest Log ────
+
+  openQuestLog() {
+    this.questLogOpen = true;
+    this.sfx.playMenuOpen();
+    this.player.body.setVelocity(0);
+    this._hideTouchControls();
+    this.scene.launch('QuestLog', {
+      onClose: () => {
+        this.sfx.playMenuClose();
+        this.scene.stop('QuestLog');
+        this.time.delayedCall(100, () => {
+          this.questLogOpen = false;
+          this.drawPartyHUD();
+          this._showTouchControls();
+        });
+      },
+    });
+  }
+
+  // ──── Quest Hooks ────
+
+  /**
+   * After winning a random encounter, check defeat_count objectives for each enemy type killed.
+   * @param {string[]} enemyTypes - array of enemy def keys (e.g. ['skeleton','skeleton','zombie'])
+   */
+  checkQuestBattleEnd(enemyTypes) {
+    // Count each type
+    const counts = {};
+    for (const t of enemyTypes) {
+      counts[t] = (counts[t] || 0) + 1;
+    }
+
+    for (const [enemyType, count] of Object.entries(counts)) {
+      const matches = findDefeatCountObjectives(this.registry, enemyType);
+      for (const { questId, objectiveId } of matches) {
+        const result = progressObjective(this.registry, questId, objectiveId, count);
+        if (result) {
+          this.showQuestProgressToast(questId, result);
+          if (result.questComplete) {
+            this.autoCompleteQuest(questId);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * After winning an overworld enemy battle, check defeat_enemy objectives.
+   * @param {string} overworldEnemyId - the OVERWORLD_ENEMIES id (e.g. 'ow_wolfpack')
+   */
+  checkQuestOverworldEnemyDefeat(overworldEnemyId) {
+    const matches = findDefeatEnemyObjectives(this.registry, overworldEnemyId);
+    for (const { questId, objectiveId } of matches) {
+      const result = progressObjective(this.registry, questId, objectiveId, 1);
+      if (result) {
+        this.showQuestProgressToast(questId, result);
+        if (result.questComplete) {
+          this.autoCompleteQuest(questId);
+        }
+      }
+    }
+  }
+
+  /**
+   * When player steps on a new tile, check reach_location objectives.
+   */
+  checkLocationObjectives(tx, ty) {
+    const matches = checkReachLocationObjectives(this.registry, tx, ty);
+    for (const { questId, objectiveId } of matches) {
+      const result = progressObjective(this.registry, questId, objectiveId, 1);
+      if (result) {
+        this.showQuestProgressToast(questId, result);
+        if (result.questComplete) {
+          this.autoCompleteQuest(questId);
+        }
+      }
+    }
+  }
+
+  /**
+   * When player talks to an NPC, check talk_npc objectives.
+   * @param {string} npcId - the character id (e.g. 'rivin')
+   */
+  checkQuestNPCTalk(npcId) {
+    const matches = findTalkNPCObjectives(this.registry, npcId);
+    for (const { questId, objectiveId } of matches) {
+      const result = progressObjective(this.registry, questId, objectiveId, 1);
+      if (result) {
+        this.showQuestProgressToast(questId, result);
+        if (result.questComplete) {
+          this.autoCompleteQuest(questId);
+        }
+      }
+    }
+  }
+
+  /**
+   * Auto-complete a quest (for quests with giver: 'auto').
+   * NPC-giver quests would be turned in via dialogue instead.
+   */
+  autoCompleteQuest(questId) {
+    const def = QUEST_DEFS[questId];
+    if (!def) return;
+
+    const rewards = completeQuest(this.registry, questId);
+    if (rewards) {
+      this.showQuestCompleteToast(def.name, rewards);
+      this.drawPartyHUD();
+    }
+  }
+
+  // ──── Quest Toast Notifications ────
+
+  showQuestProgressToast(questId, result) {
+    const def = QUEST_DEFS[questId];
+    if (!def) return;
+
+    // Find the objective that just progressed
+    const objDef = def.objectives.find(o => {
+      const qs = this.registry.get('questState');
+      const state = qs && qs.active[questId];
+      return state && state.objectiveProgress[o.id] === result.newValue;
+    });
+    const objDesc = objDef ? objDef.description : def.name;
+
+    if (result.objectiveMet) {
+      const text = `${objDesc} - Complete!`;
+      const toast = this._addUI(this.add.text(400, 560, text, {
+        fontSize: '11px', color: '#55cc55',
+        backgroundColor: '#00000099', padding: { x: 10, y: 4 },
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(400));
+      this.tweens.add({
+        targets: toast, alpha: 0, y: 540,
+        delay: 2000, duration: 600,
+        onComplete: () => toast.destroy(),
+      });
+    } else if (result.required > 1) {
+      const text = `${objDesc} (${result.newValue}/${result.required})`;
+      const toast = this._addUI(this.add.text(400, 560, text, {
+        fontSize: '10px', color: '#aaaaaa',
+        backgroundColor: '#00000099', padding: { x: 10, y: 4 },
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(400));
+      this.tweens.add({
+        targets: toast, alpha: 0, y: 540,
+        delay: 1500, duration: 500,
+        onComplete: () => toast.destroy(),
+      });
+    }
+  }
+
+  showQuestCompleteToast(questName, rewards) {
+    const rewardParts = [];
+    if (rewards.gold) rewardParts.push(`+${rewards.gold}g`);
+    if (rewards.xp) rewardParts.push(`+${rewards.xp} XP`);
+    const rewardStr = rewardParts.length > 0 ? `  ${rewardParts.join('  ')}` : '';
+
+    const toast = this._addUI(this.add.text(400, 540, `Quest Complete: ${questName}${rewardStr}`, {
+      fontSize: '13px', color: '#44dd44', fontStyle: 'bold',
+      backgroundColor: '#00000099', padding: { x: 12, y: 6 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(400).setAlpha(0));
+
+    this.tweens.add({
+      targets: toast, alpha: 1, duration: 300,
+    });
+    this.tweens.add({
+      targets: toast, alpha: 0, y: 520,
+      delay: 3000, duration: 600,
+      onComplete: () => toast.destroy(),
+    });
+  }
+
   // ──── Encounters ────
 
   checkEncounter(tx, ty) {
@@ -1477,6 +1688,7 @@ export class OverworldScene extends Phaser.Scene {
           this._showTouchControls();
           if (result === 'win') {
             this.triggerAutoSave();
+            this.checkQuestBattleEnd(picked.enemies);
             if (isBossEncounter) {
               if (zone === 'vranek') {
                 this.registry.set('vranekDefeated', true);
@@ -1656,11 +1868,13 @@ export class OverworldScene extends Phaser.Scene {
         }
         if (closest.marker) closest.marker.destroy();
         this.drawPartyHUD();
+        this.checkQuestNPCTalk(closest.id);
         this.triggerAutoSave();
       });
     } else {
       const lines = NPC_DIALOGUES[closest.id].idle;
       this.showDialogue([lines[Math.floor(Math.random() * lines.length)]]);
+      this.checkQuestNPCTalk(closest.id);
     }
   }
 

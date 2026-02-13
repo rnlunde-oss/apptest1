@@ -13,6 +13,7 @@ import { ShopScene } from './scenes/ShopScene.js';
 import { InnScene } from './scenes/InnScene.js';
 import { ExperienceScene } from './scenes/ExperienceScene.js';
 import { TouchControlsScene } from './scenes/TouchControlsScene.js';
+import { QuestLogScene } from './scenes/QuestLogScene.js';
 import { SoundManager } from './utils/SoundManager.js';
 
 const config = {
@@ -31,7 +32,7 @@ const config = {
   input: {
     activePointers: 3,
   },
-  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, TouchControlsScene],
+  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, QuestLogScene, TouchControlsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

@@ -69,6 +69,30 @@ export class BattleScene extends Phaser.Scene {
     if (!this.textures.exists('spr_havrifyn')) {
       this.load.image('spr_havrifyn', 'assets/sprites/havrifyn_battle.png');
     }
+    if (!this.textures.exists('spr_zombie')) {
+      this.load.image('spr_zombie', 'assets/sprites/zombie_battle.png');
+    }
+    if (!this.textures.exists('spr_dire_wolf')) {
+      this.load.image('spr_dire_wolf', 'assets/sprites/dire_wolf_battle.png');
+    }
+    if (!this.textures.exists('spr_plague_rat')) {
+      this.load.image('spr_plague_rat', 'assets/sprites/plague_rat_battle.png');
+    }
+    if (!this.textures.exists('spr_corrupted_treant')) {
+      this.load.image('spr_corrupted_treant', 'assets/sprites/corrupted_treant_battle.png');
+    }
+    if (!this.textures.exists('spr_bandit_thief')) {
+      this.load.image('spr_bandit_thief', 'assets/sprites/bandit_thief_battle.png');
+    }
+    if (!this.textures.exists('spr_bandit_henchman')) {
+      this.load.image('spr_bandit_henchman', 'assets/sprites/bandit_henchman_battle.png');
+    }
+    if (!this.textures.exists('spr_bandit_chief')) {
+      this.load.image('spr_bandit_chief', 'assets/sprites/bandit_chief_battle.png');
+    }
+    if (!this.textures.exists('spr_shadow_fiend')) {
+      this.load.image('spr_shadow_fiend', 'assets/sprites/shadow_fiend_battle.png');
+    }
   }
 
   create() {
@@ -594,7 +618,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   _removeWhiteBackgrounds() {
-    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn'];
+    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn', 'spr_zombie', 'spr_dire_wolf', 'spr_plague_rat', 'spr_corrupted_treant', 'spr_bandit_thief', 'spr_bandit_henchman', 'spr_bandit_chief', 'spr_shadow_fiend'];
     for (const key of keys) {
       if (!this.textures.exists(key)) continue;
       const src = this.textures.get(key).getSourceImage();
@@ -1594,6 +1618,14 @@ export class BattleScene extends Phaser.Scene {
       skeleton: 'spr_skeleton',
       dagvar: 'spr_dagvar',
       havrifyn: 'spr_havrifyn',
+      zombie: 'spr_zombie',
+      dire_wolf: 'spr_dire_wolf',
+      plague_rat: 'spr_plague_rat',
+      corrupted_treant: 'spr_corrupted_treant',
+      bandit_thief: 'spr_bandit_thief',
+      bandit_henchman: 'spr_bandit_henchman',
+      bandit_chief: 'spr_bandit_chief',
+      shadow_fiend: 'spr_shadow_fiend',
     };
     // Exact match first, then match base id (before '_' suffix for enemies)
     if (spriteMap[character.id]) return spriteMap[character.id];
