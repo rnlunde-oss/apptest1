@@ -90,9 +90,9 @@ export const PARTY_DEFS = {
     alwaysActive: false,
     recruited: false,
   },
-  hyla: {
-    id: 'hyla',
-    name: 'Hyla',
+  hela: {
+    id: 'hela',
+    name: 'Hela',
     title: 'War Mage',
     cls: 'Wizard',
     color: 0x8844cc,

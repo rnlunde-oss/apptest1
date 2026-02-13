@@ -71,19 +71,19 @@ const NPC_DIALOGUES = {
       'Rickets: "My Mana Shield won\'t last long, but it\'s saved my life more times than I can count."',
     ],
   },
-  hyla: {
+  hela: {
     recruit: [
-      'Hyla: "Captain Metz. The Danath war-colleges sent me when they heard about the incursions."',
-      'Hyla: "I trained in ice and thunder. Precise. Efficient. No wasted energy."',
-      'Hyla: "I can freeze enemies in place, call lightning, and raise barriers for the whole party."',
-      'Hyla: "The college wants field data on necromantic magic. I want to stop it. We both benefit."',
-      '[ Hyla the War Mage has joined your party! ]',
+      'Hela: "Captain Metz. The Danath war-colleges sent me when they heard about the incursions."',
+      'Hela: "I trained in ice and thunder. Precise. Efficient. No wasted energy."',
+      'Hela: "I can freeze enemies in place, call lightning, and raise barriers for the whole party."',
+      'Hela: "The college wants field data on necromantic magic. I want to stop it. We both benefit."',
+      '[ Hela the War Mage has joined your party! ]',
     ],
     idle: [
-      'Hyla: "Atikesh\'s magic is crude but powerful. We must be precise where he is not."',
-      'Hyla: "Frozen Chains slows them. Thunder Strike punishes them. Simple formula."',
-      'Hyla: "War Barrier protects the whole party. Use it when things get overwhelming."',
-      'Hyla: "The college will want a full report when this is over. Assuming we survive."',
+      'Hela: "Atikesh\'s magic is crude but powerful. We must be precise where he is not."',
+      'Hela: "Frozen Chains slows them. Thunder Strike punishes them. Simple formula."',
+      'Hela: "War Barrier protects the whole party. Use it when things get overwhelming."',
+      'Hela: "The college will want a full report when this is over. Assuming we survive."',
     ],
   },
   anuel: {
@@ -180,6 +180,21 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.textures.exists('rivin_portrait_base')) {
       this.load.image('rivin_portrait_base', 'assets/sprites/rivin_portrait_base.png');
     }
+    if (!this.textures.exists('lyra_portrait_base')) {
+      this.load.image('lyra_portrait_base', 'assets/sprites/lyra_portrait_base.png');
+    }
+    if (!this.textures.exists('hela_portrait_base')) {
+      this.load.image('hela_portrait_base', 'assets/sprites/hela_portrait_base.png');
+    }
+    if (!this.textures.exists('fenton_portrait_base')) {
+      this.load.image('fenton_portrait_base', 'assets/sprites/fenton_portrait_base.png');
+    }
+    if (!this.textures.exists('rickets_portrait_base')) {
+      this.load.image('rickets_portrait_base', 'assets/sprites/rickets_portrait_base.png');
+    }
+    if (!this.textures.exists('anuel_portrait_base')) {
+      this.load.image('anuel_portrait_base', 'assets/sprites/anuel_portrait_base.png');
+    }
   }
 
   create() {
@@ -223,11 +238,11 @@ export class OverworldScene extends Phaser.Scene {
     this.buildMiniMap();
 
     // Instructions
-    const inst = this.add.text(400, 620,
+    const inst = this._addUI(this.add.text(400, 620,
       'WASD: Move | E: Interact/Shop | P: Party | I: Inv | X: Exp | N: Map | ESC: Save', {
       fontSize: '11px', color: '#ffffff',
       backgroundColor: '#00000088', padding: { x: 8, y: 4 },
-    }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100);
+    }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(100));
     this.tweens.add({ targets: inst, alpha: 0, delay: 6000, duration: 1000 });
 
     // ── Touch Controls ──
@@ -242,10 +257,10 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     // Title
-    this.add.text(400, 14, 'Defense of Rhaud — Eastern Frontier, 250 B.C.E.', {
+    this._addUI(this.add.text(400, 14, 'Defense of Rhaud — Eastern Frontier, 250 B.C.E.', {
       fontSize: '12px', color: '#ddccaa', fontStyle: 'bold',
       backgroundColor: '#00000066', padding: { x: 10, y: 3 },
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100));
   }
 
   // ──── Map ────
@@ -639,6 +654,11 @@ export class OverworldScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(3));
     }
 
+    // Hide dynamically created world objects from the UI camera
+    if (this.uiCamera) {
+      for (const obj of objects) this.uiCamera.ignore(obj);
+    }
+
     this.renderedTiles.set(key, { objects, tweens, wall });
   }
 
@@ -757,7 +777,7 @@ export class OverworldScene extends Phaser.Scene {
       { id: 'lyra',   x: 50 * TILE_SIZE + 16, y: 93 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
       { id: 'fenton', x: 35 * TILE_SIZE + 16, y: 137 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
       { id: 'rickets',x: 83 * TILE_SIZE + 16, y: 73 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
-      { id: 'hyla',   x: 163 * TILE_SIZE + 16, y: 117 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
+      { id: 'hela',   x: 163 * TILE_SIZE + 16, y: 117 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
       { id: 'anuel',  x: 168 * TILE_SIZE + 16, y: 33 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
     ];
 
@@ -964,6 +984,18 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, mapW, mapH);
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.setZoom(3.35);
+
+    // UI camera — zoom 1, no scroll. Renders only UI objects.
+    this.uiCamera = this.cameras.add(0, 0, 800, 640);
+
+    // Hide every existing world object from the UI camera
+    this.children.list.forEach(obj => this.uiCamera.ignore(obj));
+  }
+
+  /** Mark a game object as UI-only (visible on uiCamera, hidden from main). */
+  _addUI(obj) {
+    this.cameras.main.ignore(obj);
+    return obj;
   }
 
   // ──── Party HUD (top-left) ────
@@ -971,6 +1003,7 @@ export class OverworldScene extends Phaser.Scene {
   drawPartyHUD() {
     if (this.hudContainer) this.hudContainer.destroy();
     this.hudContainer = this.add.container(10, 36).setScrollFactor(0).setDepth(100);
+    this._addUI(this.hudContainer);
 
     const roster = this.registry.get('roster');
     const activeParty = this.getActiveParty();
@@ -1019,8 +1052,8 @@ export class OverworldScene extends Phaser.Scene {
     const mapW = MAP_COLS * MINI_SCALE; // 200
     const mapH = MAP_ROWS * MINI_SCALE; // 200
 
-    this.minimapContainer = this.add.container(590, 36)
-      .setScrollFactor(0).setDepth(150);
+    this.minimapContainer = this.add.container(590, 36).setScrollFactor(0).setDepth(150);
+    this._addUI(this.minimapContainer);
     this.minimapVisible = true;
 
     // Semi-transparent background with border
@@ -1675,14 +1708,14 @@ export class OverworldScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     // Overlay background
-    const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.85)
-      .setScrollFactor(0).setDepth(300);
+    const bg = this._addUI(this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.85)
+      .setScrollFactor(0).setDepth(300));
     elements.push(bg);
 
     // Title
-    const title = this.add.text(width / 2, 80, 'SAVE GAME', {
+    const title = this._addUI(this.add.text(width / 2, 80, 'SAVE GAME', {
       fontSize: '24px', color: '#ffddaa', fontStyle: 'bold',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(301);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301));
     elements.push(title);
 
     // Current game summary
@@ -1692,9 +1725,9 @@ export class OverworldScene extends Phaser.Scene {
     const maxLevel = Object.values(roster)
       .filter(c => c.recruited)
       .reduce((max, c) => Math.max(max, c.level || 1), 1);
-    const summary = this.add.text(width / 2, 120, `Current: Lv.${maxLevel}  Gold: ${gold}  Party: ${recruited}`, {
+    const summary = this._addUI(this.add.text(width / 2, 120, `Current: Lv.${maxLevel}  Gold: ${gold}  Party: ${recruited}`, {
       fontSize: '12px', color: '#888888',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(301);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301));
     elements.push(summary);
 
     // Save slots
@@ -1707,9 +1740,9 @@ export class OverworldScene extends Phaser.Scene {
       const slotData = slotSummaries[i];
 
       // Slot background
-      const slotBg = this.add.rectangle(width / 2, sy, 500, 55, 0x1a1a2e)
+      const slotBg = this._addUI(this.add.rectangle(width / 2, sy, 500, 55, 0x1a1a2e)
         .setStrokeStyle(1, 0x4a3a6a, 0.6)
-        .setScrollFactor(0).setDepth(301);
+        .setScrollFactor(0).setDepth(301));
       elements.push(slotBg);
 
       // Slot info
@@ -1721,20 +1754,20 @@ export class OverworldScene extends Phaser.Scene {
       } else {
         infoStr = `Slot ${slotNum}  —  Empty`;
       }
-      const infoText = this.add.text(width / 2 - 210, sy, infoStr, {
+      const infoText = this._addUI(this.add.text(width / 2 - 210, sy, infoStr, {
         fontSize: '13px', color: slotData.exists ? '#ccbbaa' : '#555555',
-      }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(302);
+      }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(302));
       elements.push(infoText);
 
       // Save button
-      const btnBg = this.add.rectangle(width / 2 + 200, sy, 70, 30, 0x335533)
+      const btnBg = this._addUI(this.add.rectangle(width / 2 + 200, sy, 70, 30, 0x335533)
         .setStrokeStyle(1, 0x55aa55, 0.7)
         .setScrollFactor(0).setDepth(302)
-        .setInteractive({ useHandCursor: true });
+        .setInteractive({ useHandCursor: true }));
       elements.push(btnBg);
-      const btnText = this.add.text(width / 2 + 200, sy, 'Save', {
+      const btnText = this._addUI(this.add.text(width / 2 + 200, sy, 'Save', {
         fontSize: '12px', color: '#aaffaa',
-      }).setOrigin(0.5).setScrollFactor(0).setDepth(303);
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(303));
       elements.push(btnText);
 
       btnBg.on('pointerover', () => {
@@ -1756,9 +1789,9 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     // Close button / hint
-    const closeHint = this.add.text(width / 2, slotY + 3 * 70 + 20, 'Press ESC or click here to close', {
+    const closeHint = this._addUI(this.add.text(width / 2, slotY + 3 * 70 + 20, 'Press ESC or click here to close', {
       fontSize: '11px', color: '#666666',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setInteractive({ useHandCursor: true });
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setInteractive({ useHandCursor: true }));
     elements.push(closeHint);
 
     closeHint.on('pointerdown', () => closeSaveMenu());
@@ -1815,10 +1848,10 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   showSaveToast(message) {
-    const toast = this.add.text(400, 600, message, {
+    const toast = this._addUI(this.add.text(400, 600, message, {
       fontSize: '12px', color: '#aaffaa',
       backgroundColor: '#00000099', padding: { x: 12, y: 6 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(400);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(400));
     this.tweens.add({
       targets: toast, alpha: 0, y: 580,
       delay: 1200, duration: 600,
@@ -1851,15 +1884,15 @@ export class OverworldScene extends Phaser.Scene {
 
     const hintStr = this.touchControls ? '[Tap]' : '[E]';
 
-    this.dBox = this.add.rectangle(400, 580, 720, 70, 0x000000, 0.9)
-      .setStrokeStyle(2, 0xaa8844).setScrollFactor(0).setDepth(200);
-    this.dText = this.add.text(60, 555, text, {
+    this.dBox = this._addUI(this.add.rectangle(400, 580, 720, 70, 0x000000, 0.9)
+      .setStrokeStyle(2, 0xaa8844).setScrollFactor(0).setDepth(200));
+    this.dText = this._addUI(this.add.text(60, 555, text, {
       fontSize: '14px', color: '#ffe8cc',
       wordWrap: { width: 640 }, lineSpacing: 4,
-    }).setScrollFactor(0).setDepth(201);
-    this.dHint = this.add.text(740, 595, hintStr, {
+    }).setScrollFactor(0).setDepth(201));
+    this.dHint = this._addUI(this.add.text(740, 595, hintStr, {
       fontSize: '10px', color: '#887755',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(201));
 
     // Tap-to-advance: make dialogue box interactive for touch
     this.dBox.setInteractive();

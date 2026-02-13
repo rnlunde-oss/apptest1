@@ -77,6 +77,6 @@ export const CHARACTER_APPEARANCE = {
   lyra:    { skin: '#f0d0b0', hair: '#996633', hairStyle: 'long' },
   fenton:  { skin: '#c49060', hair: '#554422', hairStyle: 'medium' },
   rickets: { skin: '#e0c0a0', hair: '#666688', hairStyle: 'wild' },
-  hyla:    { skin: '#e8c8a0', hair: '#221133', hairStyle: 'tied' },
+  hela:    { skin: '#e8c8a0', hair: '#221133', hairStyle: 'tied' },
   anuel:   { skin: '#f0d8c0', hair: '#CCBB88', hairStyle: 'long' },
 };

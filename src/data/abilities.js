@@ -208,7 +208,7 @@ export const ABILITIES = {
     effect: { type: 'shield', stat: 'def', amount: 0.6, turns: 2 },
   },
 
-  // ──── Hyla (Wizard — ice/thunder, tactical, party support) ────
+  // ──── Hela (Wizard — ice/thunder, tactical, party support) ────
   frost_spike: {
     name: 'Frost Spike',
     type: 'magic',
