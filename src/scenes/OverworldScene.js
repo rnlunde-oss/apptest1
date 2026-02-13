@@ -11,7 +11,7 @@ import {
   getTrackedQuest, getActiveQuests,
   findDefeatEnemyObjectives, findDefeatCountObjectives, findTalkNPCObjectives,
   checkReachLocationObjectives, progressObjective, completeQuest,
-  acceptQuest, isQuestActive,
+  acceptQuest, isQuestActive, isQuestComplete,
   LOCATION_COORDS, getActiveQuestLocations,
 } from '../utils/QuestManager.js';
 import { QUEST_DEFS } from '../data/quests.js';
@@ -236,8 +236,6 @@ const OVERWORLD_ENEMIES = [
     postDialogue: [
       'The Skeletal Captain crumbles, its armor clattering to the ground.',
       'The gate to Fort Bracken is open.',
-      'Rivin: "Well fought, Captain. A deal\'s a deal — my axe is yours."',
-      '[ Rivin the Warrior has joined your party! ]',
     ],
   },
 ];
@@ -1121,12 +1119,7 @@ export class OverworldScene extends Phaser.Scene {
               defeatedMap[oe.id] = true;
               this.registry.set('defeatedOverworldEnemies', defeatedMap);
 
-              this.showDialogue(oe.def.postDialogue, () => {
-                // Special: recruit Rivin after Skeletal Captain defeat
-                if (oe.id === 'skeletal_captain') {
-                  this.recruitAfterBoss('rivin');
-                }
-              });
+              this.showDialogue(oe.def.postDialogue);
               this.checkQuestOverworldEnemyDefeat(oe.id);
               this.checkQuestBattleEnd(oe.def.enemies);
               this.triggerAutoSave();
@@ -1515,6 +1508,16 @@ export class OverworldScene extends Phaser.Scene {
           this.registry.set('rivinDialoguePlayed', true);
           this.player.body.setVelocity(0);
           this.triggerRivinDialogue();
+        }
+      }
+
+      if (this.registry.get('rivinDialoguePlayed') && !this.registry.get('rivinRecruitPlayed')
+          && isQuestComplete(this.registry, 'act1_clear_bracken')) {
+        const dx = tx - 55, dy = ty - 87;
+        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
+          this.registry.set('rivinRecruitPlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerRivinRecruit();
         }
       }
     }
@@ -2217,6 +2220,16 @@ export class OverworldScene extends Phaser.Scene {
         Math.floor(this.player.y / TILE_SIZE)
       );
       this.triggerAutoSave();
+    });
+  }
+
+  triggerRivinRecruit() {
+    this.showDialogue([
+      'Rivin: "You cleared the town. I\'m impressed, Captain."',
+      'Rivin: "A deal\'s a deal — my axe is yours."',
+      '[ Rivin the Warrior has joined your party! ]',
+    ], () => {
+      this.recruitAfterBoss('rivin');
     });
   }
 

@@ -28,6 +28,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('farmlandCutscenePlayed', this.loadData.farmlandCutscenePlayed || false);
       this.registry.set('brackenCutscenePlayed', this.loadData.brackenCutscenePlayed || false);
       this.registry.set('rivinDialoguePlayed', this.loadData.rivinDialoguePlayed || false);
+      this.registry.set('rivinRecruitPlayed', this.loadData.rivinRecruitPlayed || false);
 
       // Restore quest state (or init fresh for old saves without it)
       if (this.loadData.questState) {
@@ -58,6 +59,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('farmlandCutscenePlayed', false);
       this.registry.set('brackenCutscenePlayed', false);
       this.registry.set('rivinDialoguePlayed', false);
+      this.registry.set('rivinRecruitPlayed', false);
 
       initQuestState(this.registry);
 

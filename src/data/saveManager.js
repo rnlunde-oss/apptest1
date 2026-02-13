@@ -52,6 +52,7 @@ export function serializeGameState(registry, playerPos) {
     farmlandCutscenePlayed: registry.get('farmlandCutscenePlayed') || false,
     brackenCutscenePlayed: registry.get('brackenCutscenePlayed') || false,
     rivinDialoguePlayed: registry.get('rivinDialoguePlayed') || false,
+    rivinRecruitPlayed: registry.get('rivinRecruitPlayed') || false,
     questState: JSON.parse(JSON.stringify(registry.get('questState') || { active: {}, completed: [], trackedQuestId: null })),
     playerPos: { x: playerPos.x, y: playerPos.y },
     saveTime: new Date().toISOString(),
