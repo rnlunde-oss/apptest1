@@ -206,6 +206,12 @@ const OVERWORLD_ENEMIES = [
     postDialogue: [
       'The Bone Reaper collapses, its axe shattering into dust.',
       'The farmlands are free of its terror — for now.',
+      'Lyra: "You fight well, sir. What\'s your name?"',
+      'Metz: "Metz. I serve as Captain at His Majesty\'s pleasure."',
+      'Lyra: "I am Lyra, a ranger of these lands."',
+      'Metz: "What news can you tell me of Bracken?"',
+      'Lyra: "Reports come in that the undead have already overwhelmed the town. Beyond that I cannot say."',
+      'Metz: "Then we make for Bracken!"',
     ],
   },
 ];
@@ -218,6 +224,7 @@ export class OverworldScene extends Phaser.Scene {
   init(data) {
     this.loadedPos = data?.playerPos || null;
     this.pendingPostCutscene = data?.postCutsceneDialogue || false;
+    this.pendingFarmlandReturn = data?.fromFarmlandCutscene || false;
   }
 
   preload() {
@@ -360,6 +367,32 @@ export class OverworldScene extends Phaser.Scene {
             onComplete: () => toast.destroy(),
           });
         });
+      });
+    }
+
+    // Return from Farmland cutscene — recruit Lyra, progress quests
+    if (this.pendingFarmlandReturn) {
+      this.pendingFarmlandReturn = false;
+      this.time.delayedCall(300, () => {
+        this.sfx.playNPCRecruit();
+        const roster = this.registry.get('roster');
+        roster.lyra.recruited = true;
+        roster.lyra.active = true;
+
+        const partyOrder = this.registry.get('partyOrder') || [];
+        if (!partyOrder.includes('lyra')) {
+          partyOrder.push('lyra');
+          this.registry.set('partyOrder', partyOrder);
+        }
+
+        this.drawPartyHUD();
+        this.checkQuestNPCTalk('lyra');
+
+        const tx = Math.floor(this.player.x / TILE_SIZE);
+        const ty = Math.floor(this.player.y / TILE_SIZE);
+        this.checkLocationObjectives(tx, ty);
+
+        this.triggerAutoSave();
       });
     }
   }
@@ -1704,10 +1737,33 @@ export class OverworldScene extends Phaser.Scene {
     const def = QUEST_DEFS[questId];
     if (!def) return;
 
+    // Snapshot active quests before completion (to detect newly accepted quests)
+    const qs = this.registry.get('questState');
+    const activeBefore = qs ? new Set(Object.keys(qs.active)) : new Set();
+
     const rewards = completeQuest(this.registry, questId);
     if (rewards) {
       this.showQuestCompleteToast(def.name, rewards);
       this.drawPartyHUD();
+
+      // Show "New Quest" toast for any quests auto-accepted by completion
+      if (qs) {
+        for (const newId of Object.keys(qs.active)) {
+          if (!activeBefore.has(newId) && QUEST_DEFS[newId]) {
+            this.time.delayedCall(1500, () => {
+              const toast = this._addUI(this.add.text(400, 560, `New Quest: ${QUEST_DEFS[newId].name}`, {
+                fontSize: '12px', color: '#ffdd44', fontStyle: 'bold',
+                backgroundColor: '#00000099', padding: { x: 12, y: 5 },
+              }).setOrigin(0.5).setScrollFactor(0).setDepth(400));
+              this.tweens.add({
+                targets: toast, alpha: 0, y: 540,
+                delay: 3000, duration: 600,
+                onComplete: () => toast.destroy(),
+              });
+            });
+          }
+        }
+      }
     }
   }
 
@@ -2045,45 +2101,11 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   triggerFarmlandCutscene() {
-    const lines = [
-      'As Metz rounded the small ridgeline, he saw the Asvam Farmlands extend below and beyond.',
-      'Scattered bands of skeletons roamed the fields in discordant chaos, attacking the villagers.',
-      'Spotting him above, the skeletons made way to confront the lone captain.',
-      'Charging uphill, they shambled upwards — their terrifying visage making up for haggard discipline. With drawn sword, Metz awaited them at the top.',
-      'A voice rang out: "Fire!"',
-      'Steel arrows and makeshift javelins rained upon the charging skeletons, fracturing bones that had held them together.',
-      'When it was all over, Metz looked to his left to find a ranger and her makeshift militia emerge from the brush.',
-      'Lyra: "Looks like you owe us, sir."',
-      'Metz: "Looks like it."',
-      'Lyra: "You can make it up to us by vanquishing the Bone Reaper below. He\'s responsible for bringing these hordes of skeletons."',
-      'Metz: "Bring me to him and we\'ll see to it I\'ve repaid your kindness."',
-      '[ Lyra the Ranger has joined your party! ]',
-    ];
-
-    this.showDialogue(lines, () => {
-      this.sfx.playNPCRecruit();
-      const roster = this.registry.get('roster');
-      roster.lyra.recruited = true;
-      roster.lyra.active = true;
-
-      const partyOrder = this.registry.get('partyOrder') || [];
-      if (!partyOrder.includes('lyra')) {
-        partyOrder.push('lyra');
-        this.registry.set('partyOrder', partyOrder);
-      }
-
-      // Remove Lyra's NPC marker
-      const lyraNpc = this.npcs.find(n => n.id === 'lyra');
-      if (lyraNpc && lyraNpc.marker) lyraNpc.marker.destroy();
-
-      this.drawPartyHUD();
-      this.checkQuestNPCTalk('lyra');
-
-      const tx = Math.floor(this.player.x / TILE_SIZE);
-      const ty = Math.floor(this.player.y / TILE_SIZE);
-      this.checkLocationObjectives(tx, ty);
-
-      this.triggerAutoSave();
+    // Save player position so we can return to it
+    this.registry.set('farmlandCutscenePlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('FarmlandCutscene');
     });
   }
 
