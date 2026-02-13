@@ -13,15 +13,15 @@ export class CutsceneScene extends Phaser.Scene {
     this.slides = [
       {
         imageKey: 'cut1',
-        text: 'The eastern villages burn. The necromancer Atikesh has raised an army of the dead, and the frontier crumbles.',
+        text: 'Captain Metz rode eastwards. Under the command of King Dandaron he had been tasked with the defense of the Eastern frontier. News was spreading of an evil rising, the likes of which had never been seen by the world of men before.',
       },
       {
         imageKey: 'cut2',
-        text: 'Captain Metz rides east under orders from the crown. Rally what allies remain. Hold the line.',
+        text: 'Casting his eyes upwards toward the horizon, Metz could make out the disaster ahead...',
       },
       {
         imageKey: 'cut3',
-        text: 'One captain. One chance. The defense of Rhaud begins.',
+        text: '...a hamlet already aflame. Metz hastened towards the disaster.',
       },
     ];
     this.slideIndex = 0;

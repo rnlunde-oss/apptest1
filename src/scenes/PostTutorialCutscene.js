@@ -254,6 +254,7 @@ export class PostTutorialVictory extends Phaser.Scene {
       { text: 'Within three lunging strides, he closed the distance and brought both steel and vengeance crashing against the Dark Knight.', image: null },
       { text: '"Argh!!" Dagvar fell to the ground with a curse, aware even in that moment he had been bested.', image: null },
       { text: 'It was as Metz roared and brought his sword downward for a second and final strike, that the hooded reaper simply vanished in a plume of dark smoke; steel tasting nothing but in trodden soil.', image: null },
+      { text: 'The animating presence of their leader having departed, the skeletons disassembled instantly, leaving the living with nothing but grief.', image: null },
     ];
 
     // Cutscene image display (swapped per-line)
