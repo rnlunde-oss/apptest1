@@ -40,19 +40,19 @@ const NPC_DIALOGUES = {
       'Rivin: "Press P to manage the party. Might come in handy later."',
     ],
   },
-  lyla: {
+  lyra: {
     recruit: [
-      'Lyla: "Hold. You walk loudly for a soldier, Captain."',
-      'Lyla: "I\'ve been tracking the undead incursions from the tree line. They\'re getting bolder."',
-      'Lyla: "My bow is quick, and I know herbs that can mend wounds in a pinch."',
-      'Lyla: "If you\'re heading into those cursed lands, I\'d rather go with you than wait for them to come to me."',
-      '[ Lyla the Ranger has joined your party! ]',
+      'Lyra: "Hold. You walk loudly for a soldier, Captain."',
+      'Lyra: "I\'ve been tracking the undead incursions from the tree line. They\'re getting bolder."',
+      'Lyra: "My bow is quick, and I know herbs that can mend wounds in a pinch."',
+      'Lyra: "If you\'re heading into those cursed lands, I\'d rather go with you than wait for them to come to me."',
+      '[ Lyra the Ranger has joined your party! ]',
     ],
     idle: [
-      'Lyla: "Listen — the forest has gone quiet. That\'s never a good sign."',
-      'Lyla: "My Poison Arrows slow them down. Gives us time to finish the job."',
-      'Lyla: "I can patch up wounds with Herb Remedy. Won\'t match a priest, but it\'ll keep you standing."',
-      'Lyla: "I\'ve got eyes on the perimeter. Nothing gets past without me knowing."',
+      'Lyra: "Listen — the forest has gone quiet. That\'s never a good sign."',
+      'Lyra: "My Poison Arrows slow them down. Gives us time to finish the job."',
+      'Lyra: "I can patch up wounds with Herb Remedy. Won\'t match a priest, but it\'ll keep you standing."',
+      'Lyra: "I\'ve got eyes on the perimeter. Nothing gets past without me knowing."',
     ],
   },
   fenton: {
@@ -194,8 +194,8 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.textures.exists('rivin_portrait_base')) {
       this.load.image('rivin_portrait_base', 'assets/sprites/rivin_portrait_base.png');
     }
-    if (!this.textures.exists('lyla_portrait_base')) {
-      this.load.image('lyla_portrait_base', 'assets/sprites/lyla_portrait_base.png');
+    if (!this.textures.exists('lyra_portrait_base')) {
+      this.load.image('lyra_portrait_base', 'assets/sprites/lyra_portrait_base.png');
     }
     if (!this.textures.exists('hela_portrait_base')) {
       this.load.image('hela_portrait_base', 'assets/sprites/hela_portrait_base.png');
@@ -791,7 +791,7 @@ export class OverworldScene extends Phaser.Scene {
     // NPC placement data: id, pixel position, name color, detail color
     const NPC_DEFS = [
       { id: 'rivin',  x: 55 * TILE_SIZE + 16, y: 87 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
-      { id: 'lyla',   x: 50 * TILE_SIZE + 16, y: 93 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
+      { id: 'lyra',   x: 50 * TILE_SIZE + 16, y: 93 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
       { id: 'fenton', x: 35 * TILE_SIZE + 16, y: 137 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
       { id: 'rickets',x: 83 * TILE_SIZE + 16, y: 73 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
       { id: 'hela',   x: 163 * TILE_SIZE + 16, y: 117 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
