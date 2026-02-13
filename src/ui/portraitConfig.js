@@ -74,7 +74,7 @@ export const BODY_TEMPLATES = {
 export const CHARACTER_APPEARANCE = {
   metz:    { skin: '#d4a574', hair: '#332211', hairStyle: 'short' },
   rivin:   { skin: '#c49060', hair: '#443322', hairStyle: 'shaved' },
-  lyra:    { skin: '#f0d0b0', hair: '#996633', hairStyle: 'long' },
+  lyla:    { skin: '#f0d0b0', hair: '#996633', hairStyle: 'long' },
   fenton:  { skin: '#c49060', hair: '#554422', hairStyle: 'medium' },
   rickets: { skin: '#e0c0a0', hair: '#666688', hairStyle: 'wild' },
   hela:    { skin: '#e8c8a0', hair: '#221133', hairStyle: 'tied' },

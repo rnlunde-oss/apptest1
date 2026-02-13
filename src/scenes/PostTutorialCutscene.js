@@ -215,11 +215,21 @@ export class PostTutorialVictory extends Phaser.Scene {
 
     const lines = [
       'Dagvar staggers back, his dark armor cracking.',
-      'Dagvar: "This... changes nothing. Atikesh will consume this land."',
+      'Dagvar: "This... changes nothing. The dead do not rest, Captain."',
       'The lieutenant retreats into the cursed mist.',
-      'Alan: "We did it... but that was only a lieutenant."',
-      'Metz: "Then we need allies. The road east — there are towns that still stand."',
-      'Alan tends to his family. Captain Metz turns toward the horizon.',
+      'Alan collapses to his knees. Dark veins spread from a wound in his side.',
+      'Metz: "Alan! Stay with me—"',
+      'Alan: "It\'s too late, Captain. The poison... from his blade."',
+      'A boy runs from the farmhouse. Makar, Alan\'s son.',
+      'Makar: "Papa! Papa, get up!"',
+      'Alan: "Makar... be brave, son. Be brave for your mother."',
+      'Alan: "Captain... promise me. Promise me you\'ll look after him."',
+      'Metz: "I swear it, Alan. On my life."',
+      'Alan smiles. His hand goes still. Farmer Alan is dead.',
+      'Makar sobs against his father\'s chest. Metz kneels beside them.',
+      'Metz: "...I won\'t let this be for nothing."',
+      'Metz: "The frontier must be secured. There are towns east that still stand."',
+      'Metz stands, gripping his sword. The road ahead is long.',
     ];
 
     let idx = 0;

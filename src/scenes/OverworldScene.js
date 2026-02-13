@@ -18,6 +18,13 @@ const PLAYER_SPEED = 160;
 const VIEWPORT_BUFFER = 3;        // extra tiles beyond camera edge
 const VIEWPORT_UPDATE_THRESHOLD = 2; // tiles moved before re-eval
 
+const LOCATION_LABELS = [
+  { name: 'Bracken',           tileX: 55, tileY: 87, color: '#ccaa44' },
+  { name: 'Asvam Farmlands',   tileX: 50, tileY: 97, color: '#88aa66' },
+  { name: 'The Catacombs',     tileX: 83, tileY: 73, color: '#9977bb' },
+  { name: 'Verlan Farmstead',  tileX: 40, tileY: 82, color: '#88aa66' },
+];
+
 const NPC_DIALOGUES = {
   rivin: {
     recruit: [
@@ -33,19 +40,19 @@ const NPC_DIALOGUES = {
       'Rivin: "Press P to manage the party. Might come in handy later."',
     ],
   },
-  lyra: {
+  lyla: {
     recruit: [
-      'Lyra: "Hold. You walk loudly for a soldier, Captain."',
-      'Lyra: "I\'ve been tracking the undead incursions from the tree line. They\'re getting bolder."',
-      'Lyra: "My bow is quick, and I know herbs that can mend wounds in a pinch."',
-      'Lyra: "If you\'re heading into those cursed lands, I\'d rather go with you than wait for them to come to me."',
-      '[ Lyra the Ranger has joined your party! ]',
+      'Lyla: "Hold. You walk loudly for a soldier, Captain."',
+      'Lyla: "I\'ve been tracking the undead incursions from the tree line. They\'re getting bolder."',
+      'Lyla: "My bow is quick, and I know herbs that can mend wounds in a pinch."',
+      'Lyla: "If you\'re heading into those cursed lands, I\'d rather go with you than wait for them to come to me."',
+      '[ Lyla the Ranger has joined your party! ]',
     ],
     idle: [
-      'Lyra: "Listen — the forest has gone quiet. That\'s never a good sign."',
-      'Lyra: "My Poison Arrows slow them down. Gives us time to finish the job."',
-      'Lyra: "I can patch up wounds with Herb Remedy. Won\'t match a priest, but it\'ll keep you standing."',
-      'Lyra: "I\'ve got eyes on the perimeter. Nothing gets past without me knowing."',
+      'Lyla: "Listen — the forest has gone quiet. That\'s never a good sign."',
+      'Lyla: "My Poison Arrows slow them down. Gives us time to finish the job."',
+      'Lyla: "I can patch up wounds with Herb Remedy. Won\'t match a priest, but it\'ll keep you standing."',
+      'Lyla: "I\'ve got eyes on the perimeter. Nothing gets past without me knowing."',
     ],
   },
   fenton: {
@@ -187,8 +194,8 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.textures.exists('rivin_portrait_base')) {
       this.load.image('rivin_portrait_base', 'assets/sprites/rivin_portrait_base.png');
     }
-    if (!this.textures.exists('lyra_portrait_base')) {
-      this.load.image('lyra_portrait_base', 'assets/sprites/lyra_portrait_base.png');
+    if (!this.textures.exists('lyla_portrait_base')) {
+      this.load.image('lyla_portrait_base', 'assets/sprites/lyla_portrait_base.png');
     }
     if (!this.textures.exists('hela_portrait_base')) {
       this.load.image('hela_portrait_base', 'assets/sprites/hela_portrait_base.png');
@@ -213,6 +220,7 @@ export class OverworldScene extends Phaser.Scene {
     this.spawnWorldItems();
     this.spawnOverworldEnemies();
     this.setupCamera();
+    this.drawLocationLabels();
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys({
@@ -783,7 +791,7 @@ export class OverworldScene extends Phaser.Scene {
     // NPC placement data: id, pixel position, name color, detail color
     const NPC_DEFS = [
       { id: 'rivin',  x: 55 * TILE_SIZE + 16, y: 87 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
-      { id: 'lyra',   x: 50 * TILE_SIZE + 16, y: 93 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
+      { id: 'lyla',   x: 50 * TILE_SIZE + 16, y: 93 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
       { id: 'fenton', x: 35 * TILE_SIZE + 16, y: 137 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
       { id: 'rickets',x: 83 * TILE_SIZE + 16, y: 73 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
       { id: 'hela',   x: 163 * TILE_SIZE + 16, y: 117 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
@@ -1007,6 +1015,22 @@ export class OverworldScene extends Phaser.Scene {
   _addUI(obj) {
     this.cameras.main.ignore(obj);
     return obj;
+  }
+
+  // ──── Location Labels ────
+
+  drawLocationLabels() {
+    for (const loc of LOCATION_LABELS) {
+      const worldX = loc.tileX * TILE_SIZE + TILE_SIZE / 2;
+      const worldY = loc.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const label = this.add.text(worldX, worldY, loc.name, {
+        fontFamily: 'monospace',
+        fontSize: '9px',
+        color: loc.color,
+        align: 'center',
+      }).setOrigin(0.5).setAlpha(0.45).setDepth(5);
+      this.uiCamera.ignore(label);
+    }
   }
 
   // ──── Party HUD (top-left) ────

@@ -39,9 +39,9 @@ export const PARTY_DEFS = {
     alwaysActive: false,
     recruited: false,
   },
-  lyra: {
-    id: 'lyra',
-    name: 'Lyra',
+  lyla: {
+    id: 'lyla',
+    name: 'Lyla',
     title: 'Frontier Ranger',
     cls: 'Ranger',
     color: 0x228833,

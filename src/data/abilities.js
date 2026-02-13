@@ -87,7 +87,7 @@ export const ABILITIES = {
     effect: { type: 'buff', stat: 'charged', amount: 1.0, turns: 1 },
   },
 
-  // ──── Lyra (Ranger — quick, poison, healer) ────
+  // ──── Lyla (Ranger — quick, poison, healer) ────
   bow_shot: {
     name: 'Bow Shot',
     type: 'physical',
