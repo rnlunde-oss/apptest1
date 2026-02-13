@@ -25,6 +25,14 @@ const FARMLAND_SKELETON_TABLE = [
   { enemies: ['skeleton', 'skeleton', 'skeleton'], weight: 30, xp: 32, gold: 28 },
   { enemies: ['skeleton', 'skeleton', 'skeleton', 'skeleton'], weight: 15, xp: 42, gold: 35 },
 ];
+
+// Skeleton-only encounter table for "Clear the Town" quest (Bracken)
+const BRACKEN_SKELETON_TABLE = [
+  { enemies: ['skeleton', 'skeleton'], weight: 25, xp: 22, gold: 18 },
+  { enemies: ['skeleton', 'skeleton', 'skeleton'], weight: 35, xp: 32, gold: 28 },
+  { enemies: ['skeleton', 'skeleton', 'skeleton', 'skeleton'], weight: 25, xp: 42, gold: 35 },
+  { enemies: ['skeleton', 'skeleton', 'skeleton', 'skeleton', 'skeleton'], weight: 15, xp: 52, gold: 42 },
+];
 const VIEWPORT_BUFFER = 3;        // extra tiles beyond camera edge
 const VIEWPORT_UPDATE_THRESHOLD = 2; // tiles moved before re-eval
 
@@ -1862,6 +1870,17 @@ export class OverworldScene extends Phaser.Scene {
       17: { zone: 'forest', rate: ENCOUNTER_RATE_DEEP_FOREST },
     };
 
+    // During "Clear the Town" quest, Bracken area spawns only skeletons on any walkable tile
+    if (isQuestActive(this.registry, 'act1_clear_bracken')) {
+      const dx = tx - 55, dy = ty - 87;
+      if (dx * dx + dy * dy <= 20 * 20 && tile !== 1 && tile !== 8 && tile !== 11) {
+        if (Math.random() < 0.30) {
+          this.startBattle('bracken_skeleton');
+        }
+        return;
+      }
+    }
+
     const entry = ZONE_MAP[tile];
     if (!entry) return;
 
@@ -1888,7 +1907,9 @@ export class OverworldScene extends Phaser.Scene {
     // Pick encounter from zone table
     const table = zone === 'farmland_skeleton'
       ? FARMLAND_SKELETON_TABLE
-      : (ENCOUNTER_TABLES[zone] || ENCOUNTER_TABLES.cursed);
+      : zone === 'bracken_skeleton'
+        ? BRACKEN_SKELETON_TABLE
+        : (ENCOUNTER_TABLES[zone] || ENCOUNTER_TABLES.cursed);
     const total = table.reduce((s, e) => s + e.weight, 0);
     let roll = Math.random() * total;
     let picked = table[0];
