@@ -12,6 +12,7 @@ import {
   findDefeatEnemyObjectives, findDefeatCountObjectives, findTalkNPCObjectives,
   checkReachLocationObjectives, progressObjective, completeQuest,
   acceptQuest, isQuestActive,
+  LOCATION_COORDS, getActiveQuestLocations,
 } from '../utils/QuestManager.js';
 import { QUEST_DEFS } from '../data/quests.js';
 
@@ -1275,6 +1276,22 @@ export class OverworldScene extends Phaser.Scene {
       this.minimapEnemyDots.push({ dot, id: oe.id });
     }
 
+    // Quest objective markers (pulsing cyan, initially hidden)
+    this.minimapQuestMarkers = [];
+    for (const [key, coords] of Object.entries(LOCATION_COORDS)) {
+      const dot = this.add.circle(
+        coords.x * MINI_SCALE,
+        coords.y * MINI_SCALE,
+        3, 0x44ddff
+      ).setVisible(false);
+      this.minimapContainer.add(dot);
+      this.tweens.add({
+        targets: dot, alpha: 0.3,
+        duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+      this.minimapQuestMarkers.push({ dot, locationKey: key });
+    }
+
     // Player dot (blinking white)
     this.minimapPlayerDot = this.add.circle(
       (this.player.x / TILE_SIZE) * MINI_SCALE,
@@ -1325,6 +1342,13 @@ export class OverworldScene extends Phaser.Scene {
     for (const ed of this.minimapEnemyDots) {
       const oe = this.overworldEnemies.find(e => e.id === ed.id);
       if (oe && oe.defeated) ed.dot.setVisible(false);
+    }
+
+    // Show/hide quest objective markers
+    const activeLocations = getActiveQuestLocations(this.registry);
+    const activeKeys = new Set(activeLocations.map(l => l.locationKey));
+    for (const qm of this.minimapQuestMarkers) {
+      qm.dot.setVisible(activeKeys.has(qm.locationKey));
     }
   }
 
@@ -1403,6 +1427,15 @@ export class OverworldScene extends Phaser.Scene {
       this.lastTileY = ty;
       this.checkEncounter(tx, ty);
       this.checkLocationObjectives(tx, ty);
+
+      if (!this.registry.get('farmlandCutscenePlayed')) {
+        const dx = tx - 50, dy = ty - 97;
+        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
+          this.registry.set('farmlandCutscenePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerFarmlandCutscene();
+        }
+      }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
@@ -2010,6 +2043,49 @@ export class OverworldScene extends Phaser.Scene {
       this.showDialogue([lines[Math.floor(Math.random() * lines.length)]]);
       this.checkQuestNPCTalk(closest.id);
     }
+  }
+
+  triggerFarmlandCutscene() {
+    const lines = [
+      'As Metz rounded the small ridgeline, he saw the Asvam Farmlands extend below and beyond.',
+      'Scattered bands of skeletons roamed the fields in discordant chaos, attacking the villagers.',
+      'Spotting him above, the skeletons made way to confront the lone captain.',
+      'Charging uphill, they shambled upwards — their terrifying visage making up for haggard discipline. With drawn sword, Metz awaited them at the top.',
+      'A voice rang out: "Fire!"',
+      'Steel arrows and makeshift javelins rained upon the charging skeletons, fracturing bones that had held them together.',
+      'When it was all over, Metz looked to his left to find a ranger and her makeshift militia emerge from the brush.',
+      'Lyra: "Looks like you owe us, sir."',
+      'Metz: "Looks like it."',
+      'Lyra: "You can make it up to us by vanquishing the Bone Reaper below. He\'s responsible for bringing these hordes of skeletons."',
+      'Metz: "Bring me to him and we\'ll see to it I\'ve repaid your kindness."',
+      '[ Lyra the Ranger has joined your party! ]',
+    ];
+
+    this.showDialogue(lines, () => {
+      this.sfx.playNPCRecruit();
+      const roster = this.registry.get('roster');
+      roster.lyra.recruited = true;
+      roster.lyra.active = true;
+
+      const partyOrder = this.registry.get('partyOrder') || [];
+      if (!partyOrder.includes('lyra')) {
+        partyOrder.push('lyra');
+        this.registry.set('partyOrder', partyOrder);
+      }
+
+      // Remove Lyra's NPC marker
+      const lyraNpc = this.npcs.find(n => n.id === 'lyra');
+      if (lyraNpc && lyraNpc.marker) lyraNpc.marker.destroy();
+
+      this.drawPartyHUD();
+      this.checkQuestNPCTalk('lyra');
+
+      const tx = Math.floor(this.player.x / TILE_SIZE);
+      const ty = Math.floor(this.player.y / TILE_SIZE);
+      this.checkLocationObjectives(tx, ty);
+
+      this.triggerAutoSave();
+    });
   }
 
   collectWorldItem(wi) {

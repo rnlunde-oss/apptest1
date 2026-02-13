@@ -4,6 +4,14 @@
 import { QUEST_DEFS } from '../data/quests.js';
 import { awardXP } from '../data/characters.js';
 
+// Named location coordinates for reach_location objectives
+export const LOCATION_COORDS = {
+  asvam_farmlands: { x: 50, y: 97, radius: 5 },
+  bracken:         { x: 55, y: 87, radius: 5 },
+  catacombs:       { x: 83, y: 73, radius: 5 },
+  dungeon:         { x: 115, y: 20, radius: 5 },
+};
+
 // ──── Initialization ────
 
 /**
@@ -284,17 +292,24 @@ export function checkReachLocationObjectives(registry, tileX, tileY) {
       if (obj.type !== 'reach_location') continue;
       if (state.objectiveProgress[obj.id] >= obj.required) continue;
 
-      // target format: "tileX,tileY" or { x, y, radius }
-      const target = obj.target;
-      if (typeof target === 'string') {
-        const [tx, ty] = target.split(',').map(Number);
-        if (tileX === tx && tileY === ty) {
-          matches.push({ questId, objectiveId: obj.id });
+      // target format: location name string, "tileX,tileY", or { x, y, radius }
+      let resolved = obj.target;
+      if (typeof resolved === 'string') {
+        if (LOCATION_COORDS[resolved]) {
+          resolved = LOCATION_COORDS[resolved];
+        } else {
+          const [tx, ty] = resolved.split(',').map(Number);
+          if (!isNaN(tx) && !isNaN(ty)) {
+            resolved = { x: tx, y: ty, radius: 0 };
+          } else {
+            continue; // unknown target
+          }
         }
-      } else if (target && typeof target === 'object') {
-        const dx = tileX - target.x;
-        const dy = tileY - target.y;
-        const r = target.radius || 0;
+      }
+      if (resolved && typeof resolved === 'object') {
+        const dx = tileX - resolved.x;
+        const dy = tileY - resolved.y;
+        const r = resolved.radius || 0;
         if (dx * dx + dy * dy <= r * r) {
           matches.push({ questId, objectiveId: obj.id });
         }
@@ -302,6 +317,31 @@ export function checkReachLocationObjectives(registry, tileX, tileY) {
     }
   }
   return matches;
+}
+
+/**
+ * Get locations for active, incomplete reach_location objectives.
+ * Returns [{ locationKey, x, y }] for minimap markers.
+ */
+export function getActiveQuestLocations(registry) {
+  const qs = registry.get('questState');
+  if (!qs) return [];
+
+  const locations = [];
+  for (const [questId, state] of Object.entries(qs.active)) {
+    const def = QUEST_DEFS[questId];
+    if (!def) continue;
+
+    for (const obj of def.objectives) {
+      if (obj.type !== 'reach_location') continue;
+      if (state.objectiveProgress[obj.id] >= obj.required) continue;
+      const coords = typeof obj.target === 'string' ? LOCATION_COORDS[obj.target] : obj.target;
+      if (coords) {
+        locations.push({ locationKey: obj.target, x: coords.x, y: coords.y });
+      }
+    }
+  }
+  return locations;
 }
 
 // ──── Internal ────
