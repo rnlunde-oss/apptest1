@@ -222,6 +222,24 @@ const OVERWORLD_ENEMIES = [
       'Metz: "Then we make for Bracken!"',
     ],
   },
+  {
+    id: 'skeletal_captain',
+    tileX: 55, tileY: 83,
+    name: 'Skeletal Captain',
+    enemies: ['skeletal_captain', 'skeleton', 'skeleton', 'skeleton'],
+    xp: 75, gold: 65,
+    color: 0x998866,
+    preDialogue: [
+      'An armored skeleton stands at the gate of Fort Bracken, its cursed blade drawn and three skeleton soldiers at its side.',
+      'The Skeletal Captain will not yield the gate willingly.',
+    ],
+    postDialogue: [
+      'The Skeletal Captain crumbles, its armor clattering to the ground.',
+      'The gate to Fort Bracken is open.',
+      'Rivin: "Well fought, Captain. A deal\'s a deal — my axe is yours."',
+      '[ Rivin the Warrior has joined your party! ]',
+    ],
+  },
 ];
 
 export class OverworldScene extends Phaser.Scene {
@@ -1103,7 +1121,12 @@ export class OverworldScene extends Phaser.Scene {
               defeatedMap[oe.id] = true;
               this.registry.set('defeatedOverworldEnemies', defeatedMap);
 
-              this.showDialogue(oe.def.postDialogue);
+              this.showDialogue(oe.def.postDialogue, () => {
+                // Special: recruit Rivin after Skeletal Captain defeat
+                if (oe.id === 'skeletal_captain') {
+                  this.recruitAfterBoss('rivin');
+                }
+              });
               this.checkQuestOverworldEnemyDefeat(oe.id);
               this.checkQuestBattleEnd(oe.def.enemies);
               this.triggerAutoSave();
@@ -2146,6 +2169,26 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('FarmlandCutscene');
     });
+  }
+
+  recruitAfterBoss(charId) {
+    this.sfx.playNPCRecruit();
+    const roster = this.registry.get('roster');
+    roster[charId].recruited = true;
+    roster[charId].active = true;
+
+    const partyOrder = this.registry.get('partyOrder') || [];
+    if (!partyOrder.includes(charId)) {
+      partyOrder.push(charId);
+      this.registry.set('partyOrder', partyOrder);
+    }
+
+    // Remove NPC marker if exists
+    const npc = this.npcs.find(n => n.id === charId);
+    if (npc && npc.marker) npc.marker.destroy();
+
+    this.drawPartyHUD();
+    this.triggerAutoSave();
   }
 
   triggerBrackenCutscene() {

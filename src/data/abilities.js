@@ -817,6 +817,15 @@ export const ABILITIES = {
   reaper_drain:      { name: 'Marrow Drain',     type: 'magic',    target: 'enemy',       power: 30, mpCost: 0,  accuracy: 90, desc: 'Drains life force through the axe. Heals the caster.', healAmount: 15 },
   reaper_frenzy:     { name: 'Reaper Frenzy',    type: 'buff',     target: 'self',        power: 0,  mpCost: 0,  accuracy: 100, desc: 'Enters a frenzied rage. Greatly boosts attack.', effect: { type: 'buff', stat: 'atk', amount: 0.35, turns: 3 } },
 
+  // ──── Boss: Skeletal Captain abilities ────
+  captain_slash:     { name: 'Cursed Slash',     type: 'physical', target: 'enemy',       power: 40, mpCost: 0,  accuracy: 90, desc: 'A heavy overhead strike with a cursed blade.' },
+  captain_rally:     { name: 'Rally Undead',     type: 'buff',     target: 'all_allies',  power: 0,  mpCost: 0,  accuracy: 100, desc: 'Rallies skeleton allies, boosting their attack.', effect: { type: 'buff', stat: 'atk', amount: 0.25, turns: 3 } },
+  captain_shieldwall:{ name: 'Shield Wall',      type: 'buff',     target: 'self',        power: 0,  mpCost: 0,  accuracy: 100, desc: 'Raises a heavy shield. Greatly boosts defense.', effect: { type: 'shield', stat: 'def', amount: 0.5, turns: 3 } },
+  // Phase 2 (below 50% HP):
+  captain_execute:   { name: 'Execute',          type: 'physical', target: 'enemy',       power: 50, mpCost: 0,  accuracy: 85, desc: 'A devastating strike aimed to finish the weakened.' },
+  captain_warcry:    { name: 'War Cry',          type: 'physical', target: 'all_enemies', power: 28, mpCost: 0,  accuracy: 85, desc: 'A terrifying shout that strikes all foes.', effect: { type: 'debuff', stat: 'def', amount: 0.15, turns: 3 } },
+  captain_crush:     { name: 'Shield Crush',     type: 'physical', target: 'enemy',       power: 35, mpCost: 0,  accuracy: 90, desc: 'Smashes with the shield, stunning the target.', effect: { type: 'debuff', stat: 'spd', amount: 0.3, turns: 2 } },
+
   // ──── Boss: Atikesh abilities ────
   necrotic_blast: {
     name: 'Necrotic Blast',

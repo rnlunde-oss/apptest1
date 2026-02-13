@@ -97,6 +97,9 @@ export class BattleScene extends Phaser.Scene {
     if (!this.textures.exists('spr_bone_reaper')) {
       this.load.image('spr_bone_reaper', 'assets/sprites/bone_reaper_battle.png');
     }
+    if (!this.textures.exists('spr_skeletal_captain')) {
+      this.load.image('spr_skeletal_captain', 'assets/sprites/skeletal_captain_battle.png');
+    }
   }
 
   create() {
@@ -622,7 +625,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   _removeWhiteBackgrounds() {
-    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn', 'spr_zombie', 'spr_dire_wolf', 'spr_plague_rat', 'spr_corrupted_treant', 'spr_bandit_thief', 'spr_bandit_henchman', 'spr_bandit_chief', 'spr_shadow_fiend', 'spr_bone_reaper'];
+    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn', 'spr_zombie', 'spr_dire_wolf', 'spr_plague_rat', 'spr_corrupted_treant', 'spr_bandit_thief', 'spr_bandit_henchman', 'spr_bandit_chief', 'spr_shadow_fiend', 'spr_bone_reaper', 'spr_skeletal_captain'];
     for (const key of keys) {
       if (!this.textures.exists(key)) continue;
       const src = this.textures.get(key).getSourceImage();

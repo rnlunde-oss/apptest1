@@ -278,6 +278,23 @@ export const ENEMY_DEFS = {
     desc: 'An undead axe-wielder risen from the farmland graves. Its cleaving strikes shatter bone and steel alike.',
   },
 
+  skeletal_captain: {
+    id: 'skeletal_captain',
+    name: 'Skeletal Captain',
+    cls: 'Boss',
+    color: 0x998866,
+    maxHp: 170,
+    maxMp: 0,
+    atk: 18,
+    def: 16,
+    spd: 11,
+    abilities: ['captain_slash', 'captain_rally', 'captain_shieldwall'],
+    aiWeights: [45, 25, 30],
+    isBoss: true,
+    phase2Abilities: ['captain_execute', 'captain_warcry', 'captain_crush'],
+    desc: 'An armored undead commander guarding the gate of Fort Bracken. Its cursed blade commands the skeleton horde.',
+  },
+
   // ──── Beasts (corrupted by Atikesh's magic) ────
   plague_rat: {
     id: 'plague_rat',
