@@ -109,6 +109,12 @@ export class BattleScene extends Phaser.Scene {
     this.enemySprites = [];
     this.formationOverlays = [];
 
+    // Depth layering per position for 3D perspective
+    // Party: pos 0 (front) = bottom layer, pos 3 (rear) = top layer
+    const partyDepth = [10, 14, 14, 18];
+    // Enemy: pos 0 (front) = top layer, pos 3 (rear) = bottom layer
+    const enemyDepth = [18, 14, 14, 10];
+
     // Party — diamond/wedge formation
     const partyPositions = getPartyFormationPositions(this.party.length);
 
@@ -117,21 +123,22 @@ export class BattleScene extends Phaser.Scene {
       const pos = partyPositions[i] || partyPositions[0];
       const x = pos.x;
       const y = pos.y;
+      const baseD = partyDepth[i] || 10;
 
-      this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
+      this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(baseD - 2);
 
       // Use character sprite if available, otherwise fallback to colored rectangle
       const spriteKey = this.getCharSpriteKey(member);
       let sprite;
       if (spriteKey && this.textures.exists(spriteKey)) {
-        sprite = this.add.image(x, y, spriteKey).setDepth(5);
+        sprite = this.add.image(x, y, spriteKey).setDepth(baseD);
         const targetH = spriteKey === 'spr_metz' ? 147 : 128;
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
       } else {
-        sprite = this.add.rectangle(x, y, 76, 100, member.color).setDepth(5);
-        this.add.rectangle(x, y, 76, 100).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
+        sprite = this.add.rectangle(x, y, 76, 100, member.color).setDepth(baseD);
+        this.add.rectangle(x, y, 76, 100).setStrokeStyle(1, 0xffffff, 0.25).setDepth(baseD + 1);
 
         // Class icon
         const iconMap = {
@@ -142,13 +149,13 @@ export class BattleScene extends Phaser.Scene {
           Priest: { shape: 'circle', color: 0xddddaa },
         };
         const icon = iconMap[member.cls] || iconMap.Warrior;
-        this.add.circle(x, y - 40, 8, icon.color, 0.8).setDepth(7);
+        this.add.circle(x, y - 40, 8, icon.color, 0.8).setDepth(baseD + 2);
       }
 
       // Name under sprite
       this.add.text(x, y + 58, member.name, {
         fontSize: '11px', color: '#cccccc',
-      }).setOrigin(0.5).setDepth(7);
+      }).setOrigin(0.5).setDepth(baseD + 2);
 
       this.tweens.add({
         targets: sprite, y: y - 5,
@@ -165,25 +172,26 @@ export class BattleScene extends Phaser.Scene {
       const pos = enemyPositions[i] || enemyPositions[0];
       const x = pos.x;
       const y = pos.y;
+      const baseD = enemyDepth[i] || 10;
 
       // Boss enemies get larger sprites
       const spriteW = enemy.isBoss ? 100 : 76;
       const spriteH = enemy.isBoss ? 130 : 100;
 
-      this.add.ellipse(x, y + spriteH / 2 + 2, spriteW + 20, 28, 0x000000, 0.3).setDepth(3);
+      this.add.ellipse(x, y + spriteH / 2 + 2, spriteW + 20, 28, 0x000000, 0.3).setDepth(baseD - 2);
 
       let sprite;
       const enemySpriteKey = this.getCharSpriteKey(enemy);
 
       if (enemySpriteKey && this.textures.exists(enemySpriteKey)) {
-        sprite = this.add.image(x, y, enemySpriteKey).setDepth(5);
+        sprite = this.add.image(x, y, enemySpriteKey).setDepth(baseD);
         const targetH = enemySpriteKey === 'spr_dagvar' ? 320 : enemySpriteKey === 'spr_skeleton' ? 218 : (enemy.isBoss ? 160 : 128);
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
         if (enemy.cls === 'Spirit') sprite.setAlpha(0.7);
         if (enemy.isBoss) {
-          const glow = this.add.ellipse(x, y, spriteW + 32, spriteH + 32, enemy.color, 0.15).setDepth(4);
+          const glow = this.add.ellipse(x, y, spriteW + 32, spriteH + 32, enemy.color, 0.15).setDepth(baseD - 1);
           this.tweens.add({
             targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
             duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -191,7 +199,7 @@ export class BattleScene extends Phaser.Scene {
         }
       } else if (enemy.isBoss) {
         // Boss glow
-        const glow = this.add.ellipse(x, y, spriteW + 32, spriteH + 32, enemy.color, 0.15).setDepth(4);
+        const glow = this.add.ellipse(x, y, spriteW + 32, spriteH + 32, enemy.color, 0.15).setDepth(baseD - 1);
         this.tweens.add({
           targets: glow, scaleX: 1.2, scaleY: 1.2, alpha: 0.05,
           duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -200,44 +208,44 @@ export class BattleScene extends Phaser.Scene {
         // Use boss-specific procedural texture
         const baseId = enemy.id.replace(/_[a-z0-9]{4}$/, '');
         const bossTexKey = baseId + '_boss';
-        sprite = this.add.image(x, y, this.textures.exists(bossTexKey) ? bossTexKey : 'atikesh_boss').setDepth(5);
+        sprite = this.add.image(x, y, this.textures.exists(bossTexKey) ? bossTexKey : 'atikesh_boss').setDepth(baseD);
       } else {
         // Fallback: colored rectangle
         const spriteAlpha = enemy.cls === 'Spirit' ? 0.7 : 1;
-        sprite = this.add.rectangle(x, y, spriteW, spriteH, enemy.color).setDepth(5).setAlpha(spriteAlpha);
+        sprite = this.add.rectangle(x, y, spriteW, spriteH, enemy.color).setDepth(baseD).setAlpha(spriteAlpha);
         const strokeColor = 0xff4444;
         const strokeAlpha = 0.2;
-        this.add.rectangle(x, y, spriteW, spriteH).setStrokeStyle(1, strokeColor, strokeAlpha).setDepth(6);
+        this.add.rectangle(x, y, spriteW, spriteH).setStrokeStyle(1, strokeColor, strokeAlpha).setDepth(baseD + 1);
       }
 
       // Class-based visual icons (skip for boss and image sprites)
       if (!enemySpriteKey || !this.textures.exists(enemySpriteKey)) {
         if (enemy.cls === 'Undead') {
-          this.add.circle(x, y - 32, 10, 0xddddaa, 0.5).setDepth(7);
-          this.add.circle(x - 4, y - 34, 3, 0x220000).setDepth(8);
-          this.add.circle(x + 4, y - 34, 3, 0x220000).setDepth(8);
+          this.add.circle(x, y - 32, 10, 0xddddaa, 0.5).setDepth(baseD + 2);
+          this.add.circle(x - 4, y - 34, 3, 0x220000).setDepth(baseD + 3);
+          this.add.circle(x + 4, y - 34, 3, 0x220000).setDepth(baseD + 3);
         } else if (enemy.cls === 'Spirit') {
-          this.add.circle(x - 6, y - 36, 4, 0xccaaff, 0.6).setDepth(7);
-          this.add.circle(x + 6, y - 36, 4, 0xccaaff, 0.6).setDepth(7);
+          this.add.circle(x - 6, y - 36, 4, 0xccaaff, 0.6).setDepth(baseD + 2);
+          this.add.circle(x + 6, y - 36, 4, 0xccaaff, 0.6).setDepth(baseD + 2);
         } else if (enemy.cls === 'Armored') {
-          this.add.rectangle(x, y - 32, 16, 20, 0x888899, 0.7).setDepth(7);
-          this.add.rectangle(x, y - 32, 16, 20).setStrokeStyle(1, 0xaaaacc, 0.5).setDepth(8);
+          this.add.rectangle(x, y - 32, 16, 20, 0x888899, 0.7).setDepth(baseD + 2);
+          this.add.rectangle(x, y - 32, 16, 20).setStrokeStyle(1, 0xaaaacc, 0.5).setDepth(baseD + 3);
         } else if (enemy.cls === 'Caster') {
-          this.add.circle(x, y - 36, 8, 0x8844cc, 0.6).setDepth(7);
+          this.add.circle(x, y - 36, 8, 0x8844cc, 0.6).setDepth(baseD + 2);
         } else if (enemy.cls === 'Ranged') {
-          this.add.triangle(x, y - 36, 0, 16, 8, 0, 16, 16, 0x998866, 0.7).setDepth(7);
+          this.add.triangle(x, y - 36, 0, 16, 8, 0, 16, 16, 0x998866, 0.7).setDepth(baseD + 2);
         } else if (enemy.cls === 'Beast') {
-          const claw = this.add.graphics().setDepth(7);
+          const claw = this.add.graphics().setDepth(baseD + 2);
           claw.lineStyle(3, 0xddaa66, 0.8);
           claw.lineBetween(x - 10, y - 44, x - 2, y - 28);
           claw.lineBetween(x + 2, y - 44, x + 10, y - 28);
         } else if (enemy.cls === 'Demon') {
-          const horns = this.add.graphics().setDepth(7);
+          const horns = this.add.graphics().setDepth(baseD + 2);
           horns.fillStyle(0xcc4422, 0.8);
           horns.fillTriangle(x - 12, y - 28, x - 6, y - 44, x, y - 28);
           horns.fillTriangle(x, y - 28, x + 6, y - 44, x + 12, y - 28);
         } else if (enemy.cls === 'Nature') {
-          const leaf = this.add.graphics().setDepth(7);
+          const leaf = this.add.graphics().setDepth(baseD + 2);
           leaf.fillStyle(0x55aa44, 0.8);
           leaf.fillTriangle(x, y - 44, x - 10, y - 34, x, y - 24);
           leaf.fillTriangle(x, y - 44, x + 10, y - 34, x, y - 24);
@@ -249,7 +257,7 @@ export class BattleScene extends Phaser.Scene {
       this.add.text(x, y + spriteH / 2 + 14, enemy.name, {
         fontSize: '11px', color: enemy.isBoss ? '#ff8888' : '#cc9999',
         fontStyle: enemy.isBoss ? 'bold' : 'normal',
-      }).setOrigin(0.5).setDepth(7);
+      }).setOrigin(0.5).setDepth(baseD + 2);
 
       this.tweens.add({
         targets: sprite, y: y - 5,
@@ -273,12 +281,15 @@ export class BattleScene extends Phaser.Scene {
     this.formationOverlays = [];
 
     // Party overlays — blue shield glow behind sprites
+    const partyDepthMap = [10, 14, 14, 18];
+    const enemyDepthMap = [18, 14, 14, 10];
     for (let i = 0; i < this.partySprites.length; i++) {
       const ps = this.partySprites[i];
       const idx = this.party.indexOf(ps.character);
       const dr = getFormationDR(this.party, idx);
       if (dr > 0) {
-        const glow = this.add.ellipse(ps.baseX, ps.baseY, 90, 110, 0x4488ff, dr * 0.3).setDepth(4);
+        const baseD = partyDepthMap[idx] || 10;
+        const glow = this.add.ellipse(ps.baseX, ps.baseY, 90, 110, 0x4488ff, dr * 0.3).setDepth(baseD - 1);
         // Sync with idle bobbing
         this.tweens.add({
           targets: glow, y: ps.baseY - 5,
@@ -294,9 +305,10 @@ export class BattleScene extends Phaser.Scene {
       const idx = this.enemies.indexOf(es.character);
       const dr = getFormationDR(this.enemies, idx);
       if (dr > 0) {
+        const baseD = enemyDepthMap[idx] || 10;
         const spriteW = es.character.isBoss ? 100 : 76;
         const spriteH = es.character.isBoss ? 130 : 100;
-        const shade = this.add.rectangle(es.baseX, es.baseY, spriteW, spriteH, 0x000000, dr * 0.5).setDepth(9);
+        const shade = this.add.rectangle(es.baseX, es.baseY, spriteW, spriteH, 0x000000, dr * 0.5).setDepth(baseD + 1);
         // Sync with idle bobbing
         this.tweens.add({
           targets: shade, y: es.baseY - 5,
@@ -317,13 +329,16 @@ export class BattleScene extends Phaser.Scene {
     this.formationOverlays = [];
 
     // Party overlays
+    const partyDM = [10, 14, 14, 18];
+    const enemyDM = [18, 14, 14, 10];
     for (let i = 0; i < this.partySprites.length; i++) {
       const ps = this.partySprites[i];
       if (ps.character.hp <= 0) continue;
       const idx = this.party.indexOf(ps.character);
       const dr = getFormationDR(this.party, idx);
       if (dr > 0) {
-        const glow = this.add.ellipse(ps.sprite.x, ps.sprite.y, 90, 110, 0x4488ff, dr * 0.3).setDepth(4);
+        const baseD = partyDM[idx] || 10;
+        const glow = this.add.ellipse(ps.sprite.x, ps.sprite.y, 90, 110, 0x4488ff, dr * 0.3).setDepth(baseD - 1);
         this.tweens.add({
           targets: glow, y: ps.baseY - 5,
           duration: 900 + i * 200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -339,9 +354,10 @@ export class BattleScene extends Phaser.Scene {
       const idx = this.enemies.indexOf(es.character);
       const dr = getFormationDR(this.enemies, idx);
       if (dr > 0) {
+        const baseD = enemyDM[idx] || 10;
         const spriteW = es.character.isBoss ? 100 : 76;
         const spriteH = es.character.isBoss ? 130 : 100;
-        const shade = this.add.rectangle(es.sprite.x, es.sprite.y, spriteW, spriteH, 0x000000, dr * 0.5).setDepth(9);
+        const shade = this.add.rectangle(es.sprite.x, es.sprite.y, spriteW, spriteH, 0x000000, dr * 0.5).setDepth(baseD + 1);
         this.tweens.add({
           targets: shade, y: es.baseY - 5,
           duration: 1100 + i * 150, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -1511,20 +1527,22 @@ export class BattleScene extends Phaser.Scene {
     const pos = partyPositions[i];
     const x = pos.x;
     const y = pos.y;
+    const partyDepthMap = [10, 14, 14, 18];
+    const baseD = partyDepthMap[i] || 10;
 
-    this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(3);
+    this.add.ellipse(x, y + 54, 96, 28, 0x000000, 0.3).setDepth(baseD - 2);
 
     const spriteKey = this.getCharSpriteKey(allyChar);
     let sprite;
     if (spriteKey && this.textures.exists(spriteKey)) {
-      sprite = this.add.image(x, y, spriteKey).setDepth(5);
+      sprite = this.add.image(x, y, spriteKey).setDepth(baseD);
       const targetH = spriteKey === 'spr_metz' ? 147 : 128;
       const scale = targetH / sprite.height;
       sprite.setScale(scale);
       sprite.setOrigin(0.5, 0.5);
     } else {
-      sprite = this.add.rectangle(x, y, 76, 100, allyChar.color).setDepth(5);
-      this.add.rectangle(x, y, 76, 100).setStrokeStyle(1, 0xffffff, 0.25).setDepth(6);
+      sprite = this.add.rectangle(x, y, 76, 100, allyChar.color).setDepth(baseD);
+      this.add.rectangle(x, y, 76, 100).setStrokeStyle(1, 0xffffff, 0.25).setDepth(baseD + 1);
 
       const iconMap = {
         Commander: { color: 0xffcc44 },
@@ -1535,12 +1553,12 @@ export class BattleScene extends Phaser.Scene {
         Farmer: { color: 0x88aa44 },
       };
       const icon = iconMap[allyChar.cls] || iconMap.Warrior;
-      this.add.circle(x, y - 40, 8, icon.color, 0.8).setDepth(7);
+      this.add.circle(x, y - 40, 8, icon.color, 0.8).setDepth(baseD + 2);
     }
 
     this.add.text(x, y + 58, allyChar.name, {
       fontSize: '11px', color: '#cccccc',
-    }).setOrigin(0.5).setDepth(7);
+    }).setOrigin(0.5).setDepth(baseD + 2);
 
     // Fade in
     sprite.setAlpha(0);
