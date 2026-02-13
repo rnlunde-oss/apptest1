@@ -245,7 +245,15 @@ export class PostTutorialVictory extends Phaser.Scene {
       { text: 'If he was not to have today\'s victory - no one would.', image: '3cut5' },
       { text: 'But few things command a man\'s heart more than family. It was at the last that Farmer Alan threw his body in desperate love to protect those for whom he had lived and died.', image: null },
       { text: 'Though a man may have no martial prowess, it is the strength of his spirit that commands bravery. And so the farmer absorbed the terrible magic for the sake of his wife and children.', image: null },
-      // Scene 8: Alan death — black background (to be filled in)
+      // Scene 8: Alan death — black background
+      { text: '"Daddy!"', image: null },
+      { text: '"Papa!"', image: null },
+      { text: '"Alan!"', image: null },
+      { text: 'The Dark Knight grunted in both surprise and displeasure, momentarily stunned by the farmer\'s final display of valor.', image: null },
+      { text: 'Metz sprung into action and charged, raising his sword for a crippling blow.', image: null },
+      { text: 'Within three lunging strides, he closed the distance and brought both steel and vengeance crashing against the Dark Knight.', image: null },
+      { text: '"Argh!!" Dagvar fell to the ground with a curse, aware even in that moment he had been bested.', image: null },
+      { text: 'It was as Metz roared and brought his sword downward for a second and final strike, that the hooded reaper simply vanished in a plume of dark smoke; steel tasting nothing but in trodden soil.', image: null },
     ];
 
     // Cutscene image display (swapped per-line)
