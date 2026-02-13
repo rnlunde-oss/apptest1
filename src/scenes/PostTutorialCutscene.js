@@ -213,6 +213,8 @@ export class PostTutorialVictory extends Phaser.Scene {
     this.load.image('3cut1', 'assets/cutscenes/3CUT1.png');
     this.load.image('3cut2', 'assets/cutscenes/3CUT2.png');
     this.load.image('3cut3', 'assets/cutscenes/3CUT3.png');
+    this.load.image('3cut4', 'assets/cutscenes/3CUT4.png');
+    this.load.image('3cut5', 'assets/cutscenes/3CUT5.png');
   }
 
   create() {
@@ -223,10 +225,12 @@ export class PostTutorialVictory extends Phaser.Scene {
 
     // Each line maps to an image key (or null for black bg)
     const lines = [
+      // Transition: black screen beat after battle
+      { text: '', image: null },
       // Scene 1: Battlefield standoff (3CUT1)
-      { text: 'Metz and Alan fought against the Dark Knight tirelessly. Exchanging blow for blow.', image: '3cut1' },
-      { text: 'Against the cresting sunlight of late afternoon, the three combatants stood silently staring at each other.', image: '3cut1' },
-      { text: 'The eerie silence was broken by Dagvar\'s wretched voice, "You protect the weak, Captain. Admirable... but inefficient."', image: '3cut1' },
+      { text: 'Metz and Alan fought against the Dark Knight tirelessly, exchanging blow for blow.', image: '3cut1' },
+      { text: 'Against the waning sunlight of late afternoon, the three combatants stood silently staring across the field at each other.', image: '3cut1' },
+      { text: 'The eerie silence was broken by the Dark Knight\'s wretched voice, "You protect the weak, Captain. Admirable... but inefficient."', image: '3cut1' },
       { text: '"Then I will be inefficient," Metz replied. "You mistake cruelty for strength."', image: '3cut1' },
       // Scene 2: Dagvar closeup (3CUT2)
       { text: '"You call it cruelty because you cannot bear the cost. I call it correction."', image: '3cut2' },
@@ -234,7 +238,14 @@ export class PostTutorialVictory extends Phaser.Scene {
       // Scene 3: Metz closeup (3CUT3)
       { text: 'For all of Metz\'s training, he had never seen a knight like this before. Where had this man come from?', image: '3cut3' },
       { text: '"Whose correction? Yours or someone else\'s?"', image: '3cut3' },
-      // Scene 4: Alan death — black background
+      // Scene 4: Black — Dagvar's final retort
+      { text: '"Does it matter? In the end you will all kneel."', image: '3cut4' },
+      // Scene 5: Black — Dark Knight attacks
+      { text: 'The Dark Knight lifted his cursed blade, and from it issued a terrifying bolt of dark magic aimed at the farmer\'s family.', image: '3cut5' },
+      { text: 'If he was not to have today\'s victory - no one would.', image: '3cut5' },
+      { text: 'But few things command a man\'s heart more than family. It was at the last that Farmer Alan threw his body in desperate love to protect those for whom he had lived and died.', image: null },
+      { text: 'Though a man may have no martial prowess, it is the strength of his spirit that commands bravery. And so the farmer absorbed the terrible magic for the sake of his wife and children.', image: null },
+      // Scene 6: Alan death — black background
       { text: 'Dagvar staggers back, his dark armor cracking.', image: null },
       { text: 'Dagvar: "This... changes nothing. The dead do not rest, Captain."', image: null },
       { text: 'The lieutenant retreats into the cursed mist.', image: null },
@@ -256,7 +267,8 @@ export class PostTutorialVictory extends Phaser.Scene {
     // Cutscene image display (swapped per-line)
     const cutsceneImage = this.add.image(400, 320, '3cut1');
     this._scaleCover(cutsceneImage);
-    let currentImageKey = '3cut1';
+    cutsceneImage.setAlpha(0);
+    let currentImageKey = null;
 
     let idx = 0;
     let ready = false;
@@ -272,6 +284,22 @@ export class PostTutorialVictory extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '10px', color: '#887755',
     }).setOrigin(0.5);
     this.tweens.add({ targets: hint, alpha: 0.3, duration: 500, yoyo: true, repeat: -1 });
+
+    const setTextVisible = (visible) => {
+      textBg.setVisible(visible);
+      dialogueText.setVisible(visible);
+      hint.setVisible(visible);
+    };
+
+    const applyLine = (line) => {
+      if (line.text) {
+        setTextVisible(true);
+        dialogueText.setText(line.text);
+      } else {
+        setTextVisible(false);
+      }
+      idx++;
+    };
 
     const showLine = () => {
       if (idx >= lines.length) {
@@ -305,14 +333,12 @@ export class PostTutorialVictory extends Phaser.Scene {
                 alpha: 1,
                 duration: 400,
                 onComplete: () => {
-                  dialogueText.setText(line.text);
-                  idx++;
+                  applyLine(line);
                   transitioning = false;
                 },
               });
             } else {
-              dialogueText.setText(line.text);
-              idx++;
+              applyLine(line);
               transitioning = false;
             }
           },
@@ -320,8 +346,7 @@ export class PostTutorialVictory extends Phaser.Scene {
         return;
       }
 
-      dialogueText.setText(line.text);
-      idx++;
+      applyLine(line);
     };
     showLine();
 
