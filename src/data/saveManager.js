@@ -57,6 +57,7 @@ export function serializeGameState(registry, playerPos) {
     ricketsProximityPlayed: registry.get('ricketsProximityPlayed') || false,
     catacombsCutscenePlayed: registry.get('catacombsCutscenePlayed') || false,
     halBattleTriggered: registry.get('halBattleTriggered') || false,
+    newsOfAtikeshCutscenePlayed: registry.get('newsOfAtikeshCutscenePlayed') || false,
     questState: JSON.parse(JSON.stringify(registry.get('questState') || { active: {}, completed: [], trackedQuestId: null })),
     playerPos: { x: playerPos.x, y: playerPos.y },
     saveTime: new Date().toISOString(),

@@ -268,6 +268,7 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingBrackenVictory = data?.fromBrackenVictory || false;
     this.pendingCatacombsReturn = data?.fromCatacombsCutscene || false;
     this.pendingHalVictory = data?.fromHalVictory || false;
+    this.pendingNewsOfAtikesh = data?.fromNewsOfAtikesh || false;
   }
 
   preload() {
@@ -475,6 +476,15 @@ export class OverworldScene extends Phaser.Scene {
         this.time.delayedCall(500, () => {
           this.triggerHalPostDialogue();
         });
+      });
+    }
+
+    // Return from News of Atikesh cutscene — complete quest + auto-save
+    if (this.pendingNewsOfAtikesh) {
+      this.pendingNewsOfAtikesh = false;
+      this.time.delayedCall(300, () => {
+        this.autoCompleteQuest('act1_news_of_atikesh');
+        this.triggerAutoSave();
       });
     }
   }
@@ -1634,6 +1644,17 @@ export class OverworldScene extends Phaser.Scene {
           }
         }
       }
+
+      // News of Atikesh — return to Bracken proximity trigger — 10 tiles from (55, 87)
+      if (!this.registry.get('newsOfAtikeshCutscenePlayed')
+          && isQuestActive(this.registry, 'act1_news_of_atikesh')) {
+        const dx = tx - 55, dy = ty - 87;
+        if (Math.sqrt(dx * dx + dy * dy) <= 10) {
+          this.registry.set('newsOfAtikeshCutscenePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerNewsOfAtikeshCutscene();
+        }
+      }
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
@@ -2350,6 +2371,14 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('HalVictoryCutscene');
+    });
+  }
+
+  triggerNewsOfAtikeshCutscene() {
+    this.registry.set('newsOfAtikeshPlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('NewsOfAtikeshCutscene');
     });
   }
 

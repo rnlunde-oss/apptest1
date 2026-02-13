@@ -33,6 +33,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('ricketsProximityPlayed', this.loadData.ricketsProximityPlayed || false);
       this.registry.set('catacombsCutscenePlayed', this.loadData.catacombsCutscenePlayed || false);
       this.registry.set('halBattleTriggered', this.loadData.halBattleTriggered || false);
+      this.registry.set('newsOfAtikeshCutscenePlayed', this.loadData.newsOfAtikeshCutscenePlayed || false);
 
       // Restore quest state (or init fresh for old saves without it)
       if (this.loadData.questState) {
@@ -68,6 +69,7 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('ricketsProximityPlayed', false);
       this.registry.set('catacombsCutscenePlayed', false);
       this.registry.set('halBattleTriggered', false);
+      this.registry.set('newsOfAtikeshCutscenePlayed', false);
 
       initQuestState(this.registry);
 

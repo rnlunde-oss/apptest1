@@ -10,6 +10,7 @@ import { RivinRecruitCutscene } from './scenes/RivinRecruitCutscene.js';
 import { BrackenVictoryCutscene } from './scenes/BrackenVictoryCutscene.js';
 import { CatacombsCutscene } from './scenes/CatacombsCutscene.js';
 import { HalVictoryCutscene } from './scenes/HalVictoryCutscene.js';
+import { NewsOfAtikeshCutscene } from './scenes/NewsOfAtikeshCutscene.js';
 import { OverworldScene } from './scenes/OverworldScene.js';
 import { BattleScene } from './scenes/BattleScene.js';
 import { BattleUIScene } from './scenes/BattleUIScene.js';
@@ -38,7 +39,7 @@ const config = {
   input: {
     activePointers: 3,
   },
-  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat, FarmlandCutscene, BrackenCutscene, RivinRecruitCutscene, BrackenVictoryCutscene, CatacombsCutscene, HalVictoryCutscene, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, QuestLogScene, TouchControlsScene],
+  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat, FarmlandCutscene, BrackenCutscene, RivinRecruitCutscene, BrackenVictoryCutscene, CatacombsCutscene, HalVictoryCutscene, NewsOfAtikeshCutscene, OverworldScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, QuestLogScene, TouchControlsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
