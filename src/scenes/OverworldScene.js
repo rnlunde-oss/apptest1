@@ -30,7 +30,7 @@ const VIEWPORT_UPDATE_THRESHOLD = 2; // tiles moved before re-eval
 
 const LOCATION_LABELS = [
   { name: 'Bracken',           tileX: 55, tileY: 87, color: '#ccaa44' },
-  { name: 'Asvam Farmlands',   tileX: 50, tileY: 97, color: '#88aa66' },
+  { name: 'Asvam Farmlands',   tileX: 18, tileY: 188, color: '#88aa66' },
   { name: 'The Catacombs',     tileX: 83, tileY: 73, color: '#9977bb' },
   { name: 'Verlan Farmstead',  tileX: 40, tileY: 82, color: '#88aa66' },
 ];
@@ -875,7 +875,6 @@ export class OverworldScene extends Phaser.Scene {
     // NPC placement data: id, pixel position, name color, detail color
     const NPC_DEFS = [
       { id: 'rivin',  x: 55 * TILE_SIZE + 16, y: 87 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
-      { id: 'lyra',   x: 50 * TILE_SIZE + 16, y: 93 * TILE_SIZE + 16, nameColor: '#aaddaa', detailColor: 0x115522 },
       { id: 'fenton', x: 35 * TILE_SIZE + 16, y: 137 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
       { id: 'rickets',x: 83 * TILE_SIZE + 16, y: 73 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
       { id: 'hela',   x: 163 * TILE_SIZE + 16, y: 117 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
@@ -1429,7 +1428,7 @@ export class OverworldScene extends Phaser.Scene {
       this.checkLocationObjectives(tx, ty);
 
       if (!this.registry.get('farmlandCutscenePlayed')) {
-        const dx = tx - 50, dy = ty - 97;
+        const dx = tx - 18, dy = ty - 188;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           this.registry.set('farmlandCutscenePlayed', true);
           this.player.body.setVelocity(0);

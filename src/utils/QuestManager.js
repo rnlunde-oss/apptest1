@@ -6,7 +6,7 @@ import { awardXP } from '../data/characters.js';
 
 // Named location coordinates for reach_location objectives
 export const LOCATION_COORDS = {
-  asvam_farmlands: { x: 50, y: 97, radius: 5 },
+  asvam_farmlands: { x: 18, y: 188, radius: 5 },
   bracken:         { x: 55, y: 87, radius: 5 },
   catacombs:       { x: 83, y: 73, radius: 5 },
   dungeon:         { x: 115, y: 20, radius: 5 },
