@@ -158,6 +158,7 @@ const SPEAKER_PORTRAITS = {
   'Makar': null,
   'Vivian': null,
   'Dhan': null,
+  'Lieutenant Dhan': null,
   // NPC-only speakers — add portrait keys here when assets are added:
   // 'Kelea': 'kelea_portrait_base',
   // 'Farmer': 'farmer_portrait_base',
@@ -392,6 +393,8 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingCatacombsReturn = data?.fromCatacombsCutscene || false;
     this.pendingHalVictory = data?.fromHalVictory || false;
     this.pendingNewsOfAtikesh = data?.fromNewsOfAtikesh || false;
+    this.pendingCravenForestReturn = data?.fromCravenForestCutscene || false;
+    this.pendingFortRitkerReturn = data?.fromFortRitkerCutscene || false;
   }
 
   preload() {
@@ -610,6 +613,22 @@ export class OverworldScene extends Phaser.Scene {
       this.pendingNewsOfAtikesh = false;
       this.time.delayedCall(300, () => {
         this.autoCompleteQuest('act1_news_of_atikesh');
+        this.triggerAutoSave();
+      });
+    }
+
+    // Return from Craven Forest entry cutscene
+    if (this.pendingCravenForestReturn) {
+      this.pendingCravenForestReturn = false;
+      this.time.delayedCall(300, () => {
+        this.triggerAutoSave();
+      });
+    }
+
+    // Return from Fort Ritker cutscene
+    if (this.pendingFortRitkerReturn) {
+      this.pendingFortRitkerReturn = false;
+      this.time.delayedCall(300, () => {
         this.triggerAutoSave();
       });
     }
@@ -1907,9 +1926,103 @@ export class OverworldScene extends Phaser.Scene {
             const inventory = this.registry.get('inventory');
             inventory.push('dandaron_shield');
             this.showDialogue(['Received Shield of House Dandaron!'], () => {
+              acceptQuest(this.registry, 'act1_first_importance');
+              this.time.delayedCall(500, () => {
+                const toast = this._addUI(this.add.text(400, 560, 'New Quest: Of First Importance', {
+                  fontSize: '12px', color: '#ffdd44', fontStyle: 'bold',
+                  backgroundColor: '#00000099', padding: { x: 12, y: 5 },
+                }).setOrigin(0.5).setScrollFactor(0).setDepth(400));
+                this.tweens.add({
+                  targets: toast, alpha: 0, y: 540,
+                  delay: 3000, duration: 600,
+                  onComplete: () => toast.destroy(),
+                });
+              });
               this.triggerAutoSave();
             });
           });
+        }
+      }
+
+      // Craven Forest approach — triggers within 20 tiles when quest is active
+      if (!this.registry.get('cravenForestApproachPlayed')
+          && isQuestActive(this.registry, 'act1_first_importance')) {
+        const dx = tx - 115, dy = ty - 50;
+        if (Math.sqrt(dx * dx + dy * dy) <= 20) {
+          this.registry.set('cravenForestApproachPlayed', true);
+          this.player.body.setVelocity(0);
+          this.showDialogue([
+            'The party journeyed in suspended silence beneath the view of the distant mountain peaks. The road meandered through grassland clearings before terminating into the dense treeline that expanded as far as the eye could see in either direction of the horizon.',
+            'Lyra: "Craven Forest\u2026 it\'s been years."',
+            'Rivin: "You\'ve been?!"',
+            'Lyra: "Many times\u2026"',
+            'Rivin: "You are a strange lass."',
+            'Rickets: "Boy! What could you be scared of?!"',
+            'Rivin: "You old coot! The forest is known to be haunted\u2026"',
+            'Metz: "The whole world is haunted now\u2026 come on, Lieutenant Dhan and his vanguard should be near."',
+          ], () => {
+            const result = progressObjective(this.registry, 'act1_first_importance', 'reach_craven_forest', 1);
+            if (result && result.questComplete) {
+              this.autoCompleteQuest('act1_first_importance');
+            }
+            this.triggerAutoSave();
+          });
+        }
+      }
+
+      // Lieutenant Dhan rendezvous — triggers within 10 tiles of Craven Forest after approach cutscene
+      if (this.registry.get('cravenForestApproachPlayed')
+          && !this.registry.get('dhanRendezvousPlayed')) {
+        const dx = tx - 115, dy = ty - 50;
+        if (Math.sqrt(dx * dx + dy * dy) <= 10) {
+          this.registry.set('dhanRendezvousPlayed', true);
+          this.player.body.setVelocity(0);
+          this.showDialogue([
+            'An owl hoot is heard from behind the brush.',
+            'Lyra responds with an owl call of her own.',
+            'Lieutenant Dhan and his vanguard emerge from the brush.',
+            'Lieutenant Dhan: "Captain Metz?"',
+            'Metz: "Aye, sir."',
+            'Lieutenant Dhan: "Lord Sivin informs me that you intend the road to Fort Ritker."',
+            'Metz: "We do."',
+            'Lieutenant Dhan: "Then you\'ll need this. The forest is teeming with foul beasts and creatures. Few dare the road."',
+            'Rivin groans.',
+          ], () => {
+            const inventory = this.registry.get('inventory');
+            inventory.push('healing_stone');
+            this.showDialogue([
+              'Lieutenant Dhan gives the party a Healing Stone.',
+              'Rickets: "A healing stone!"',
+              'Lieutenant Dhan: "You\'ll not find many places for refuge in the forest, but keep that close and you\'ll have a fighting chance to live."',
+              'Lyra: "How far is Fort Ritker from the treeline?"',
+              'Lieutenant Dhan: "About half a day\'s journey. It was built decades ago before the northlands grew quiet."',
+              'Metz: "Then we\'d best be making our way there. Thank you, Lieutenant."',
+            ], () => {
+              this.triggerAutoSave();
+            });
+          });
+        }
+      }
+
+      // Craven Forest entry cutscene — triggers within 5 tiles of forest center after Dhan rendezvous
+      if (this.registry.get('dhanRendezvousPlayed')
+          && !this.registry.get('cravenForestEntryCutscenePlayed')) {
+        const dx = tx - 115, dy = ty - 50;
+        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
+          this.registry.set('cravenForestEntryCutscenePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerCravenForestCutscene();
+        }
+      }
+
+      // Fort Ritker approach cutscene — triggers within 8 tiles of Fort Ritker
+      if (this.registry.get('cravenForestEntryCutscenePlayed')
+          && !this.registry.get('fortRitkerCutscenePlayed')) {
+        const dx = tx - 115, dy = ty - 20;
+        if (Math.sqrt(dx * dx + dy * dy) <= 8) {
+          this.registry.set('fortRitkerCutscenePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerFortRitkerCutscene();
         }
       }
     }
@@ -2736,6 +2849,22 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('CatacombsCutscene');
+    });
+  }
+
+  triggerCravenForestCutscene() {
+    this.registry.set('cravenForestCutscenePlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('CravenForestCutscene');
+    });
+  }
+
+  triggerFortRitkerCutscene() {
+    this.registry.set('fortRitkerCutscenePlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('FortRitkerCutscene');
     });
   }
 

@@ -1,9 +1,9 @@
-// Rivin Recruit Cutscene — triggered when player returns to Rivin after clearing the town
+// Craven Forest Entry Cutscene — triggered when party enters Craven Forest
 // Uses black placeholder images (to be replaced with art later)
 
-export class RivinRecruitCutscene extends Phaser.Scene {
+export class CravenForestCutscene extends Phaser.Scene {
   constructor() {
-    super('RivinRecruitCutscene');
+    super('CravenForestCutscene');
   }
 
   create() {
@@ -13,10 +13,9 @@ export class RivinRecruitCutscene extends Phaser.Scene {
     this.add.rectangle(400, 320, 800, 640, 0x000000);
 
     const lines = [
-      { text: 'Rivin: "The name\'s Rivin."', image: null },
-      { text: 'Metz: "Well met."', image: null },
-      { text: 'Rivin: "I\'ve fought for lords, ladies, and coins. But for now\u2026 I\'ll fight for you."', image: null },
-      { text: '[ Rivin has joined the party! ]', image: null },
+      { text: 'As soon as the party entered the overgrowth of Craven Forest the air seemed to compress. The very trees were unwelcoming to life itself.', image: null },
+      { text: 'The further the party journeyed, the more the tall boughs overhead choked the sunlight. How did anything grow beneath them?', image: null },
+      { text: 'Rivin: "Dawn\'s song keep me\u2026"', image: null },
     ];
 
     // Cutscene image (hidden when null — black bg shows through)
@@ -61,8 +60,8 @@ export class RivinRecruitCutscene extends Phaser.Scene {
         this.input.off('pointerdown', advance);
         this.cameras.main.fadeOut(600, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-          const savedPos = this.registry.get('rivinRecruitPlayerPos');
-          this.scene.start('Overworld', { fromRivinRecruit: true, playerPos: savedPos });
+          const savedPos = this.registry.get('cravenForestCutscenePlayerPos');
+          this.scene.start('Overworld', { fromCravenForestCutscene: true, playerPos: savedPos });
         });
         return;
       }

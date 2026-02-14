@@ -1,9 +1,9 @@
-// Rivin Recruit Cutscene — triggered when player returns to Rivin after clearing the town
+// Fort Ritker Approach Cutscene — triggered when party is within 8 tiles of Fort Ritker
 // Uses black placeholder images (to be replaced with art later)
 
-export class RivinRecruitCutscene extends Phaser.Scene {
+export class FortRitkerCutscene extends Phaser.Scene {
   constructor() {
-    super('RivinRecruitCutscene');
+    super('FortRitkerCutscene');
   }
 
   create() {
@@ -13,10 +13,14 @@ export class RivinRecruitCutscene extends Phaser.Scene {
     this.add.rectangle(400, 320, 800, 640, 0x000000);
 
     const lines = [
-      { text: 'Rivin: "The name\'s Rivin."', image: null },
-      { text: 'Metz: "Well met."', image: null },
-      { text: 'Rivin: "I\'ve fought for lords, ladies, and coins. But for now\u2026 I\'ll fight for you."', image: null },
-      { text: '[ Rivin has joined the party! ]', image: null },
+      { text: 'Time stretched beyond reckoning for the party as they journeyed through the forest. They could not discern the time of day, night, or any other reckoning.', image: null },
+      { text: 'Save for precious breaks in the treeline, one would have thought themselves to be beneath the earth.', image: null },
+      { text: 'Suddenly, the ruins of Fort Ritker came into view, its stone columns distinguishing its time in history as hundreds of years prior.', image: null },
+      { text: 'Rickets: "Fort Ritker\u2026 as I live and breathe\u2026"', image: null },
+      { text: 'Rivin: "I swear, if this knight isn\'t here\u2026"', image: null },
+      { text: 'Lyra: "By the dawn, Rivin, you are insufferable!"', image: null },
+      { text: 'Metz: "I see torchlight! Someone\'s home\u2026"', image: null },
+      { text: 'Rickets giggled.', image: null },
     ];
 
     // Cutscene image (hidden when null — black bg shows through)
@@ -61,8 +65,8 @@ export class RivinRecruitCutscene extends Phaser.Scene {
         this.input.off('pointerdown', advance);
         this.cameras.main.fadeOut(600, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-          const savedPos = this.registry.get('rivinRecruitPlayerPos');
-          this.scene.start('Overworld', { fromRivinRecruit: true, playerPos: savedPos });
+          const savedPos = this.registry.get('fortRitkerCutscenePlayerPos');
+          this.scene.start('Overworld', { fromFortRitkerCutscene: true, playerPos: savedPos });
         });
         return;
       }

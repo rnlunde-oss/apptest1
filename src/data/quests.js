@@ -164,6 +164,25 @@ export const QUEST_DEFS = {
     sortOrder: 400,
   },
 
+  act1_first_importance: {
+    id: 'act1_first_importance',
+    name: 'Of First Importance',
+    act: 1,
+    type: 'main',
+    giver: 'tertullian',
+    giverName: 'Captain Tertullian',
+    description: 'Rendezvous with Lieutenant Dhan and his vanguard on the edge of Craven Forest.',
+    objectives: [
+      { id: 'reach_craven_forest', type: 'reach_location', target: 'craven_forest', description: 'Rendezvous with Lt. Dhan at Craven Forest', required: 1 },
+    ],
+    prereqs: ['act1_from_the_ashes'],
+    rewards: { gold: 0, xp: 0, items: [], unlocks: [] },
+    acceptDialogue: ['Make haste for Craven Forest. Lieutenant Dhan and his vanguard await.'],
+    completeDialogue: ['The vanguard awaits at the edge of Craven Forest.'],
+    tracked: true,
+    sortOrder: 460,
+  },
+
   act1_what_goes_around: {
     id: 'act1_what_goes_around',
     name: 'What Goes Around...',

@@ -13,6 +13,7 @@ export const LOCATION_COORDS = {
   bjorn_hideout:   { x: 80, y: 110, radius: 5 },
   harolds_farm:    { x: 30, y: 90, radius: 5 },
   old_nans_farm:   { x: 35, y: 65, radius: 5 },
+  craven_forest:   { x: 115, y: 50, radius: 5 },
 };
 
 // ──── Initialization ────

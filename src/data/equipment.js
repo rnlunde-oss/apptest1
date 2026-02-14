@@ -459,6 +459,18 @@ export const CONSUMABLES = {
     buyPrice: 15,
     sellPrice: 7,
   },
+  healing_stone: {
+    id: 'healing_stone',
+    name: 'Healing Stone',
+    type: 'heal_party_full',
+    target: 'party',
+    amount: 9999,
+    charges: 5,
+    desc: 'A rare stone capable of restoring the entire party to full health. Has 5 charges.',
+    rarity: 'Rare',
+    buyPrice: 0,
+    sellPrice: 0,
+  },
   old_nans_honey: {
     id: 'old_nans_honey',
     name: "Old Nan's Honey",

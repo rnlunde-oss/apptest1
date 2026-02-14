@@ -37,6 +37,10 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('fromTheAshesDialoguePlayed', this.loadData.fromTheAshesDialoguePlayed || false);
       this.registry.set('makarFarewellPlayed', this.loadData.makarFarewellPlayed || false);
       this.registry.set('tertullianShieldPlayed', this.loadData.tertullianShieldPlayed || false);
+      this.registry.set('cravenForestApproachPlayed', this.loadData.cravenForestApproachPlayed || false);
+      this.registry.set('dhanRendezvousPlayed', this.loadData.dhanRendezvousPlayed || false);
+      this.registry.set('cravenForestEntryCutscenePlayed', this.loadData.cravenForestEntryCutscenePlayed || false);
+      this.registry.set('fortRitkerCutscenePlayed', this.loadData.fortRitkerCutscenePlayed || false);
 
       // Restore quest state (or init fresh for old saves without it)
       if (this.loadData.questState) {
@@ -76,6 +80,10 @@ export class BootScene extends Phaser.Scene {
       this.registry.set('fromTheAshesDialoguePlayed', false);
       this.registry.set('makarFarewellPlayed', false);
       this.registry.set('tertullianShieldPlayed', false);
+      this.registry.set('cravenForestApproachPlayed', false);
+      this.registry.set('dhanRendezvousPlayed', false);
+      this.registry.set('cravenForestEntryCutscenePlayed', false);
+      this.registry.set('fortRitkerCutscenePlayed', false);
 
       initQuestState(this.registry);
 
