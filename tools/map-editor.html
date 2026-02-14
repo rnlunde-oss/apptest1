@@ -178,7 +178,10 @@ const TILES = {
   19: { name: 'Bridge',        color: '#8b6b3a' },
   20: { name: 'Swamp',         color: '#3a5a2a' },
   21: { name: 'Shop',          color: '#8b6b5a' },
+  22: { name: 'Bracken Gate',  color: '#ddaa22' },
   23: { name: 'Grassland',     color: '#5a9a3a' },
+  24: { name: 'Tavrish Gate',  color: '#2266cc' },
+  25: { name: "Dawn's Vigil",  color: '#ccccff' },
 };
 const TILE_IDS = Object.keys(TILES).map(Number).sort((a, b) => a - b);
 
@@ -186,7 +189,9 @@ const TILE_IDS = Object.keys(TILES).map(Number).sort((a, b) => a - b);
 // LOCATION LABELS (mutable)
 // ═══════════════════════════════════════════════
 let locations = [
-  { name: 'Bracken', x: 81, y: 112 },
+  { name: 'Bracken North', x: 79, y: 111 },
+  { name: 'Bracken West Entrance', x: 77, y: 115 },
+  { name: 'Bracken East Entrance', x: 85, y: 116 },
   { name: 'Asvam', x: 28, y: 154 },
   { name: 'Verlan', x: 9, y: 184 },
   { name: 'Fort Ritker', x: 35, y: 49 },
@@ -757,7 +762,10 @@ function exportMap() {
 // 19 = bridge (walkable)
 // 20 = swamp (walkable, encounters)
 // 21 = shop building (impassable)
+// 22 = town entrance: Bracken (walkable, scene transition)
 // 23 = grassland (walkable, low encounters)
+// 24 = town entrance: Tavrish (walkable, scene transition)
+// 25 = sanctuary entrance: Dawn's Vigil (walkable, scene transition)
 
 export const TILE_SIZE = 32;
 export const MAP_COLS = 200;
@@ -797,7 +805,10 @@ export const TILE_COLORS = {
   19: 0x8b6b3a, // bridge (wood brown)
   20: 0x3a5a2a, // swamp (murky green)
   21: 0x8b6b3a, // shop building (wood)
+  22: 0xddaa22, // town entrance: Bracken (gold gate)
   23: 0x5a9a3a, // grassland (light green)
+  24: 0x2266cc, // town entrance: Tavrish (blue port)
+  25: 0xccccff, // sanctuary entrance: Dawn's Vigil (silver)
 };
 
 export const ENCOUNTER_RATE = 0.10;

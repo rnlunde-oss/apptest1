@@ -39,7 +39,7 @@ const VIEWPORT_BUFFER = 3;        // extra tiles beyond camera edge
 const VIEWPORT_UPDATE_THRESHOLD = 2; // tiles moved before re-eval
 
 const LOCATION_LABELS = [
-  { name: 'Bracken',           tileX: 81,  tileY: 112, color: '#ccaa44' },
+  { name: 'Bracken',           tileX: 81,  tileY: 114, color: '#ccaa44' },
   { name: 'Asvam Farmlands',   tileX: 28,  tileY: 154, color: '#88aa66' },
   { name: 'The Catacombs',     tileX: 100, tileY: 112, color: '#9977bb' },
   { name: 'Verlan Farmstead',  tileX: 9,   tileY: 184, color: '#88aa66' },
@@ -332,7 +332,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'skeletal_captain',
-    tileX: 81, tileY: 108,
+    tileX: 75, tileY: 115,
     name: 'Skeletal Captain',
     enemies: ['skeletal_captain', 'skeleton', 'skeleton', 'skeleton'],
     xp: 75, gold: 65,
@@ -1867,7 +1867,7 @@ export class OverworldScene extends Phaser.Scene {
       // News of Atikesh — return to Bracken proximity trigger — 10 tiles from Bracken
       if (!this.registry.get('newsOfAtikeshCutscenePlayed')
           && isQuestActive(this.registry, 'act1_news_of_atikesh')) {
-        const dx = tx - 81, dy = ty - 112;
+        const dx = tx - 77, dy = ty - 115;
         if (Math.sqrt(dx * dx + dy * dy) <= 10) {
           this.registry.set('newsOfAtikeshCutscenePlayed', true);
           this.player.body.setVelocity(0);
@@ -1878,7 +1878,7 @@ export class OverworldScene extends Phaser.Scene {
       // From the Ashes completion — "First Importance" dialogue near Bracken center
       if (!this.registry.get('fromTheAshesDialoguePlayed')
           && isQuestComplete(this.registry, 'act1_from_the_ashes')) {
-        const dx = tx - 81, dy = ty - 112;
+        const dx = tx - 77, dy = ty - 115;
         if (Math.sqrt(dx * dx + dy * dy) <= 10) {
           this.registry.set('fromTheAshesDialoguePlayed', true);
           this.player.body.setVelocity(0);
@@ -2457,7 +2457,7 @@ export class OverworldScene extends Phaser.Scene {
 
     // During "Clear the Town" quest, Bracken area spawns only skeletons on any walkable tile
     if (isQuestActive(this.registry, 'act1_clear_bracken')) {
-      const dx = tx - 81, dy = ty - 112;
+      const dx = tx - 81, dy = ty - 114;
       if (dx * dx + dy * dy <= 20 * 20 && tile !== 1 && tile !== 8 && tile !== 11) {
         if (Math.random() < 0.30) {
           this.startBattle('bracken_skeleton');
