@@ -302,7 +302,7 @@ export class PostTutorialVictory extends Phaser.Scene {
         this.registry.set('tutorialComplete', true);
         this.cameras.main.fadeOut(600, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-          this.scene.start('Overworld', { playerPos: { x: 5 * 32 + 16, y: 190 * 32 + 16 }, postCutsceneDialogue: true });
+          this.scene.start('Overworld', { playerPos: { x: 7 * 32 + 16, y: 186 * 32 + 16 }, postCutsceneDialogue: true });
         });
         return;
       }
