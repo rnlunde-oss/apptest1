@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Defense of Rhaud — Bracken Town Editor (40×40)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+  /* Toolbar */
+  #toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #16213e; border-bottom: 1px solid #0f3460; flex-shrink: 0; flex-wrap: wrap; }
+  #toolbar button, #toolbar label { font-size: 13px; padding: 4px 10px; background: #0f3460; color: #e0e0e0; border: 1px solid #1a4a8a; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+  #toolbar button:hover { background: #1a5a9a; }
+  #toolbar button.active { background: #e94560; border-color: #e94560; }
+  .tb-sep { width: 1px; height: 24px; background: #0f3460; flex-shrink: 0; }
+  #toolbar select, #toolbar input[type=range] { font-size: 13px; background: #0f3460; color: #e0e0e0; border: 1px solid #1a4a8a; border-radius: 4px; padding: 2px 4px; }
+  #brush-size-label { font-size: 12px; min-width: 20px; text-align: center; }
+
+  /* Main layout */
+  #main { display: flex; flex: 1; overflow: hidden; }
+
+  /* Palette (left) */
+  #palette { width: 160px; background: #16213e; border-right: 1px solid #0f3460; overflow-y: auto; flex-shrink: 0; padding: 4px; }
+  .tile-btn { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 6px; margin-bottom: 2px; background: transparent; border: 2px solid transparent; border-radius: 4px; cursor: pointer; color: #e0e0e0; font-size: 12px; text-align: left; }
+  .tile-btn:hover { background: #0f3460; }
+  .tile-btn.selected { border-color: #e94560; background: #1a1a3e; }
+  .tile-swatch { width: 20px; height: 20px; border-radius: 3px; border: 1px solid #333; flex-shrink: 0; }
+  .tile-id { color: #888; font-size: 10px; min-width: 16px; }
+
+  /* Label panel (right) */
+  #label-panel { width: 240px; background: #16213e; border-left: 1px solid #0f3460; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #label-panel.hidden { display: none; }
+  #label-panel h3 { padding: 8px 10px 4px; font-size: 13px; color: #e94560; border-bottom: 1px solid #0f3460; }
+  #label-actions { display: flex; gap: 4px; padding: 6px 10px; border-bottom: 1px solid #0f3460; flex-wrap: wrap; }
+  #label-actions button { font-size: 11px; padding: 3px 8px; background: #0f3460; color: #e0e0e0; border: 1px solid #1a4a8a; border-radius: 3px; cursor: pointer; }
+  #label-actions button:hover { background: #1a5a9a; }
+  #label-list { flex: 1; overflow-y: auto; padding: 4px; }
+  .label-item { display: flex; align-items: center; gap: 6px; padding: 5px 6px; margin-bottom: 2px; border: 2px solid transparent; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .label-item:hover { background: #0f3460; }
+  .label-item.selected { border-color: #5dade2; background: #1a1a3e; }
+  .label-dot { width: 10px; height: 10px; border-radius: 50%; background: #e94560; flex-shrink: 0; }
+  .label-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .label-coords { color: #888; font-size: 10px; white-space: nowrap; }
+  #label-hint { padding: 8px 10px; font-size: 11px; color: #888; border-top: 1px solid #0f3460; }
+
+  /* Canvas area */
+  #canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #111; }
+  #map-canvas { position: absolute; top: 0; left: 0; image-rendering: pixelated; }
+
+  /* Minimap */
+  #minimap-wrap { position: absolute; bottom: 10px; right: 10px; border: 2px solid #0f3460; border-radius: 4px; background: #111; cursor: pointer; }
+  #minimap { display: block; image-rendering: pixelated; }
+
+  /* Status bar */
+  #status { padding: 4px 12px; background: #16213e; border-top: 1px solid #0f3460; font-size: 12px; display: flex; gap: 16px; flex-shrink: 0; }
+  .status-item { white-space: nowrap; }
+  .status-key { color: #888; }
+
+  /* File input hidden */
+  #file-input { display: none; }
+
+  /* Keyboard help overlay */
+  #help-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+  #help-overlay.visible { display: flex; }
+  #help-box { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 24px; max-width: 460px; }
+  #help-box h2 { margin-bottom: 12px; color: #e94560; }
+  #help-box table { font-size: 13px; }
+  #help-box td { padding: 2px 12px 2px 0; }
+  #help-box .key { color: #5dade2; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span style="color:#ddaa22;font-weight:bold;font-size:14px;">Bracken Town (40×40)</span>
+  <div class="tb-sep"></div>
+  <button id="btn-import" title="Import brackenMap.js">Import</button>
+  <button id="btn-export" title="Export brackenMap.js">Export Map</button>
+  <button id="btn-export-labels" title="Export label coordinates as JSON">Export Labels</button>
+  <div class="tb-sep"></div>
+  <button id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
+  <button id="btn-redo" title="Redo (Ctrl+Y)">Redo</button>
+  <div class="tb-sep"></div>
+  <button id="tool-brush" class="active" title="Brush (B)">Brush</button>
+  <button id="tool-fill" title="Flood Fill (F)">Fill</button>
+  <button id="tool-eyedrop" title="Eyedropper (I)">Eyedrop</button>
+  <button id="tool-rect" title="Rectangle (R)">Rect</button>
+  <button id="tool-label" title="Label / Place Marker (P)">Label</button>
+  <div class="tb-sep"></div>
+  <label>Size:</label>
+  <input type="range" id="brush-size" min="1" max="20" value="1">
+  <span id="brush-size-label">1</span>
+  <div class="tb-sep"></div>
+  <button id="btn-grid" title="Toggle Grid (G)">Grid</button>
+  <button id="btn-labels" class="active" title="Toggle Labels (L)">Labels</button>
+  <button id="btn-help" title="Keyboard Shortcuts (?)">?</button>
+</div>
+
+<div id="main">
+  <div id="palette"></div>
+  <div id="canvas-wrap">
+    <canvas id="map-canvas"></canvas>
+    <div id="minimap-wrap">
+      <canvas id="minimap" width="160" height="160"></canvas>
+    </div>
+  </div>
+  <div id="label-panel" class="hidden">
+    <h3>Location Labels</h3>
+    <div id="label-actions">
+      <button id="btn-add-label">+ Add</button>
+      <button id="btn-rename-label">Rename</button>
+      <button id="btn-delete-label">Delete</button>
+      <button id="btn-goto-label">Go To</button>
+    </div>
+    <div id="label-list"></div>
+    <div id="label-hint">Click map to place new label. Drag existing labels to move them. Double-click a label on the map to select it.</div>
+  </div>
+</div>
+
+<div id="status">
+  <span class="status-item"><span class="status-key">Pos:</span> <span id="st-pos">—</span></span>
+  <span class="status-item"><span class="status-key">Tile:</span> <span id="st-tile">—</span></span>
+  <span class="status-item"><span class="status-key">Selected:</span> <span id="st-sel">—</span></span>
+  <span class="status-item"><span class="status-key">Zoom:</span> <span id="st-zoom">—</span></span>
+  <span class="status-item"><span class="status-key">Tool:</span> <span id="st-tool">brush</span></span>
+</div>
+
+<input type="file" id="file-input" accept=".js,.json,.txt">
+
+<div id="help-overlay">
+  <div id="help-box">
+    <h2>Keyboard Shortcuts</h2>
+    <table>
+      <tr><td class="key">B</td><td>Brush tool</td></tr>
+      <tr><td class="key">F</td><td>Flood Fill tool</td></tr>
+      <tr><td class="key">I</td><td>Eyedropper tool</td></tr>
+      <tr><td class="key">R</td><td>Rectangle tool</td></tr>
+      <tr><td class="key">P</td><td>Label / Place Marker tool</td></tr>
+      <tr><td class="key">Alt+Click</td><td>Quick eyedropper</td></tr>
+      <tr><td class="key">G</td><td>Toggle grid</td></tr>
+      <tr><td class="key">L</td><td>Toggle labels</td></tr>
+      <tr><td class="key">[ / ]</td><td>Decrease / increase brush</td></tr>
+      <tr><td class="key">+ / -</td><td>Zoom in / out</td></tr>
+      <tr><td class="key">0</td><td>Fit map to view</td></tr>
+      <tr><td class="key">Ctrl+Z</td><td>Undo</td></tr>
+      <tr><td class="key">Ctrl+Y</td><td>Redo</td></tr>
+      <tr><td class="key">Space+Drag</td><td>Pan</td></tr>
+      <tr><td class="key">Scroll</td><td>Zoom at cursor</td></tr>
+      <tr><td class="key">Del</td><td>Delete selected label (in Label mode)</td></tr>
+      <tr><td class="key">?</td><td>This help</td></tr>
+    </table>
+    <p style="margin-top:12px;color:#888;font-size:12px">Click anywhere to close</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// TILE DEFINITIONS (same as overworld)
+// ═══════════════════════════════════════════════
+const TILES = {
+  0:  { name: 'Dirt',          color: '#6b5b3a' },
+  1:  { name: 'Stone Wall',    color: '#555555' },
+  2:  { name: 'Cursed Ground', color: '#3a2a3a' },
+  3:  { name: 'Stone Path',    color: '#888070' },
+  4:  { name: 'Water',         color: '#2244aa' },
+  5:  { name: 'NPC Spawn',     color: '#6b5b3a' },
+  6:  { name: 'Player Spawn',  color: '#889070' },
+  7:  { name: 'Wood Wall',     color: '#8b6b3a' },
+  8:  { name: 'Campfire',      color: '#b86b3a' },
+  9:  { name: 'Deep Cursed',   color: '#2a1a30' },
+  10: { name: 'Boss Altar',    color: '#660022' },
+  11: { name: 'Inn',           color: '#8b7b4a' },
+  12: { name: 'Farmland',      color: '#4a8a2a' },
+  13: { name: 'Forest',        color: '#2d5a1e' },
+  14: { name: 'Mountain',      color: '#6a6a6a' },
+  15: { name: 'Mt. Pass',      color: '#8a8a7a' },
+  16: { name: 'Sand',          color: '#c2b280' },
+  17: { name: 'Deep Forest',   color: '#1a3a10' },
+  18: { name: 'Dungeon',       color: '#442266' },
+  19: { name: 'Bridge',        color: '#8b6b3a' },
+  20: { name: 'Swamp',         color: '#3a5a2a' },
+  21: { name: 'Shop',          color: '#8b6b5a' },
+  22: { name: 'Bracken Gate',  color: '#ddaa22' },
+  23: { name: 'Grassland',     color: '#5a9a3a' },
+  24: { name: 'Tavrish Gate',  color: '#2266cc' },
+  25: { name: "Dawn's Vigil",  color: '#ccccff' },
+};
+const TILE_IDS = Object.keys(TILES).map(Number).sort((a, b) => a - b);
+
+// ═══════════════════════════════════════════════
+// LOCATION LABELS (town features)
+// ═══════════════════════════════════════════════
+let locations = [
+  { name: 'North Gate', x: 19, y: 0 },
+  { name: 'West Gate', x: 0, y: 19 },
+  { name: 'East Gate', x: 39, y: 19 },
+  { name: 'Town Square', x: 19, y: 19 },
+  { name: 'Garrison', x: 5, y: 5 },
+  { name: 'Market', x: 30, y: 5 },
+  { name: 'Inn', x: 5, y: 25 },
+  { name: 'Chapel', x: 34, y: 34 },
+];
+
+// ═══════════════════════════════════════════════
+// STATE — 40x40 town map
+// ═══════════════════════════════════════════════
+const ROWS = 40, COLS = 40;
+
+// Pre-generated Bracken town map
+const INITIAL_MAP = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,1,1,1,1,1,1,3,23,23,0,1,1,1,0,0,3,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,0,0,0,0,0,0,1,3,23,23,0,1,0,1,0,0,3,3,0,0,3,21,21,21,21,3,3,21,21,21,21,3,21,21,21,0,1],
+  [1,0,1,0,0,0,0,0,0,1,3,23,23,0,1,0,1,0,0,3,3,0,0,3,21,0,0,21,3,3,21,0,0,21,3,21,0,21,0,1],
+  [1,0,0,3,3,3,3,3,3,0,3,0,0,0,1,1,1,0,0,3,3,0,0,3,21,0,0,21,3,3,21,0,0,21,3,21,0,21,0,1],
+  [1,0,1,0,0,0,0,0,0,1,3,0,0,0,0,0,0,0,0,3,3,0,0,3,21,0,21,21,3,3,21,0,21,21,3,21,0,21,0,1],
+  [1,0,1,0,0,0,0,0,0,1,3,0,0,0,0,0,0,0,0,3,3,0,0,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,0,1],
+  [1,0,1,1,1,1,1,1,1,1,3,0,0,0,0,0,0,0,0,3,3,0,0,3,3,7,7,3,7,7,3,7,7,3,7,7,3,3,0,1],
+  [1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,7,7,0,7,7,0,7,7,0,7,7,0,0,0,1],
+  [1,0,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],
+  [1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,3,3,3,3,3,3,3,3,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,3,0,7,7,7,7,7,7,7,0,1],
+  [1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,3,0,7,0,0,0,0,0,7,0,1],
+  [1,0,23,23,23,0,23,23,23,0,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,3,0,7,0,0,0,0,0,7,0,1],
+  [1,0,23,23,23,0,23,23,23,0,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,3,0,7,0,0,0,0,0,7,0,1],
+  [1,0,23,23,23,0,23,23,23,0,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,3,0,7,7,7,0,7,7,7,0,1],
+  [1,0,23,23,23,3,23,23,23,3,3,0,0,0,0,0,0,3,3,3,3,3,3,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,3,3,3,3,3,3,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,8,8,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,8,8,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+  [1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,3,3,3,3,3,3,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,11,11,11,0,11,11,11,3,3,0,7,7,0,7,7,3,3,3,3,3,3,0,7,7,0,7,7,3,0,7,7,0,7,7,0,0,0,1],
+  [1,0,11,0,0,0,0,0,11,3,3,0,7,0,0,0,7,3,0,3,3,0,0,0,7,0,0,0,7,3,0,7,0,0,0,7,0,0,0,1],
+  [1,0,11,0,0,0,0,0,11,3,3,0,7,0,0,0,7,3,0,3,3,0,0,0,7,0,0,0,7,3,0,7,0,0,0,7,0,0,0,1],
+  [1,0,11,0,0,8,0,0,11,3,3,0,7,7,7,7,7,3,0,3,3,0,0,0,7,7,7,7,7,3,0,7,7,7,7,7,0,0,0,1],
+  [1,0,11,0,0,0,0,0,11,3,3,0,0,0,0,0,0,3,0,3,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,11,0,0,0,0,0,11,3,3,0,23,23,23,23,23,3,0,3,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,11,11,11,11,11,11,11,3,3,0,23,23,23,23,23,3,0,3,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],
+  [1,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+  [1,0,7,7,0,7,7,0,7,7,0,7,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,1,1,1,0,1,1,1,0,1],
+  [1,0,7,0,0,0,7,0,7,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,3,0,1,3,3,3,3,3,1,0,1],
+  [1,0,7,0,0,0,7,0,7,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,3,0,1,3,3,3,3,3,1,0,1],
+  [1,0,7,7,7,7,7,0,7,7,7,7,7,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,3,0,1,3,3,3,3,3,1,0,1],
+  [1,0,12,12,12,12,12,12,12,12,3,0,23,23,23,23,23,23,0,0,0,0,0,0,23,23,23,23,23,3,0,23,23,23,23,23,23,23,0,1],
+  [1,0,12,12,12,12,12,12,12,12,3,0,23,23,23,23,23,23,0,0,0,0,0,0,23,23,23,23,23,3,0,23,23,23,23,23,23,23,0,1],
+  [1,0,12,12,12,12,12,12,12,12,3,0,23,23,23,23,23,23,0,0,0,0,0,0,23,23,23,23,23,3,0,23,23,23,23,23,23,23,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+let mapData = INITIAL_MAP.map(row => [...row]);
+
+let selectedTile = 0;
+let brushSize = 1;
+let tool = 'brush';
+let zoom = 12;
+let panX = 0, panY = 0;
+let showGrid = true;
+let showLabels = true;
+let dirty = true;
+let minimapDirty = true;
+
+// Undo/redo
+const undoStack = [];
+const redoStack = [];
+const MAX_UNDO = 200;
+let currentStroke = null;
+
+// Interaction state
+let isPainting = false;
+let isPanning = false;
+let spaceHeld = false;
+let lastMouse = { x: 0, y: 0 };
+let mouseInCanvas = false;
+let cursorTile = { x: -1, y: -1 };
+let rectStart = null;
+
+// Label state
+let selectedLabelIdx = -1;
+let isDraggingLabel = false;
+let labelDragOffset = { x: 0, y: 0 };
+
+// DOM refs
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+const mmCanvas = document.getElementById('minimap');
+const mmCtx = mmCanvas.getContext('2d');
+
+// ═══════════════════════════════════════════════
+// PALETTE
+// ═══════════════════════════════════════════════
+function buildPalette() {
+  const pal = document.getElementById('palette');
+  pal.innerHTML = '';
+  for (const id of TILE_IDS) {
+    const t = TILES[id];
+    const btn = document.createElement('button');
+    btn.className = 'tile-btn' + (id === selectedTile ? ' selected' : '');
+    btn.dataset.id = id;
+    btn.innerHTML = `<span class="tile-swatch" style="background:${t.color}"></span><span class="tile-id">${id}</span>${t.name}`;
+    btn.onclick = () => selectTile(id);
+    pal.appendChild(btn);
+  }
+}
+
+function selectTile(id) {
+  selectedTile = id;
+  document.querySelectorAll('.tile-btn').forEach(b => {
+    b.classList.toggle('selected', +b.dataset.id === id);
+  });
+  updateStatus();
+}
+
+// ═══════════════════════════════════════════════
+// LABEL PANEL
+// ═══════════════════════════════════════════════
+function buildLabelList() {
+  const list = document.getElementById('label-list');
+  list.innerHTML = '';
+  locations.forEach((loc, i) => {
+    const item = document.createElement('div');
+    item.className = 'label-item' + (i === selectedLabelIdx ? ' selected' : '');
+    item.innerHTML = `<span class="label-dot"></span><span class="label-name">${loc.name}</span><span class="label-coords">(${loc.x}, ${loc.y})</span>`;
+    item.onclick = () => {
+      selectedLabelIdx = i;
+      buildLabelList();
+      dirty = true;
+    };
+    item.ondblclick = () => {
+      selectedLabelIdx = i;
+      goToLabel(i);
+    };
+    list.appendChild(item);
+  });
+}
+
+function goToLabel(idx) {
+  if (idx < 0 || idx >= locations.length) return;
+  const loc = locations[idx];
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  panX = w / 2 - (loc.x + 0.5) * zoom;
+  panY = h / 2 - (loc.y + 0.5) * zoom;
+  dirty = true;
+}
+
+function addLabel() {
+  const name = prompt('Label name:');
+  if (!name || !name.trim()) return;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  const center = screenToTile(w / 2, h / 2);
+  const x = Math.max(0, Math.min(COLS - 1, center.x));
+  const y = Math.max(0, Math.min(ROWS - 1, center.y));
+  locations.push({ name: name.trim(), x, y });
+  selectedLabelIdx = locations.length - 1;
+  buildLabelList();
+  dirty = true;
+}
+
+function renameLabel() {
+  if (selectedLabelIdx < 0 || selectedLabelIdx >= locations.length) return;
+  const loc = locations[selectedLabelIdx];
+  const name = prompt('New name:', loc.name);
+  if (!name || !name.trim()) return;
+  loc.name = name.trim();
+  buildLabelList();
+  dirty = true;
+}
+
+function deleteLabel() {
+  if (selectedLabelIdx < 0 || selectedLabelIdx >= locations.length) return;
+  const loc = locations[selectedLabelIdx];
+  if (!confirm(`Delete label "${loc.name}"?`)) return;
+  locations.splice(selectedLabelIdx, 1);
+  selectedLabelIdx = Math.min(selectedLabelIdx, locations.length - 1);
+  buildLabelList();
+  dirty = true;
+}
+
+function exportLabels() {
+  const data = {
+    _info: 'Location labels exported from Bracken Town Editor',
+    locations: locations.map(l => ({ name: l.name, x: l.x, y: l.y }))
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bracken-labels.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function findLabelAt(tx, ty) {
+  const grabRadius = Math.max(3, 12 / zoom);
+  let closest = -1;
+  let closestDist = Infinity;
+  for (let i = 0; i < locations.length; i++) {
+    const loc = locations[i];
+    const d = Math.sqrt((loc.x - tx) ** 2 + (loc.y - ty) ** 2);
+    if (d < grabRadius && d < closestDist) {
+      closest = i;
+      closestDist = d;
+    }
+  }
+  return closest;
+}
+
+// ═══════════════════════════════════════════════
+// COORDINATE CONVERSION
+// ═══════════════════════════════════════════════
+function screenToTile(sx, sy) {
+  return {
+    x: Math.floor((sx - panX) / zoom),
+    y: Math.floor((sy - panY) / zoom)
+  };
+}
+
+function screenToTileFloat(sx, sy) {
+  return {
+    x: (sx - panX) / zoom,
+    y: (sy - panY) / zoom
+  };
+}
+
+function inBounds(tx, ty) {
+  return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS;
+}
+
+// ═══════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════
+function render() {
+  if (!dirty) return;
+  dirty = false;
+
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  canvas.width = w;
+  canvas.height = h;
+
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, w, h);
+
+  const t0 = screenToTile(0, 0);
+  const t1 = screenToTile(w, h);
+  const startX = Math.max(0, t0.x - 1);
+  const startY = Math.max(0, t0.y - 1);
+  const endX = Math.min(COLS - 1, t1.x + 1);
+  const endY = Math.min(ROWS - 1, t1.y + 1);
+
+  for (let ty = startY; ty <= endY; ty++) {
+    for (let tx = startX; tx <= endX; tx++) {
+      const tile = mapData[ty][tx];
+      const t = TILES[tile];
+      ctx.fillStyle = t ? t.color : '#ff00ff';
+      ctx.fillRect(
+        Math.floor(tx * zoom + panX),
+        Math.floor(ty * zoom + panY),
+        Math.ceil(zoom),
+        Math.ceil(zoom)
+      );
+    }
+  }
+
+  // Grid
+  if (showGrid && zoom >= 6) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    for (let tx = startX; tx <= endX + 1; tx++) {
+      const sx = Math.floor(tx * zoom + panX);
+      ctx.moveTo(sx, Math.floor(startY * zoom + panY));
+      ctx.lineTo(sx, Math.floor((endY + 1) * zoom + panY));
+    }
+    for (let ty = startY; ty <= endY + 1; ty++) {
+      const sy = Math.floor(ty * zoom + panY);
+      ctx.moveTo(Math.floor(startX * zoom + panX), sy);
+      ctx.lineTo(Math.floor((endX + 1) * zoom + panX), sy);
+    }
+    ctx.stroke();
+  }
+
+  // Labels
+  if (showLabels) {
+    const fontSize = Math.max(10, Math.min(14, zoom * 1.5));
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    for (let i = 0; i < locations.length; i++) {
+      const loc = locations[i];
+      const sx = loc.x * zoom + panX + zoom / 2;
+      const sy = loc.y * zoom + panY - 2;
+      if (sx < -100 || sx > w + 100 || sy < -30 || sy > h + 30) continue;
+
+      const isSelected = (i === selectedLabelIdx && tool === 'label');
+      const dotRadius = Math.max(3, zoom / 2.5);
+
+      if (isSelected) {
+        ctx.strokeStyle = '#5dade2';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(sx, sy + fontSize / 2 + 4, dotRadius + 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = isSelected ? '#5dade2' : '#e94560';
+      ctx.beginPath();
+      ctx.arc(sx, sy + fontSize / 2 + 4, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#000';
+      ctx.fillText(loc.name, sx + 1, sy + 1);
+      ctx.fillStyle = isSelected ? '#5dade2' : '#fff';
+      ctx.fillText(loc.name, sx, sy);
+
+      if (tool === 'label') {
+        ctx.font = `${Math.max(8, fontSize - 3)}px sans-serif`;
+        ctx.fillStyle = '#888';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`(${loc.x}, ${loc.y})`, sx, sy + fontSize / 2 + 4 + dotRadius + 2);
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textBaseline = 'bottom';
+      }
+    }
+  }
+
+  // Brush cursor
+  if (mouseInCanvas && (tool === 'brush' || tool === 'rect') && cursorTile.x >= 0) {
+    const half = Math.floor(brushSize / 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1;
+    if (tool === 'rect' && rectStart) {
+      const x0 = Math.min(rectStart.x, cursorTile.x);
+      const y0 = Math.min(rectStart.y, cursorTile.y);
+      const x1 = Math.max(rectStart.x, cursorTile.x);
+      const y1 = Math.max(rectStart.y, cursorTile.y);
+      ctx.strokeRect(
+        Math.floor(x0 * zoom + panX),
+        Math.floor(y0 * zoom + panY),
+        Math.ceil((x1 - x0 + 1) * zoom),
+        Math.ceil((y1 - y0 + 1) * zoom)
+      );
+    } else {
+      ctx.strokeRect(
+        Math.floor((cursorTile.x - half) * zoom + panX),
+        Math.floor((cursorTile.y - half) * zoom + panY),
+        Math.ceil(brushSize * zoom),
+        Math.ceil(brushSize * zoom)
+      );
+    }
+  }
+
+  // Label crosshair
+  if (mouseInCanvas && tool === 'label' && !isDraggingLabel && cursorTile.x >= 0) {
+    const sx = cursorTile.x * zoom + panX + zoom / 2;
+    const sy = cursorTile.y * zoom + panY + zoom / 2;
+    ctx.strokeStyle = 'rgba(93, 173, 226, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx - 8, sy); ctx.lineTo(sx + 8, sy);
+    ctx.moveTo(sx, sy - 8); ctx.lineTo(sx, sy + 8);
+    ctx.stroke();
+  }
+}
+
+function renderMinimap() {
+  if (!minimapDirty) return;
+  minimapDirty = false;
+
+  // Scale: minimap is 160x160 for 40x40 = 4px per tile
+  const scale = mmCanvas.width / COLS;
+  mmCtx.clearRect(0, 0, mmCanvas.width, mmCanvas.height);
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const tile = mapData[y][x];
+      const t = TILES[tile];
+      mmCtx.fillStyle = t ? t.color : '#ff00ff';
+      mmCtx.fillRect(x * scale, y * scale, scale, scale);
+    }
+  }
+}
+
+function renderMinimapViewport() {
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  renderMinimap();
+  const scale = mmCanvas.width / COLS;
+  const t0 = screenToTile(0, 0);
+  const t1 = screenToTile(w, h);
+  mmCtx.strokeStyle = '#e94560';
+  mmCtx.lineWidth = 1.5;
+  mmCtx.strokeRect(
+    Math.max(0, t0.x) * scale, Math.max(0, t0.y) * scale,
+    (Math.min(COLS, t1.x) - Math.max(0, t0.x)) * scale,
+    (Math.min(ROWS, t1.y) - Math.max(0, t0.y)) * scale
+  );
+  if (showLabels) {
+    for (let i = 0; i < locations.length; i++) {
+      const loc = locations[i];
+      mmCtx.fillStyle = (i === selectedLabelIdx && tool === 'label') ? '#5dade2' : '#e94560';
+      mmCtx.fillRect(loc.x * scale - 1, loc.y * scale - 1, 3, 3);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// PAINTING
+// ═══════════════════════════════════════════════
+function beginStroke() {
+  currentStroke = new Map();
+}
+
+function recordAndSet(tx, ty, newTile) {
+  if (!inBounds(tx, ty)) return;
+  const old = mapData[ty][tx];
+  if (old === newTile) return;
+  const key = `${tx},${ty}`;
+  if (!currentStroke.has(key)) {
+    currentStroke.set(key, { x: tx, y: ty, oldTile: old });
+  }
+  mapData[ty][tx] = newTile;
+  dirty = true;
+  minimapDirty = true;
+}
+
+function endStroke() {
+  if (!currentStroke || currentStroke.size === 0) {
+    currentStroke = null;
+    return;
+  }
+  const changes = Array.from(currentStroke.values()).map(c => ({
+    ...c, newTile: mapData[c.y][c.x]
+  }));
+  undoStack.push(changes);
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack.length = 0;
+  currentStroke = null;
+}
+
+function paintAt(tx, ty) {
+  const half = Math.floor(brushSize / 2);
+  for (let dy = -half; dy < brushSize - half; dy++) {
+    for (let dx = -half; dx < brushSize - half; dx++) {
+      recordAndSet(tx + dx, ty + dy, selectedTile);
+    }
+  }
+}
+
+function floodFill(startX, startY) {
+  if (!inBounds(startX, startY)) return;
+  const target = mapData[startY][startX];
+  if (target === selectedTile) return;
+
+  beginStroke();
+  const queue = [{ x: startX, y: startY }];
+  const visited = new Set();
+  visited.add(`${startX},${startY}`);
+  let count = 0;
+  const MAX_FILL = 2000;
+
+  while (queue.length > 0 && count < MAX_FILL) {
+    const { x, y } = queue.shift();
+    if (!inBounds(x, y) || mapData[y][x] !== target) continue;
+    recordAndSet(x, y, selectedTile);
+    count++;
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = x + dx, ny = y + dy;
+      const key = `${nx},${ny}`;
+      if (!visited.has(key) && inBounds(nx, ny) && mapData[ny][nx] === target) {
+        visited.add(key);
+        queue.push({ x: nx, y: ny });
+      }
+    }
+  }
+  endStroke();
+}
+
+function fillRect2(x0, y0, x1, y1) {
+  beginStroke();
+  const minX = Math.max(0, Math.min(x0, x1));
+  const maxX = Math.min(COLS - 1, Math.max(x0, x1));
+  const minY = Math.max(0, Math.min(y0, y1));
+  const maxY = Math.min(ROWS - 1, Math.max(y0, y1));
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      recordAndSet(x, y, selectedTile);
+    }
+  }
+  endStroke();
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  const changes = undoStack.pop();
+  for (const c of changes) {
+    mapData[c.y][c.x] = c.oldTile;
+  }
+  redoStack.push(changes);
+  dirty = true;
+  minimapDirty = true;
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  const changes = redoStack.pop();
+  for (const c of changes) {
+    mapData[c.y][c.x] = c.newTile;
+  }
+  undoStack.push(changes);
+  dirty = true;
+  minimapDirty = true;
+}
+
+// ═══════════════════════════════════════════════
+// IMPORT / EXPORT
+// ═══════════════════════════════════════════════
+function importMap(text) {
+  // Try BRACKEN_MAP first, then OVERWORLD_MAP, then raw JSON
+  const match = text.match(/BRACKEN_MAP\s*=\s*(\[[\s\S]*?\n\]);/) ||
+                text.match(/OVERWORLD_MAP\s*=\s*(\[[\s\S]*?\n\]);/);
+  if (!match) {
+    try {
+      const data = JSON.parse(text);
+      if (Array.isArray(data) && data.length === ROWS) {
+        for (let y = 0; y < ROWS; y++)
+          for (let x = 0; x < COLS; x++)
+            mapData[y][x] = data[y][x];
+        dirty = true;
+        minimapDirty = true;
+        undoStack.length = 0;
+        redoStack.length = 0;
+        return true;
+      }
+    } catch (e) {}
+    alert('Could not parse map data. Expected brackenMap.js with BRACKEN_MAP or a JSON 2D array (40x40).');
+    return false;
+  }
+
+  try {
+    const arrText = match[1];
+    const data = JSON.parse(arrText);
+    if (data.length !== ROWS || data[0].length !== COLS) {
+      alert(`Map dimensions mismatch: got ${data.length}x${data[0].length}, expected ${ROWS}x${COLS}`);
+      return false;
+    }
+    for (let y = 0; y < ROWS; y++)
+      for (let x = 0; x < COLS; x++)
+        mapData[y][x] = data[y][x];
+    dirty = true;
+    minimapDirty = true;
+    undoStack.length = 0;
+    redoStack.length = 0;
+    return true;
+  } catch (e) {
+    alert('Failed to parse map: ' + e.message);
+    return false;
+  }
+}
+
+function exportMap() {
+  const header = `// Bracken Town Map — 40x40 instanced map
+// Uses same tile types as overworld
+// Entrances: North (cols 19-20, row 0), West (col 0, rows 19-20), East (col 39, rows 19-20)
+
+export const BRACKEN_COLS = 40;
+export const BRACKEN_ROWS = 40;
+export const BRACKEN_TILE_SIZE = 32;
+
+`;
+
+  let mapStr = 'export const BRACKEN_MAP = [\n';
+  for (let y = 0; y < ROWS; y++) {
+    mapStr += '  [' + mapData[y].join(',') + ']';
+    if (y < ROWS - 1) mapStr += ',';
+    mapStr += '\n';
+  }
+  mapStr += '];\n';
+
+  const footer = `
+// Spawn points when entering from each gate
+export const BRACKEN_SPAWNS = {
+  west:  { x: 1 * 32 + 16, y: 19 * 32 + 16 },   // just inside west gate
+  north: { x: 19 * 32 + 16, y: 1 * 32 + 16 },    // just inside north gate
+  east:  { x: 38 * 32 + 16, y: 19 * 32 + 16 },   // just inside east gate
+};
+`;
+
+  const full = header + mapStr + footer;
+  const blob = new Blob([full], { type: 'text/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'brackenMap.js';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════
+// ZOOM & PAN
+// ═══════════════════════════════════════════════
+function zoomAt(sx, sy, factor) {
+  const oldZoom = zoom;
+  zoom = Math.max(1, Math.min(60, zoom * factor));
+  panX = sx - (sx - panX) * (zoom / oldZoom);
+  panY = sy - (sy - panY) * (zoom / oldZoom);
+  dirty = true;
+}
+
+function fitToView() {
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  zoom = Math.min(w / COLS, h / ROWS);
+  panX = (w - COLS * zoom) / 2;
+  panY = (h - ROWS * zoom) / 2;
+  dirty = true;
+}
+
+// ═══════════════════════════════════════════════
+// STATUS BAR
+// ═══════════════════════════════════════════════
+function updateStatus() {
+  const t = cursorTile;
+  document.getElementById('st-pos').textContent = inBounds(t.x, t.y) ? `${t.x}, ${t.y}` : '—';
+  if (inBounds(t.x, t.y)) {
+    const id = mapData[t.y][t.x];
+    const tile = TILES[id];
+    document.getElementById('st-tile').textContent = tile ? `${id} (${tile.name})` : id;
+  } else {
+    document.getElementById('st-tile').textContent = '—';
+  }
+  const sel = TILES[selectedTile];
+  document.getElementById('st-sel').textContent = sel ? `${selectedTile} (${sel.name})` : selectedTile;
+  document.getElementById('st-zoom').textContent = zoom.toFixed(1) + 'x';
+  document.getElementById('st-tool').textContent = tool;
+}
+
+// ═══════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════
+function getCanvasPos(e) {
+  const rect = wrap.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const pos = getCanvasPos(e);
+  const tile = screenToTile(pos.x, pos.y);
+  const tileF = screenToTileFloat(pos.x, pos.y);
+
+  if (e.button === 1 || e.button === 2 || (e.button === 0 && spaceHeld)) {
+    isPanning = true;
+    lastMouse = pos;
+    e.preventDefault();
+    return;
+  }
+
+  if (e.button !== 0) return;
+
+  if (tool === 'label') {
+    const hitIdx = findLabelAt(tileF.x, tileF.y);
+    if (hitIdx >= 0) {
+      selectedLabelIdx = hitIdx;
+      isDraggingLabel = true;
+      labelDragOffset = {
+        x: locations[hitIdx].x - tileF.x,
+        y: locations[hitIdx].y - tileF.y
+      };
+      buildLabelList();
+      dirty = true;
+    } else {
+      const name = prompt('New label name:');
+      if (name && name.trim()) {
+        const x = Math.max(0, Math.min(COLS - 1, tile.x));
+        const y = Math.max(0, Math.min(ROWS - 1, tile.y));
+        locations.push({ name: name.trim(), x, y });
+        selectedLabelIdx = locations.length - 1;
+        buildLabelList();
+        dirty = true;
+      }
+    }
+    return;
+  }
+
+  if (e.altKey && inBounds(tile.x, tile.y)) {
+    selectTile(mapData[tile.y][tile.x]);
+    return;
+  }
+
+  if (tool === 'eyedrop') {
+    if (inBounds(tile.x, tile.y)) selectTile(mapData[tile.y][tile.x]);
+    return;
+  }
+
+  if (tool === 'fill') {
+    floodFill(tile.x, tile.y);
+    return;
+  }
+
+  if (tool === 'rect') {
+    rectStart = { x: tile.x, y: tile.y };
+    dirty = true;
+    return;
+  }
+
+  isPainting = true;
+  beginStroke();
+  paintAt(tile.x, tile.y);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const pos = getCanvasPos(e);
+  cursorTile = screenToTile(pos.x, pos.y);
+  const tileF = screenToTileFloat(pos.x, pos.y);
+
+  if (isPanning) {
+    panX += pos.x - lastMouse.x;
+    panY += pos.y - lastMouse.y;
+    lastMouse = pos;
+    dirty = true;
+  }
+
+  if (isDraggingLabel && selectedLabelIdx >= 0) {
+    const newX = Math.round(tileF.x + labelDragOffset.x);
+    const newY = Math.round(tileF.y + labelDragOffset.y);
+    locations[selectedLabelIdx].x = Math.max(0, Math.min(COLS - 1, newX));
+    locations[selectedLabelIdx].y = Math.max(0, Math.min(ROWS - 1, newY));
+    buildLabelList();
+    dirty = true;
+  }
+
+  if (isPainting && tool === 'brush') {
+    paintAt(cursorTile.x, cursorTile.y);
+  }
+
+  if (tool === 'rect' && rectStart) {
+    dirty = true;
+  }
+
+  if (tool === 'label' && !isDraggingLabel) {
+    const hit = findLabelAt(tileF.x, tileF.y);
+    canvas.style.cursor = hit >= 0 ? 'grab' : 'crosshair';
+  }
+
+  dirty = true;
+  updateStatus();
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (isPanning) {
+    isPanning = false;
+    return;
+  }
+
+  if (isDraggingLabel) {
+    isDraggingLabel = false;
+    buildLabelList();
+    return;
+  }
+
+  if (tool === 'rect' && rectStart) {
+    const tile = cursorTile;
+    fillRect2(rectStart.x, rectStart.y, tile.x, tile.y);
+    rectStart = null;
+    dirty = true;
+    return;
+  }
+
+  if (isPainting) {
+    isPainting = false;
+    endStroke();
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouseInCanvas = false;
+  if (isPainting) { isPainting = false; endStroke(); }
+  if (isPanning) isPanning = false;
+  if (isDraggingLabel) { isDraggingLabel = false; buildLabelList(); }
+  dirty = true;
+});
+
+canvas.addEventListener('mouseenter', () => {
+  mouseInCanvas = true;
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  zoomAt(pos.x, pos.y, factor);
+  cursorTile = screenToTile(pos.x, pos.y);
+  updateStatus();
+}, { passive: false });
+
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// Minimap click to pan
+mmCanvas.addEventListener('mousedown', (e) => {
+  const rect = mmCanvas.getBoundingClientRect();
+  const scale = mmCanvas.width / COLS;
+  const mx = (e.clientX - rect.left) / scale;
+  const my = (e.clientY - rect.top) / scale;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  panX = w / 2 - mx * zoom;
+  panY = h / 2 - my * zoom;
+  dirty = true;
+});
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (e.key === ' ') { spaceHeld = true; e.preventDefault(); return; }
+  if (e.key === 'b' || e.key === 'B') { setTool('brush'); return; }
+  if (e.key === 'f' || e.key === 'F') { setTool('fill'); return; }
+  if (e.key === 'i' || e.key === 'I') { setTool('eyedrop'); return; }
+  if (e.key === 'r' || e.key === 'R') { setTool('rect'); return; }
+  if (e.key === 'p' || e.key === 'P') { setTool('label'); return; }
+  if (e.key === 'g' || e.key === 'G') { toggleGrid(); return; }
+  if (e.key === 'l' || e.key === 'L') { toggleLabels(); return; }
+  if (e.key === '?' || e.key === '/') { toggleHelp(); return; }
+  if (e.key === '0') { fitToView(); return; }
+  if (e.key === '=' || e.key === '+') { zoomAt(wrap.clientWidth / 2, wrap.clientHeight / 2, 1.3); return; }
+  if (e.key === '-' || e.key === '_') { zoomAt(wrap.clientWidth / 2, wrap.clientHeight / 2, 1 / 1.3); return; }
+  if (e.key === '[') { setBrushSize(Math.max(1, brushSize - 1)); return; }
+  if (e.key === ']') { setBrushSize(Math.min(20, brushSize + 1)); return; }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && tool === 'label') { deleteLabel(); return; }
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') { e.preventDefault(); undo(); return; }
+    if (e.key === 'y') { e.preventDefault(); redo(); return; }
+    if (e.key === 'Z') { e.preventDefault(); redo(); return; }
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (e.key === ' ') spaceHeld = false;
+});
+
+// ═══════════════════════════════════════════════
+// TOOLBAR BUTTONS
+// ═══════════════════════════════════════════════
+function setTool(t) {
+  tool = t;
+  rectStart = null;
+  isDraggingLabel = false;
+  document.getElementById('tool-brush').classList.toggle('active', t === 'brush');
+  document.getElementById('tool-fill').classList.toggle('active', t === 'fill');
+  document.getElementById('tool-eyedrop').classList.toggle('active', t === 'eyedrop');
+  document.getElementById('tool-rect').classList.toggle('active', t === 'rect');
+  document.getElementById('tool-label').classList.toggle('active', t === 'label');
+
+  document.getElementById('label-panel').classList.toggle('hidden', t !== 'label');
+
+  if (t === 'label' && !showLabels) {
+    showLabels = true;
+    document.getElementById('btn-labels').classList.add('active');
+  }
+
+  canvas.style.cursor =
+    t === 'eyedrop' ? 'crosshair' :
+    t === 'fill' ? 'cell' :
+    t === 'label' ? 'crosshair' :
+    'default';
+
+  dirty = true;
+  updateStatus();
+}
+
+function setBrushSize(s) {
+  brushSize = s;
+  document.getElementById('brush-size').value = s;
+  document.getElementById('brush-size-label').textContent = s;
+  dirty = true;
+}
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  document.getElementById('btn-grid').classList.toggle('active', showGrid);
+  dirty = true;
+}
+
+function toggleLabels() {
+  showLabels = !showLabels;
+  document.getElementById('btn-labels').classList.toggle('active', showLabels);
+  dirty = true;
+}
+
+function toggleHelp() {
+  document.getElementById('help-overlay').classList.toggle('visible');
+}
+
+// Toolbar wiring
+document.getElementById('btn-import').onclick = () => document.getElementById('file-input').click();
+document.getElementById('btn-export').onclick = exportMap;
+document.getElementById('btn-export-labels').onclick = exportLabels;
+document.getElementById('btn-undo').onclick = undo;
+document.getElementById('btn-redo').onclick = redo;
+document.getElementById('tool-brush').onclick = () => setTool('brush');
+document.getElementById('tool-fill').onclick = () => setTool('fill');
+document.getElementById('tool-eyedrop').onclick = () => setTool('eyedrop');
+document.getElementById('tool-rect').onclick = () => setTool('rect');
+document.getElementById('tool-label').onclick = () => setTool('label');
+document.getElementById('btn-grid').onclick = toggleGrid;
+document.getElementById('btn-labels').onclick = toggleLabels;
+document.getElementById('btn-help').onclick = toggleHelp;
+document.getElementById('help-overlay').onclick = () => document.getElementById('help-overlay').classList.remove('visible');
+document.getElementById('help-box').onclick = (e) => e.stopPropagation();
+
+// Label panel buttons
+document.getElementById('btn-add-label').onclick = addLabel;
+document.getElementById('btn-rename-label').onclick = renameLabel;
+document.getElementById('btn-delete-label').onclick = deleteLabel;
+document.getElementById('btn-goto-label').onclick = () => goToLabel(selectedLabelIdx);
+
+document.getElementById('brush-size').oninput = (e) => {
+  setBrushSize(+e.target.value);
+};
+
+document.getElementById('file-input').onchange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (importMap(reader.result)) {
+      dirty = true;
+      minimapDirty = true;
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
+
+// ═══════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════
+function loop() {
+  render();
+  renderMinimapViewport();
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+buildPalette();
+buildLabelList();
+fitToView();
+updateStatus();
+loop();
+
+window.addEventListener('resize', () => { dirty = true; });
+
+// Drag and drop support
+document.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (importMap(reader.result)) {
+      dirty = true;
+      minimapDirty = true;
+    }
+  };
+  reader.readAsText(file);
+});
+</script>
+</body>
+</html>

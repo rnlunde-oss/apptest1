@@ -408,6 +408,7 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingNewsOfAtikesh = data?.fromNewsOfAtikesh || false;
     this.pendingCravenForestReturn = data?.fromCravenForestCutscene || false;
     this.pendingFortRitkerReturn = data?.fromFortRitkerCutscene || false;
+    this.pendingBrackenTownReturn = data?.fromBrackenTown || false;
   }
 
   preload() {
@@ -476,6 +477,7 @@ export class OverworldScene extends Phaser.Scene {
     this.lastTileX = Math.floor(this.player.x / TILE_SIZE);
     this.lastTileY = Math.floor(this.player.y / TILE_SIZE);
     this.inBattle = false;
+    this.transitioning = false;
     this.dialogueActive = false;
     this.dialogueQueue = [];
     this.partyOpen = false;
@@ -1729,7 +1731,7 @@ export class OverworldScene extends Phaser.Scene {
   // ──── Update ────
 
   update() {
-    if (this.inBattle || this.dialogueActive || this.partyOpen || this.inventoryOpen || this.shopOpen || this.innOpen || this.experienceOpen || this.saveMenuOpen || this.questLogOpen) {
+    if (this.transitioning || this.inBattle || this.dialogueActive || this.partyOpen || this.inventoryOpen || this.shopOpen || this.innOpen || this.experienceOpen || this.saveMenuOpen || this.questLogOpen) {
       this.player.body.setVelocity(0);
       return;
     }
@@ -1777,6 +1779,14 @@ export class OverworldScene extends Phaser.Scene {
     if (tx !== this.lastTileX || ty !== this.lastTileY) {
       this.lastTileX = tx;
       this.lastTileY = ty;
+
+      // Bracken town entrance (tile 22)
+      if (tx >= 0 && ty >= 0 && tx < MAP_COLS && ty < MAP_ROWS &&
+          OVERWORLD_MAP[ty][tx] === 22 && !this.transitioning) {
+        this.enterBracken(tx, ty);
+        return;
+      }
+
       this.checkEncounter(tx, ty);
       this.checkLocationObjectives(tx, ty);
 
@@ -2774,6 +2784,24 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.fadeOut(600, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.start('FarmlandCutscene');
+    });
+  }
+
+  enterBracken(tx, ty) {
+    // Determine which gate based on overworld position
+    // North entrance: ~(79-80, 111)
+    // West entrance:  ~(77, 115-116)
+    // East entrance:  ~(85, 116-117)
+    let entrance = 'west';
+    if (ty <= 112) entrance = 'north';
+    else if (tx >= 83) entrance = 'east';
+
+    this.transitioning = true;
+    this.player.body.setVelocity(0);
+    this.cameras.main.fadeOut(400, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.transitioning = false;
+      this.scene.start('Bracken', { entrance });
     });
   }
 
