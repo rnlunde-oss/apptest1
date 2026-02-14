@@ -215,6 +215,11 @@ export class PostTutorialVictory extends Phaser.Scene {
     this.load.image('3cut3', 'assets/cutscenes/3CUT3.png');
     this.load.image('3cut4', 'assets/cutscenes/3CUT4.png');
     this.load.image('3cut5', 'assets/cutscenes/3CUT5.png');
+    this.load.image('3cut6', 'assets/cutscenes/3CUT6.png');
+    this.load.image('3cut7', 'assets/cutscenes/3CUT7.png');
+    this.load.image('3cut8', 'assets/cutscenes/3CUT8.png');
+    this.load.image('3cut9', 'assets/cutscenes/3CUT8B.png');
+    this.load.image('3cut10', 'assets/cutscenes/3CUT9.png');
   }
 
   create() {
@@ -243,15 +248,15 @@ export class PostTutorialVictory extends Phaser.Scene {
       // Scene 5: Black — Dark Knight attacks
       { text: 'The Dark Knight lifted his cursed blade, and from it issued a terrifying bolt of dark magic aimed at the farmer\'s family.', image: '3cut5' },
       { text: 'If he was not to have today\'s victory - no one would.', image: '3cut5' },
-      { text: 'But few things command a man\'s heart more than family. It was at the last that Farmer Alan threw his body in desperate love to protect those for whom he had lived and died.', image: null },
-      { text: 'Though a man may have no martial prowess, it is the strength of his spirit that commands bravery. And so the farmer absorbed the terrible magic for the sake of his wife and children.', image: null },
-      // Scene 8: Alan death — black background
-      { text: '"Daddy!"', image: null },
-      { text: '"Papa!"', image: null },
-      { text: '"Alan!"', image: null },
-      { text: 'The Dark Knight grunted in both surprise and displeasure, momentarily stunned by the farmer\'s final display of valor.', image: null },
-      { text: 'Metz sprung into action and charged, raising his sword for a crippling blow.', image: null },
-      { text: 'Within three lunging strides, he closed the distance and brought both steel and vengeance crashing against the Dark Knight.', image: null },
+      { text: 'But few things command a man\'s heart more than family. It was at the last that Farmer Alan threw his body in desperate love to protect those for whom he had lived and died.', image: '3cut6' },
+      { text: 'Though a man may have no martial prowess, it is the strength of his spirit that commands bravery. And so the farmer absorbed the terrible magic for the sake of his wife and children.', image: '3cut7' },
+      // Scene 8: Alan death
+      { text: '"Daddy!"', image: '3cut7' },
+      { text: '"Papa!"', image: '3cut7' },
+      { text: '"Alan!"', image: '3cut7' },
+      { text: 'The Dark Knight grunted in both surprise and displeasure, momentarily stunned by the farmer\'s final display of valor.', image: '3cut8' },
+      { text: 'Metz sprung into action and charged, raising his sword for a crippling blow.', image: '3cut9' },
+      { text: 'Within three lunging strides, he closed the distance and brought both steel and vengeance crashing against the Dark Knight.', image: '3cut10' },
       { text: '"Argh!!" Dagvar fell to the ground with a curse, aware even in that moment he had been bested.', image: null },
       { text: 'It was as Metz roared and brought his sword downward for a second and final strike that the hooded reaper simply vanished in a plume of dark smoke; steel tasted nothing but trodden soil.', image: null },
       { text: 'The animating presence of their leader having departed, the skeletons disassembled instantly, leaving the living with nothing but grief.', image: null },
