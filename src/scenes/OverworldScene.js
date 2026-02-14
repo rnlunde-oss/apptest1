@@ -3,6 +3,7 @@ import {
   MAP_COLS, MAP_ROWS, ENCOUNTER_RATE, ENCOUNTER_RATE_DEEP,
   ENCOUNTER_RATE_FARM, ENCOUNTER_RATE_FOREST, ENCOUNTER_RATE_DEEP_FOREST, ENCOUNTER_RATE_MT_PASS,
   ENCOUNTER_RATE_ROAD, ENCOUNTER_RATE_COAST,
+  ENCOUNTER_RATE_SWAMP, ENCOUNTER_RATE_GRASSLAND,
 } from '../data/maps.js';
 import { ENCOUNTER_TABLE, ENCOUNTER_TABLES, createEnemy } from '../data/characters.js';
 import { serializeGameState, saveToSlot, loadFromSlot, autoSave, getSlotSummaries } from '../data/saveManager.js';
@@ -38,10 +39,18 @@ const VIEWPORT_BUFFER = 3;        // extra tiles beyond camera edge
 const VIEWPORT_UPDATE_THRESHOLD = 2; // tiles moved before re-eval
 
 const LOCATION_LABELS = [
-  { name: 'Bracken',           tileX: 55, tileY: 87, color: '#ccaa44' },
-  { name: 'Asvam Farmlands',   tileX: 18, tileY: 188, color: '#88aa66' },
-  { name: 'The Catacombs',     tileX: 83, tileY: 73, color: '#9977bb' },
-  { name: 'Verlan Farmstead',  tileX: 40, tileY: 82, color: '#88aa66' },
+  { name: 'Bracken',           tileX: 80,  tileY: 115, color: '#ccaa44' },
+  { name: 'Asvam Farmlands',   tileX: 30,  tileY: 155, color: '#88aa66' },
+  { name: 'The Catacombs',     tileX: 105, tileY: 112, color: '#9977bb' },
+  { name: 'Verlan Farmstead',  tileX: 15,  tileY: 188, color: '#88aa66' },
+  { name: 'Three Corners',     tileX: 88,  tileY: 78,  color: '#ccaa44' },
+  { name: 'Fort Firth',        tileX: 8,   tileY: 72,  color: '#aa8866' },
+  { name: "Harlan's Watch",    tileX: 118, tileY: 170, color: '#aa8866' },
+  { name: 'Reedwind Village',  tileX: 80,  tileY: 12,  color: '#88aa66' },
+  { name: 'Tavrish',           tileX: 170, tileY: 108, color: '#6688cc' },
+  { name: "Dawn's Vigil",      tileX: 135, tileY: 18,  color: '#aaaacc' },
+  { name: 'Fort Ritker',       tileX: 42,  tileY: 58,  color: '#884466' },
+  { name: "Old Nan's Farm",    tileX: 55,  tileY: 105, color: '#88aa66' },
 ];
 
 const NPC_DIALOGUES = {
@@ -166,11 +175,11 @@ const SPEAKER_PORTRAITS = {
 
 // ──── Quest NPC Definitions ────
 const QUEST_NPC_DEFS = [
-  { id: 'garren',  name: 'Garren Brightone', tileX: 53, tileY: 85, color: 0xccaa44, nameColor: '#ffdd66', questId: 'act1_what_goes_around' },
-  { id: 'fillian', name: 'Sgt. Fillian',     tileX: 58, tileY: 85, color: 0x889999, nameColor: '#aaccdd', questId: 'act1_at_the_ready' },
-  { id: 'harold',  name: 'Farmer Harold',    tileX: 50, tileY: 90, color: 0x886644, nameColor: '#ccaa77', questId: 'act1_bought_with_blood' },
-  { id: 'veera',   name: 'Ranger Veera',     tileX: 60, tileY: 89, color: 0x448844, nameColor: '#88cc88', questId: 'act1_not_so_lone_wolf' },
-  { id: 'twill',   name: 'Innkeeper Twill',  tileX: 54, tileY: 88, color: 0x996644, nameColor: '#ccaa88', questId: 'act1_old_nans' },
+  { id: 'garren',  name: 'Garren Brightone', tileX: 78,  tileY: 113, color: 0xccaa44, nameColor: '#ffdd66', questId: 'act1_what_goes_around' },
+  { id: 'fillian', name: 'Sgt. Fillian',     tileX: 83,  tileY: 113, color: 0x889999, nameColor: '#aaccdd', questId: 'act1_at_the_ready' },
+  { id: 'harold',  name: 'Farmer Harold',    tileX: 75,  tileY: 118, color: 0x886644, nameColor: '#ccaa77', questId: 'act1_bought_with_blood' },
+  { id: 'veera',   name: 'Ranger Veera',     tileX: 85,  tileY: 117, color: 0x448844, nameColor: '#88cc88', questId: 'act1_not_so_lone_wolf' },
+  { id: 'twill',   name: 'Innkeeper Twill',  tileX: 79,  tileY: 116, color: 0x996644, nameColor: '#ccaa88', questId: 'act1_old_nans' },
 ];
 
 const QUEST_NPC_DIALOGUES = {
@@ -238,26 +247,26 @@ const QUEST_NPC_DIALOGUES = {
 
 // Guardsman positions around Bracken for "At the Ready!" quest
 const GUARDSMAN_POSITIONS = [
-  { tileX: 52, tileY: 83 }, { tileX: 56, tileY: 83 }, { tileX: 59, tileY: 84 },
-  { tileX: 51, tileY: 86 }, { tileX: 57, tileY: 86 }, { tileX: 60, tileY: 87 },
-  { tileX: 53, tileY: 89 }, { tileX: 56, tileY: 90 }, { tileX: 59, tileY: 91 },
-  { tileX: 51, tileY: 92 }, { tileX: 54, tileY: 92 }, { tileX: 57, tileY: 93 },
-  { tileX: 52, tileY: 95 }, { tileX: 55, tileY: 95 }, { tileX: 58, tileY: 96 },
+  { tileX: 77, tileY: 111 }, { tileX: 81, tileY: 111 }, { tileX: 84, tileY: 112 },
+  { tileX: 76, tileY: 114 }, { tileX: 82, tileY: 114 }, { tileX: 85, tileY: 115 },
+  { tileX: 78, tileY: 117 }, { tileX: 81, tileY: 118 }, { tileX: 84, tileY: 119 },
+  { tileX: 76, tileY: 120 }, { tileX: 79, tileY: 120 }, { tileX: 82, tileY: 121 },
+  { tileX: 77, tileY: 123 }, { tileX: 80, tileY: 123 }, { tileX: 83, tileY: 124 },
 ];
 
 // World item pickup definitions
 const WORLD_ITEMS = [
-  { id: 'pickup_1', x: 25, y: 177, itemId: 'iron_helm', label: 'Iron Helm' },
-  { id: 'pickup_2', x: 55, y: 80, itemId: 'frontier_blade', label: 'Frontier Blade' },
-  { id: 'pickup_3', x: 30, y: 147, itemId: 'scout_boots', label: 'Scout Boots' },
-  { id: 'pickup_old_nans_honey', x: 35, y: 65, itemId: 'old_nans_honey', label: "Old Nan's Honey" },
+  { id: 'pickup_1', x: 25, y: 160, itemId: 'iron_helm', label: 'Iron Helm' },
+  { id: 'pickup_2', x: 75, y: 110, itemId: 'frontier_blade', label: 'Frontier Blade' },
+  { id: 'pickup_3', x: 50, y: 140, itemId: 'scout_boots', label: 'Scout Boots' },
+  { id: 'pickup_old_nans_honey', x: 55, y: 105, itemId: 'old_nans_honey', label: "Old Nan's Honey" },
 ];
 
 // Overworld-visible enemy encounters
 const OVERWORLD_ENEMIES = [
   {
     id: 'ow_wolfpack',
-    tileX: 75, tileY: 150,
+    tileX: 60, tileY: 160,
     name: 'Wolf Pack',
     enemies: ['dire_wolf', 'dire_wolf', 'dire_wolf'],
     xp: 40, gold: 35,
@@ -267,7 +276,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_treant',
-    tileX: 88, tileY: 80,
+    tileX: 100, tileY: 108,
     name: 'Corrupted Treant',
     enemies: ['corrupted_treant', 'fell_spider', 'fell_spider'],
     xp: 55, gold: 45,
@@ -277,7 +286,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_skeleton_patrol',
-    tileX: 125, tileY: 33,
+    tileX: 100, tileY: 40,
     name: 'Skeleton Patrol',
     enemies: ['skeleton', 'skeleton', 'cursed_archer'],
     xp: 50, gold: 40,
@@ -287,7 +296,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_mountain_bandits',
-    tileX: 63, tileY: 33,
+    tileX: 90, tileY: 45,
     name: 'Mountain Bandits',
     enemies: ['dark_knight', 'skeleton', 'skeleton'],
     xp: 55, gold: 50,
@@ -297,7 +306,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_bone_reaper',
-    tileX: 20, tileY: 185,
+    tileX: 25, tileY: 160,
     name: 'Bone Reaper',
     enemies: ['bone_reaper'],
     xp: 60, gold: 50,
@@ -319,7 +328,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'skeletal_captain',
-    tileX: 55, tileY: 83,
+    tileX: 80, tileY: 111,
     name: 'Skeletal Captain',
     enemies: ['skeletal_captain', 'skeleton', 'skeleton', 'skeleton'],
     xp: 75, gold: 65,
@@ -335,7 +344,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'vampirling_hal',
-    tileX: 85, tileY: 70,
+    tileX: 108, tileY: 108,
     name: 'Vampirling Hal',
     enemies: ['skeletal_champion', 'skeleton', 'skeleton', 'vampirling_hal'],
     xp: 90, gold: 80,
@@ -348,7 +357,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'bandit_chief_bjorn',
-    tileX: 80, tileY: 110,
+    tileX: 82, tileY: 148,
     name: 'Bandit Chief Bjorn',
     enemies: ['bandit_chief', 'bandit_henchman', 'bandit_thief', 'bandit_henchman'],
     xp: 65, gold: 55,
@@ -364,7 +373,7 @@ const OVERWORLD_ENEMIES = [
   },
   {
     id: 'ow_wolf_pack_harold',
-    tileX: 30, tileY: 90,
+    tileX: 35, tileY: 150,
     name: 'Feral Wolf Pack',
     enemies: ['dire_wolf', 'dire_wolf', 'dire_wolf', 'dire_wolf'],
     xp: 50, gold: 40,
@@ -643,7 +652,7 @@ export class OverworldScene extends Phaser.Scene {
 
     this.prescanSpecialTiles();
 
-    const spawn = this.loadedPos || this.playerSpawn || { x: 272, y: 336 };
+    const spawn = this.loadedPos || this.playerSpawn || { x: 496, y: 6032 };
     this.updateViewportTiles(spawn.x, spawn.y, true);
   }
 
@@ -670,7 +679,7 @@ export class OverworldScene extends Phaser.Scene {
         }
 
         if (tile === 10) {
-          const isVranekSpire = col <= 50 && row <= 33;
+          const isVranekSpire = col <= 35 && row <= 20;
           const altarName = isVranekSpire ? 'Vranek Spire' : 'Altar of Atikesh';
           const bossKey = isVranekSpire ? 'vranek' : 'atikesh';
           this.bossAltarPositions.push({ x, y, bossKey, name: altarName });
@@ -678,7 +687,11 @@ export class OverworldScene extends Phaser.Scene {
         }
 
         if (tile === 18) {
-          const entranceName = col <= 120 ? 'The Reliquary' : 'Dungeon';
+          let entranceName = 'Dungeon';
+          if (col <= 35 && row <= 20) entranceName = 'Vranek Spire';
+          else if (col >= 55 && col <= 65 && row >= 30 && row <= 40) entranceName = 'The Reliquary';
+          else if (col >= 38 && col <= 50 && row >= 50 && row <= 65) entranceName = 'Fort Ritker';
+          else if (col >= 130 && row <= 25) entranceName = "Dawn's Vigil";
           this.dungeonEntrances.push({ x, y, name: entranceName });
         }
 
@@ -1115,7 +1128,7 @@ export class OverworldScene extends Phaser.Scene {
   // ──── Player ────
 
   spawnPlayer() {
-    const { x, y } = this.loadedPos || this.playerSpawn || { x: 272, y: 336 };
+    const { x, y } = this.loadedPos || this.playerSpawn || { x: 496, y: 6032 };
 
     // Sprite-based player with directional textures
     this.playerDir = 'down';
@@ -1144,11 +1157,11 @@ export class OverworldScene extends Phaser.Scene {
 
     // NPC placement data: id, pixel position, name color, detail color
     const NPC_DEFS = [
-      { id: 'rivin',  x: 55 * TILE_SIZE + 16, y: 87 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
-      { id: 'fenton', x: 35 * TILE_SIZE + 16, y: 137 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
-      { id: 'rickets',x: 83 * TILE_SIZE + 16, y: 73 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
-      { id: 'hela',   x: 163 * TILE_SIZE + 16, y: 117 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
-      { id: 'anuel',  x: 168 * TILE_SIZE + 16, y: 33 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
+      { id: 'rivin',  x: 80 * TILE_SIZE + 16, y: 115 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
+      { id: 'fenton', x: 40 * TILE_SIZE + 16, y: 145 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
+      { id: 'rickets',x: 105 * TILE_SIZE + 16, y: 112 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
+      { id: 'hela',   x: 160 * TILE_SIZE + 16, y: 115 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
+      { id: 'anuel',  x: 130 * TILE_SIZE + 16, y: 22 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
     ];
 
     this.npcs = [];
@@ -1764,7 +1777,7 @@ export class OverworldScene extends Phaser.Scene {
       this.checkLocationObjectives(tx, ty);
 
       if (!this.registry.get('farmlandCutscenePlayed')) {
-        const dx = tx - 18, dy = ty - 188;
+        const dx = tx - 30, dy = ty - 155;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           this.registry.set('farmlandCutscenePlayed', true);
           this.player.body.setVelocity(0);
@@ -1773,7 +1786,7 @@ export class OverworldScene extends Phaser.Scene {
       }
 
       if (!this.registry.get('brackenCutscenePlayed')) {
-        const dx = tx - 55, dy = ty - 87;
+        const dx = tx - 80, dy = ty - 115;
         if (Math.sqrt(dx * dx + dy * dy) <= 50) {
           this.registry.set('brackenCutscenePlayed', true);
           this.player.body.setVelocity(0);
@@ -1782,7 +1795,7 @@ export class OverworldScene extends Phaser.Scene {
       }
 
       if (this.registry.get('brackenCutscenePlayed') && !this.registry.get('rivinDialoguePlayed')) {
-        const dx = tx - 55, dy = ty - 87;
+        const dx = tx - 80, dy = ty - 115;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           this.registry.set('rivinDialoguePlayed', true);
           this.player.body.setVelocity(0);
@@ -1792,7 +1805,7 @@ export class OverworldScene extends Phaser.Scene {
 
       if (this.registry.get('rivinDialoguePlayed') && !this.registry.get('rivinRecruitPlayed')
           && isQuestComplete(this.registry, 'act1_clear_bracken')) {
-        const dx = tx - 55, dy = ty - 87;
+        const dx = tx - 80, dy = ty - 115;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           this.registry.set('rivinRecruitPlayed', true);
           this.player.body.setVelocity(0);
@@ -1802,7 +1815,7 @@ export class OverworldScene extends Phaser.Scene {
 
       if (this.registry.get('rivinRecruitPlayed') && !this.registry.get('captainApproachPlayed')
           && isQuestActive(this.registry, 'act1_retake_bracken')) {
-        const dx = tx - 55, dy = ty - 83;
+        const dx = tx - 80, dy = ty - 111;
         if (Math.sqrt(dx * dx + dy * dy) <= 3) {
           this.registry.set('captainApproachPlayed', true);
           this.player.body.setVelocity(0);
@@ -1813,7 +1826,7 @@ export class OverworldScene extends Phaser.Scene {
       // Catacombs approach cutscene
       if (!this.registry.get('catacombsCutscenePlayed')
           && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
-        const dx = tx - 83, dy = ty - 73;
+        const dx = tx - 105, dy = ty - 112;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           this.registry.set('catacombsCutscenePlayed', true);
           this.player.body.setVelocity(0);
@@ -1825,7 +1838,7 @@ export class OverworldScene extends Phaser.Scene {
       if (this.registry.get('catacombsCutscenePlayed')
           && !this.registry.get('ricketsProximityPlayed')
           && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
-        const dx = tx - 83, dy = ty - 73;
+        const dx = tx - 105, dy = ty - 112;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           this.registry.set('ricketsProximityPlayed', true);
           this.checkQuestNPCTalk('rickets');
@@ -1836,7 +1849,7 @@ export class OverworldScene extends Phaser.Scene {
       // Vampirling Hal proximity trigger — 5 tiles
       if (!this.registry.get('halBattleTriggered')
           && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
-        const dx = tx - 85, dy = ty - 70;
+        const dx = tx - 108, dy = ty - 108;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           const halOe = this.overworldEnemies.find(e => e.id === 'vampirling_hal' && !e.defeated);
           if (halOe) {
@@ -1847,10 +1860,10 @@ export class OverworldScene extends Phaser.Scene {
         }
       }
 
-      // News of Atikesh — return to Bracken proximity trigger — 10 tiles from (55, 87)
+      // News of Atikesh — return to Bracken proximity trigger — 10 tiles from Bracken
       if (!this.registry.get('newsOfAtikeshCutscenePlayed')
           && isQuestActive(this.registry, 'act1_news_of_atikesh')) {
-        const dx = tx - 55, dy = ty - 87;
+        const dx = tx - 80, dy = ty - 115;
         if (Math.sqrt(dx * dx + dy * dy) <= 10) {
           this.registry.set('newsOfAtikeshCutscenePlayed', true);
           this.player.body.setVelocity(0);
@@ -1861,7 +1874,7 @@ export class OverworldScene extends Phaser.Scene {
       // From the Ashes completion — "First Importance" dialogue near Bracken center
       if (!this.registry.get('fromTheAshesDialoguePlayed')
           && isQuestComplete(this.registry, 'act1_from_the_ashes')) {
-        const dx = tx - 55, dy = ty - 87;
+        const dx = tx - 80, dy = ty - 115;
         if (Math.sqrt(dx * dx + dy * dy) <= 10) {
           this.registry.set('fromTheAshesDialoguePlayed', true);
           this.player.body.setVelocity(0);
@@ -1947,7 +1960,7 @@ export class OverworldScene extends Phaser.Scene {
       // Craven Forest approach — triggers within 20 tiles when quest is active
       if (!this.registry.get('cravenForestApproachPlayed')
           && isQuestActive(this.registry, 'act1_first_importance')) {
-        const dx = tx - 115, dy = ty - 50;
+        const dx = tx - 45, dy = ty - 62;
         if (Math.sqrt(dx * dx + dy * dy) <= 20) {
           this.registry.set('cravenForestApproachPlayed', true);
           this.player.body.setVelocity(0);
@@ -1973,7 +1986,7 @@ export class OverworldScene extends Phaser.Scene {
       // Lieutenant Dhan rendezvous — triggers within 10 tiles of Craven Forest after approach cutscene
       if (this.registry.get('cravenForestApproachPlayed')
           && !this.registry.get('dhanRendezvousPlayed')) {
-        const dx = tx - 115, dy = ty - 50;
+        const dx = tx - 45, dy = ty - 62;
         if (Math.sqrt(dx * dx + dy * dy) <= 10) {
           this.registry.set('dhanRendezvousPlayed', true);
           this.player.body.setVelocity(0);
@@ -2007,7 +2020,7 @@ export class OverworldScene extends Phaser.Scene {
       // Craven Forest entry cutscene — triggers within 5 tiles of forest center after Dhan rendezvous
       if (this.registry.get('dhanRendezvousPlayed')
           && !this.registry.get('cravenForestEntryCutscenePlayed')) {
-        const dx = tx - 115, dy = ty - 50;
+        const dx = tx - 45, dy = ty - 62;
         if (Math.sqrt(dx * dx + dy * dy) <= 5) {
           this.registry.set('cravenForestEntryCutscenePlayed', true);
           this.player.body.setVelocity(0);
@@ -2018,7 +2031,7 @@ export class OverworldScene extends Phaser.Scene {
       // Fort Ritker approach cutscene — triggers within 8 tiles of Fort Ritker
       if (this.registry.get('cravenForestEntryCutscenePlayed')
           && !this.registry.get('fortRitkerCutscenePlayed')) {
-        const dx = tx - 115, dy = ty - 20;
+        const dx = tx - 42, dy = ty - 58;
         if (Math.sqrt(dx * dx + dy * dy) <= 8) {
           this.registry.set('fortRitkerCutscenePlayed', true);
           this.player.body.setVelocity(0);
@@ -2434,11 +2447,13 @@ export class OverworldScene extends Phaser.Scene {
       15: { zone: 'mountain_pass', rate: ENCOUNTER_RATE_MT_PASS },
       16: { zone: 'coastline', rate: ENCOUNTER_RATE_COAST },
       17: { zone: 'forest', rate: ENCOUNTER_RATE_DEEP_FOREST },
+      20: { zone: 'swamp', rate: ENCOUNTER_RATE_SWAMP },
+      23: { zone: 'grassland', rate: ENCOUNTER_RATE_GRASSLAND },
     };
 
     // During "Clear the Town" quest, Bracken area spawns only skeletons on any walkable tile
     if (isQuestActive(this.registry, 'act1_clear_bracken')) {
-      const dx = tx - 55, dy = ty - 87;
+      const dx = tx - 80, dy = ty - 115;
       if (dx * dx + dy * dy <= 20 * 20 && tile !== 1 && tile !== 8 && tile !== 11) {
         if (Math.random() < 0.30) {
           this.startBattle('bracken_skeleton');

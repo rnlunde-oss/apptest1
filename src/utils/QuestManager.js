@@ -6,14 +6,14 @@ import { awardXP } from '../data/characters.js';
 
 // Named location coordinates for reach_location objectives
 export const LOCATION_COORDS = {
-  asvam_farmlands: { x: 18, y: 188, radius: 5 },
-  bracken:         { x: 55, y: 87, radius: 5 },
-  catacombs:       { x: 83, y: 73, radius: 5 },
-  dungeon:         { x: 115, y: 20, radius: 5 },
-  bjorn_hideout:   { x: 80, y: 110, radius: 5 },
-  harolds_farm:    { x: 30, y: 90, radius: 5 },
-  old_nans_farm:   { x: 35, y: 65, radius: 5 },
-  craven_forest:   { x: 115, y: 50, radius: 5 },
+  asvam_farmlands: { x: 30, y: 155, radius: 5 },
+  bracken:         { x: 80, y: 115, radius: 5 },
+  catacombs:       { x: 105, y: 112, radius: 5 },
+  dungeon:         { x: 42, y: 58, radius: 5 },
+  bjorn_hideout:   { x: 82, y: 148, radius: 5 },
+  harolds_farm:    { x: 35, y: 150, radius: 5 },
+  old_nans_farm:   { x: 55, y: 105, radius: 5 },
+  craven_forest:   { x: 45, y: 62, radius: 5 },
 };
 
 // ──── Initialization ────

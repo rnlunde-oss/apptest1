@@ -812,6 +812,23 @@ export const ENCOUNTER_TABLES = {
     { enemies: ['dire_wolf', 'dire_wolf'], weight: 10, xp: 20, gold: 15 },
     { enemies: ['plague_rat', 'plague_rat', 'plague_rat'], weight: 10, xp: 12, gold: 10 },
   ],
+  swamp: [  // tile 20 — murky wetlands
+    { enemies: ['plague_rat', 'plague_rat', 'plague_rat'], weight: 25, xp: 15, gold: 10 },
+    { enemies: ['zombie', 'zombie'], weight: 20, xp: 30, gold: 25 },
+    { enemies: ['fell_spider', 'fell_spider', 'plague_rat'], weight: 20, xp: 28, gold: 22 },
+    { enemies: ['zombie', 'skeleton', 'skeleton'], weight: 15, xp: 35, gold: 30 },
+    { enemies: ['corrupted_treant', 'plague_rat', 'plague_rat'], weight: 10, xp: 35, gold: 28 },
+    { enemies: ['shadow_fiend', 'zombie'], weight: 5, xp: 45, gold: 40 },
+    { enemies: ['corrupted_treant', 'fell_spider'], weight: 5, xp: 40, gold: 35 },
+  ],
+  grassland: [  // tile 23 — open plains, low danger
+    { enemies: ['plague_rat', 'plague_rat'], weight: 30, xp: 8, gold: 6 },
+    { enemies: ['dire_wolf'], weight: 25, xp: 12, gold: 10 },
+    { enemies: ['plague_rat', 'plague_rat', 'plague_rat'], weight: 20, xp: 12, gold: 10 },
+    { enemies: ['dire_wolf', 'dire_wolf'], weight: 15, xp: 20, gold: 15 },
+    { enemies: ['bandit_thief'], weight: 5, xp: 12, gold: 15 },
+    { enemies: ['skeleton'], weight: 5, xp: 15, gold: 12 },
+  ],
   coastline: [  // tile 16 — sand/coastline, pirate encounters
     { enemies: ['pirate', 'pirate'], weight: 25, xp: 22, gold: 25 },
     { enemies: ['pirate', 'pirate', 'pirate'], weight: 20, xp: 35, gold: 40 },
