@@ -62,7 +62,12 @@ export class RivinRecruitCutscene extends Phaser.Scene {
         this.cameras.main.fadeOut(600, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
           const savedPos = this.registry.get('rivinRecruitPlayerPos');
-          this.scene.start('Overworld', { fromRivinRecruit: true, playerPos: savedPos });
+          if (this.registry.get('rivinRecruitFromBracken')) {
+            this.registry.set('rivinRecruitFromBracken', false);
+            this.scene.start('Bracken', { fromRivinRecruit: true, playerPos: savedPos, entrance: 'west' });
+          } else {
+            this.scene.start('Overworld', { fromRivinRecruit: true, playerPos: savedPos });
+          }
         });
         return;
       }

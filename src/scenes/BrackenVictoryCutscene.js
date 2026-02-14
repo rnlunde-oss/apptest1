@@ -61,7 +61,12 @@ export class BrackenVictoryCutscene extends Phaser.Scene {
         this.cameras.main.fadeOut(600, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
           const savedPos = this.registry.get('brackenVictoryPlayerPos');
-          this.scene.start('Overworld', { fromBrackenVictory: true, playerPos: savedPos });
+          if (this.registry.get('brackenVictoryFromBracken')) {
+            this.registry.set('brackenVictoryFromBracken', false);
+            this.scene.start('Bracken', { fromBrackenVictory: true, playerPos: savedPos, entrance: 'west' });
+          } else {
+            this.scene.start('Overworld', { fromBrackenVictory: true, playerPos: savedPos });
+          }
         });
         return;
       }

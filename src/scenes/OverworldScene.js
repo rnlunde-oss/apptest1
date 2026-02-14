@@ -331,22 +331,6 @@ const OVERWORLD_ENEMIES = [
     ],
   },
   {
-    id: 'skeletal_captain',
-    tileX: 75, tileY: 115,
-    name: 'Skeletal Captain',
-    enemies: ['skeletal_captain', 'skeleton', 'skeleton', 'skeleton'],
-    xp: 75, gold: 65,
-    color: 0x998866,
-    preDialogue: [
-      'An armored skeleton stands at the gate of Fort Bracken, its cursed blade drawn and three skeleton soldiers at its side.',
-      'The Skeletal Captain will not yield the gate willingly.',
-    ],
-    postDialogue: [
-      'The Skeletal Captain crumbles, its armor clattering to the ground.',
-      'The gate to Fort Bracken is open.',
-    ],
-  },
-  {
     id: 'vampirling_hal',
     tileX: 103, tileY: 108,
     name: 'Vampirling Hal',
@@ -1176,6 +1160,11 @@ export class OverworldScene extends Phaser.Scene {
       const char = roster[def.id];
       const { x, y } = def;
 
+      // Rivin is inside Bracken town during the liberation questline
+      if (def.id === 'rivin' && this.registry.get('brackenCutscenePlayed') && !this.registry.get('rivinRecruitPlayed')) {
+        continue;
+      }
+
       const body = this.add.rectangle(x, y, 22, 28, char.color).setDepth(10);
       this.physics.add.existing(body, true);
       this.add.rectangle(x, y + 8, 20, 6, def.detailColor).setDepth(11);
@@ -1783,6 +1772,7 @@ export class OverworldScene extends Phaser.Scene {
       // Bracken town entrance (tile 22)
       if (tx >= 0 && ty >= 0 && tx < MAP_COLS && ty < MAP_ROWS &&
           OVERWORLD_MAP[ty][tx] === 22 && !this.transitioning) {
+        this.checkLocationObjectives(tx, ty);
         this.enterBracken(tx, ty);
         return;
       }
