@@ -1,0 +1,98 @@
+{
+  "palette_id": "metz_master",
+
+  "skin": {
+    "base":      "#D4A574",
+    "shadow":    "#A67B5B",
+    "highlight": "#E8C39E",
+    "outline":   "#5C3A1E"
+  },
+
+  "hair": {
+    "base":      "#6B4F3A",
+    "shadow":    "#4A3728",
+    "highlight": "#8B6F55",
+    "outline":   "#2E1F14"
+  },
+
+  "beard": {
+    "base":      "#4A3728",
+    "shadow":    "#2E1F14",
+    "highlight": "#6B4F3A"
+  },
+
+  "eyes": {
+    "white":     "#E8E0D0",
+    "iris":      "#4A7FB5",
+    "pupil":     "#1A1A2E"
+  },
+
+  "steel_armor": {
+    "base":      "#8A8FA0",
+    "shadow":    "#5C6070",
+    "highlight": "#B8BDD0",
+    "bright":    "#D4D8E4",
+    "outline":   "#3A3D4A"
+  },
+
+  "gold_trim": {
+    "base":      "#C8A832",
+    "shadow":    "#8B7420",
+    "highlight": "#E8D44C",
+    "outline":   "#5C4A10"
+  },
+
+  "navy_fabric": {
+    "base":      "#2A3158",
+    "shadow":    "#1A1F38",
+    "highlight": "#3D4A78",
+    "outline":   "#0E1220"
+  },
+
+  "blue_scarf": {
+    "base":      "#3A5A8C",
+    "shadow":    "#2A4268",
+    "highlight": "#5A7AB0",
+    "outline":   "#1A2A40"
+  },
+
+  "brown_leather": {
+    "base":      "#7A5C3A",
+    "shadow":    "#5C4028",
+    "highlight": "#9A7A52",
+    "buckle":    "#C8A832",
+    "outline":   "#3A2810"
+  },
+
+  "fur_trim": {
+    "base":      "#C8C0B0",
+    "shadow":    "#9A9488",
+    "highlight": "#E8E0D4",
+    "outline":   "#6A645C"
+  },
+
+  "shield": {
+    "field":     "#2A3158",
+    "border":    "#C8A832",
+    "rim":       "#8A8FA0",
+    "crest":     "#C8A832"
+  },
+
+  "sword": {
+    "blade":     "#B8BDD0",
+    "edge":      "#D4D8E4",
+    "shadow":    "#6A6E80",
+    "guard":     "#C8A832",
+    "grip":      "#5C4028",
+    "pommel":    "#C41E3A",
+    "outline":   "#3A3D4A"
+  },
+
+  "cape": {
+    "primary":   "#2A3158",
+    "shadow":    "#1A1F38",
+    "highlight": "#3D4A78",
+    "lining":    "#3A3158",
+    "outline":   "#0E1220"
+  }
+}

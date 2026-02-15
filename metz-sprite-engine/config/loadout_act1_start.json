@@ -1,0 +1,22 @@
+{
+  "loadout_id": "act1_start",
+  "display_name": "Captain Metz — Act I Starting Loadout",
+  "body": "body_metz_48",
+  "equipment": [
+    "scarf_blue_cowl",
+    "tabard_navy_gold",
+    "chestplate_steel_gold",
+    "pauldrons_segmented_fur",
+    "bracers_steel",
+    "belt_captain_leather",
+    "greaves_steel",
+    "boots_leather_sturdy",
+    "weapon_longsword",
+    "shield_rhaud_kite",
+    "cape_navy_half"
+  ],
+  "notes": {
+    "z_order_stack_down": "cape(-1) → body(0) → scarf(1) → tabard(2) → greaves(3) → boots(3) → chestplate(4) → bracers(5) → belt(5) → pauldrons(6) → sword(9) → shield(9)",
+    "z_order_stack_up": "body(0) → scarf(1) → tabard(2) → greaves(3) → boots(3) → chestplate(4) → bracers(5) → belt(5) → pauldrons(6) → sword(-1, hidden) → shield(8) → cape(10, over back)"
+  }
+}

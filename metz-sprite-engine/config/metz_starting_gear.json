@@ -1,0 +1,83 @@
+{
+  "starting_inventory": [
+    {
+      "item_id": "chestplate_steel_gold",
+      "display_name": "Captain's Steel Cuirass",
+      "slot": "chest",
+      "tier": 3,
+      "stats": { "defense": 18, "weight": 7 },
+      "description": "Issue plate for officers of Rhaud's vanguard. The gold trim marks captain's rank.",
+      "replaceable_at": "mid_act_1"
+    },
+    {
+      "item_id": "pauldrons_segmented_fur",
+      "display_name": "Wolfsguard Pauldrons",
+      "slot": "shoulders",
+      "tier": 3,
+      "stats": { "defense": 8, "cold_resist": 5, "weight": 4 },
+      "description": "Layered steel plates lined with northern wolf pelt. Worn by captains who've served the frontier.",
+      "replaceable_at": "mid_act_1"
+    },
+    {
+      "item_id": "greaves_steel",
+      "display_name": "Steel Leg Guards",
+      "slot": "legs",
+      "tier": 2,
+      "stats": { "defense": 6, "weight": 3 },
+      "description": "Standard military greaves with reinforced knee plates.",
+      "replaceable_at": "early_act_1"
+    },
+    {
+      "item_id": "shield_rhaud_kite",
+      "display_name": "Shield of Rhaud",
+      "slot": "offhand",
+      "tier": 4,
+      "stats": { "defense": 14, "block_chance": 0.15, "weight": 6 },
+      "description": "A kite shield bearing the lion crest of Rhaud. Issued only to the kingdom's sworn defenders.",
+      "unique": true,
+      "replaceable_at": "never"
+    },
+    {
+      "item_id": "weapon_longsword",
+      "display_name": "Vanguard Blade",
+      "slot": "weapon",
+      "tier": 3,
+      "stats": { "attack": 16, "speed": 5, "weight": 4 },
+      "description": "A well-balanced longsword forged for Rhaud's vanguard officers. The red gem in the pommel is a tradition — one for each generation of captains.",
+      "replaceable_at": "mid_act_1"
+    },
+    {
+      "item_id": "cape_navy_half",
+      "display_name": "Captain's Half-Cape",
+      "slot": "cloak",
+      "tier": 3,
+      "stats": { "magic_resist": 4, "charisma": 3, "weight": 1 },
+      "description": "Navy wool cape clasped at the left shoulder. Identifies the wearer as an officer of the watch.",
+      "replaceable_at": "act_2"
+    },
+    {
+      "item_id": "belt_captain_leather",
+      "display_name": "Officer's Field Belt",
+      "slot": "belt",
+      "tier": 2,
+      "stats": { "carry_capacity": 12, "potion_slots": 2, "weight": 1 },
+      "description": "Wide leather belt with brass buckle and hip pouch. Built to carry a captain's essentials on campaign.",
+      "replaceable_at": "act_2"
+    },
+    {
+      "item_id": "scarf_blue_cowl",
+      "display_name": "Frontier Cowl",
+      "slot": "accessory",
+      "tier": 1,
+      "stats": { "cold_resist": 3, "weight": 0 },
+      "description": "Blue wool cowl from the northern frontier. More sentimental than practical.",
+      "replaceable_at": "never"
+    }
+  ],
+
+  "design_notes": {
+    "power_level": "Metz starts stronger than most RPG protagonists. His gear is tier 2-4, reflecting his rank. The player feels like a capable captain, not a village nobody. First upgrades come mid-Act I when Atikesh's forces start overwhelming standard military equipment.",
+    "narrative_items": "The Shield of Rhaud and Frontier Cowl are never replaced — they're identity items that stay with Metz throughout the game. The shield is his oath to the kingdom; the cowl is personal.",
+    "visual_progression": "Act I upgrades are lateral (steel → reinforced steel). The BIG visual change comes in Act II when mythril and enchanted items enter the picture, shifting the palette from blue-grey/navy to pale blue/silver/gold."
+  }
+}
