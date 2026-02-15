@@ -8,6 +8,8 @@ import { FarmlandCutscene } from './scenes/FarmlandCutscene.js';
 import { BrackenCutscene } from './scenes/BrackenCutscene.js';
 import { RivinRecruitCutscene } from './scenes/RivinRecruitCutscene.js';
 import { BrackenVictoryCutscene } from './scenes/BrackenVictoryCutscene.js';
+import { RicketsCutscene } from './scenes/RicketsCutscene.js';
+import { RicketsRecruitCutscene } from './scenes/RicketsRecruitCutscene.js';
 import { CatacombsCutscene } from './scenes/CatacombsCutscene.js';
 import { HalVictoryCutscene } from './scenes/HalVictoryCutscene.js';
 import { NewsOfAtikeshCutscene } from './scenes/NewsOfAtikeshCutscene.js';
@@ -42,7 +44,7 @@ const config = {
   input: {
     activePointers: 3,
   },
-  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat, FarmlandCutscene, BrackenCutscene, RivinRecruitCutscene, BrackenVictoryCutscene, CatacombsCutscene, HalVictoryCutscene, NewsOfAtikeshCutscene, CravenForestCutscene, FortRitkerCutscene, OverworldScene, BrackenScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, QuestLogScene, TouchControlsScene],
+  scene: [TitleScene, BootScene, CutsceneScene, TutorialBattleScene, PostTutorialCutscene, PostTutorialVictory, PostTutorialDefeat, FarmlandCutscene, BrackenCutscene, RivinRecruitCutscene, BrackenVictoryCutscene, RicketsCutscene, RicketsRecruitCutscene, CatacombsCutscene, HalVictoryCutscene, NewsOfAtikeshCutscene, CravenForestCutscene, FortRitkerCutscene, OverworldScene, BrackenScene, BattleScene, BattleUIScene, PartyScene, InventoryScene, ShopScene, InnScene, ExperienceScene, QuestLogScene, TouchControlsScene],
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

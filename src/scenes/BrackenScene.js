@@ -4,7 +4,7 @@ import { BRACKEN_MAP, BRACKEN_COLS, BRACKEN_ROWS, BRACKEN_TILE_SIZE, BRACKEN_SPA
 import { TILE_COLORS } from '../data/maps.js';
 import { createEnemy } from '../data/characters.js';
 import { QUEST_DEFS } from '../data/quests.js';
-import { serializeGameState, autoSave, saveToSlot, getSlotSummaries } from '../data/saveManager.js';
+import { serializeGameState, autoSave, saveToSlot, loadAutoSave, getSlotSummaries } from '../data/saveManager.js';
 import {
   getTrackedQuest,
   findDefeatEnemyObjectives, findDefeatCountObjectives, findTalkNPCObjectives,
@@ -233,17 +233,18 @@ export class BrackenScene extends Phaser.Scene {
 
       const body = this.add.rectangle(rx, ry, 22, 28, 0xbb6622).setDepth(10);
       this.physics.add.existing(body, true);
-      this.add.rectangle(rx, ry + 8, 20, 6, 0x885511).setDepth(11);
-      this.add.text(rx, ry - 22, 'Rivin', {
+      const boots = this.add.rectangle(rx, ry + 8, 20, 6, 0x885511).setDepth(11);
+      const nameLabel = this.add.text(rx, ry - 22, 'Rivin', {
         fontSize: '9px', color: '#ffcc88', fontStyle: 'bold',
       }).setOrigin(0.5).setDepth(11);
-      this.add.text(rx, ry - 13, 'Warrior', {
+      const classLabel = this.add.text(rx, ry - 13, 'Warrior', {
         fontSize: '7px', color: '#888888',
       }).setOrigin(0.5).setDepth(11);
 
       const marker = this.add.text(rx, ry - 32, '!', {
         fontSize: '14px', fontStyle: 'bold', color: '#ffff00',
       }).setOrigin(0.5).setDepth(12);
+      [body, boots, nameLabel, classLabel, marker].forEach(o => this.uiCamera.ignore(o));
       this.tweens.add({
         targets: marker, y: ry - 36,
         duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -266,14 +267,15 @@ export class BrackenScene extends Phaser.Scene {
 
       const body = this.add.rectangle(cx, cy, 24, 30, 0x998866).setDepth(10);
       this.physics.add.existing(body, true);
-      this.add.rectangle(cx, cy + 8, 22, 6, 0x776644).setDepth(11);
-      this.add.text(cx, cy - 24, 'Skeletal Captain', {
+      const boots = this.add.rectangle(cx, cy + 8, 22, 6, 0x776644).setDepth(11);
+      const nameLabel = this.add.text(cx, cy - 24, 'Skeletal Captain', {
         fontSize: '8px', color: '#ccaa88', fontStyle: 'bold',
       }).setOrigin(0.5).setDepth(11);
 
       const marker = this.add.text(cx, cy - 32, '!', {
         fontSize: '14px', fontStyle: 'bold', color: '#ff4444',
       }).setOrigin(0.5).setDepth(12);
+      [body, boots, nameLabel, marker].forEach(o => this.uiCamera.ignore(o));
       this.tweens.add({
         targets: marker, y: cy - 36,
         duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
@@ -294,10 +296,12 @@ export class BrackenScene extends Phaser.Scene {
     const py = tileY * BRACKEN_TILE_SIZE + BRACKEN_TILE_SIZE / 2;
     const body = this.add.rectangle(px, py, 18, 24, color).setDepth(10);
     this.physics.add.existing(body, true);
-    this.add.text(px, py - 18, name, {
+    const label = this.add.text(px, py - 18, name, {
       fontSize: '7px', color: '#aaaaaa',
     }).setOrigin(0.5).setDepth(11);
     this.physics.add.collider(this.player, body);
+    this.uiCamera.ignore(body);
+    this.uiCamera.ignore(label);
   }
 
   spawnTertullian(tileX, tileY) {
@@ -305,14 +309,15 @@ export class BrackenScene extends Phaser.Scene {
     const py = tileY * BRACKEN_TILE_SIZE + BRACKEN_TILE_SIZE / 2;
     const body = this.add.rectangle(px, py, 22, 28, 0x889999).setDepth(10);
     this.physics.add.existing(body, true);
-    this.add.rectangle(px, py + 8, 20, 6, 0x667777).setDepth(11);
-    this.add.text(px, py - 22, 'Cpt. Tertullian', {
+    const boots = this.add.rectangle(px, py + 8, 20, 6, 0x667777).setDepth(11);
+    const nameLabel = this.add.text(px, py - 22, 'Cpt. Tertullian', {
       fontSize: '8px', color: '#aaccdd', fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(11);
-    this.add.text(px, py - 13, 'Garrison', {
+    const classLabel = this.add.text(px, py - 13, 'Garrison', {
       fontSize: '7px', color: '#888888',
     }).setOrigin(0.5).setDepth(11);
     this.physics.add.collider(this.player, body);
+    [body, boots, nameLabel, classLabel].forEach(o => this.uiCamera.ignore(o));
     this.tertullianNpc = { body, x: px, y: py };
   }
 
@@ -608,19 +613,61 @@ export class BrackenScene extends Phaser.Scene {
   }
 
   handleDefeat() {
-    this.showDialogue(['You were overwhelmed... Your party retreats and rests.'], () => {
-      const roster = this.registry.get('roster');
-      for (const char of Object.values(roster)) {
-        if (char.recruited) {
-          char.hp = char.maxHp;
-          char.mp = char.maxMp;
-        }
-      }
-      const exitPos = OVERWORLD_EXIT[this.entrance] || OVERWORLD_EXIT.west;
-      this.cameras.main.fadeOut(400, 0, 0, 0);
-      this.cameras.main.once('camerafadeoutcomplete', () => {
-        this.scene.start('Overworld', { playerPos: exitPos });
+    // Freeze player
+    this.player.body.setVelocity(0);
+
+    // Dark overlay
+    const overlay = this.add.rectangle(400, 320, 800, 640, 0x000000, 0.85)
+      .setScrollFactor(0).setDepth(9999);
+    this._addUI(overlay);
+
+    // "Defeat" title
+    const title = this.add.text(400, 200, 'Defeat', {
+      fontSize: '36px', color: '#cc3333', fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(10000);
+    this._addUI(title);
+
+    // Subtitle
+    const msg = this.add.text(400, 260, 'Your party has fallen...', {
+      fontSize: '16px', color: '#aaaaaa',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(10000);
+    this._addUI(msg);
+
+    // Check for saves
+    const autoData = loadAutoSave();
+    let yPos = 340;
+
+    if (autoData) {
+      // "Load Last Save" button
+      const btnBg = this.add.rectangle(400, yPos, 260, 44, 0x224422)
+        .setScrollFactor(0).setDepth(10000).setInteractive({ useHandCursor: true });
+      this._addUI(btnBg);
+      const btnText = this.add.text(400, yPos, 'Load Last Save', {
+        fontSize: '18px', color: '#66cc66',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
+      this._addUI(btnText);
+
+      btnBg.on('pointerover', () => btnBg.setFillStyle(0x336633));
+      btnBg.on('pointerout', () => btnBg.setFillStyle(0x224422));
+      btnBg.on('pointerdown', () => {
+        this.scene.start('Boot', { loadData: autoData });
       });
+      yPos += 60;
+    }
+
+    // "Return to Title" button
+    const titleBg = this.add.rectangle(400, yPos, 260, 44, 0x222244)
+      .setScrollFactor(0).setDepth(10000).setInteractive({ useHandCursor: true });
+    this._addUI(titleBg);
+    const titleText = this.add.text(400, yPos, 'Return to Title', {
+      fontSize: '18px', color: '#6666cc',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
+    this._addUI(titleText);
+
+    titleBg.on('pointerover', () => titleBg.setFillStyle(0x333366));
+    titleBg.on('pointerout', () => titleBg.setFillStyle(0x222244));
+    titleBg.on('pointerdown', () => {
+      this.scene.start('Title');
     });
   }
 

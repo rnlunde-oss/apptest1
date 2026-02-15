@@ -6,7 +6,7 @@ import {
   ENCOUNTER_RATE_SWAMP, ENCOUNTER_RATE_GRASSLAND,
 } from '../data/maps.js';
 import { ENCOUNTER_TABLE, ENCOUNTER_TABLES, createEnemy } from '../data/characters.js';
-import { serializeGameState, saveToSlot, loadFromSlot, autoSave, getSlotSummaries } from '../data/saveManager.js';
+import { serializeGameState, saveToSlot, loadFromSlot, autoSave, loadAutoSave, getSlotSummaries } from '../data/saveManager.js';
 import { isTouchDevice } from '../utils/touchDetect.js';
 import {
   getTrackedQuest, getActiveQuests,
@@ -387,6 +387,8 @@ export class OverworldScene extends Phaser.Scene {
     this.pendingFarmlandReturn = data?.fromFarmlandCutscene || false;
     this.pendingRivinRecruit = data?.fromRivinRecruit || false;
     this.pendingBrackenVictory = data?.fromBrackenVictory || false;
+    this.pendingRicketsCutsceneReturn = data?.fromRicketsCutscene || false;
+    this.pendingRicketsRecruitReturn = data?.fromRicketsRecruit || false;
     this.pendingCatacombsReturn = data?.fromCatacombsCutscene || false;
     this.pendingHalVictory = data?.fromHalVictory || false;
     this.pendingNewsOfAtikesh = data?.fromNewsOfAtikesh || false;
@@ -594,6 +596,21 @@ export class OverworldScene extends Phaser.Scene {
       this.pendingBrackenVictory = false;
       this.time.delayedCall(300, () => {
         this.triggerTertullianDialogue();
+      });
+    }
+
+    // Return from Rickets bridge cutscene
+    if (this.pendingRicketsCutsceneReturn) {
+      this.pendingRicketsCutsceneReturn = false;
+    }
+
+    // Return from Rickets recruit cutscene — recruit Rickets
+    if (this.pendingRicketsRecruitReturn) {
+      this.pendingRicketsRecruitReturn = false;
+      this.time.delayedCall(300, () => {
+        this.recruitAfterBoss('rickets');
+        this.drawPartyHUD();
+        this.triggerAutoSave();
       });
     }
 
@@ -1160,7 +1177,6 @@ export class OverworldScene extends Phaser.Scene {
     // NPC placement data: id, pixel position, name color, detail color
     const NPC_DEFS = [
       { id: 'rivin',  x: 81 * TILE_SIZE + 16, y: 112 * TILE_SIZE + 16, nameColor: '#ffcc88', detailColor: 0x885511 },
-      { id: 'fenton', x: 38 * TILE_SIZE + 16, y: 143 * TILE_SIZE + 16, nameColor: '#bbcc88', detailColor: 0x3a4422 },
       { id: 'rickets',x: 100 * TILE_SIZE + 16, y: 112 * TILE_SIZE + 16, nameColor: '#bbaaff', detailColor: 0x332266 },
       { id: 'hela',   x: 160 * TILE_SIZE + 16, y: 112 * TILE_SIZE + 16, nameColor: '#ddaaff', detailColor: 0x553388 },
       { id: 'anuel',  x: 138 * TILE_SIZE + 16, y: 10 * TILE_SIZE + 16, nameColor: '#ffffcc', detailColor: 0x888866 },
@@ -1806,7 +1822,7 @@ export class OverworldScene extends Phaser.Scene {
 
       if (!this.registry.get('brackenCutscenePlayed')) {
         const dx = tx - 80, dy = ty - 115;
-        if (Math.sqrt(dx * dx + dy * dy) <= 50) {
+        if (Math.sqrt(dx * dx + dy * dy) <= 15) {
           this.registry.set('brackenCutscenePlayed', true);
           this.player.body.setVelocity(0);
           this.triggerBrackenCutscene();
@@ -1814,6 +1830,26 @@ export class OverworldScene extends Phaser.Scene {
       }
 
       // Rivin dialogue, recruit, and captain approach now trigger inside BrackenScene
+
+      // Rickets bridge cutscene — halfway across eastern bridge out of Bracken
+      if (!this.registry.get('ricketsCutscenePlayed')
+          && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
+        if (tx >= 88 && tx <= 90 && ty >= 116 && ty <= 117) {
+          this.registry.set('ricketsCutscenePlayed', true);
+          this.player.body.setVelocity(0);
+          this.triggerRicketsCutscene();
+        }
+      }
+
+      // Rickets battle — east bank of bridge, after seeing the cutscene
+      if (this.registry.get('ricketsCutscenePlayed')
+          && !this.registry.get('ricketsBattlePlayed')
+          && isQuestActive(this.registry, 'act1_liberate_catacombs')) {
+        if (tx >= 92 && tx <= 94 && ty >= 115 && ty <= 118) {
+          this.registry.set('ricketsBattlePlayed', true);
+          this.startRicketsBattle();
+        }
+      }
 
       // Catacombs approach cutscene
       if (!this.registry.get('catacombsCutscenePlayed')
@@ -2443,6 +2479,17 @@ export class OverworldScene extends Phaser.Scene {
       23: { zone: 'grassland', rate: ENCOUNTER_RATE_GRASSLAND },
     };
 
+    // Until catacombs quest is complete, only skeleton encounters everywhere at high rate
+    if (!isQuestComplete(this.registry, 'act1_liberate_catacombs')) {
+      const entry = ZONE_MAP[tile];
+      if (entry && tile !== 1 && tile !== 8 && tile !== 11) {
+        if (Math.random() < 0.22) {
+          this.startBattle('bracken_skeleton');
+        }
+      }
+      return;
+    }
+
     // During "Clear the Town" quest, Bracken area spawns only skeletons on any walkable tile
     if (isQuestActive(this.registry, 'act1_clear_bracken')) {
       const dx = tx - 81, dy = ty - 114;
@@ -2542,15 +2589,63 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   handleDefeat() {
-    const roster = this.registry.get('roster');
-    for (const c of Object.values(roster)) {
-      if (c.recruited) { c.hp = c.maxHp; c.mp = c.maxMp; }
-    }
-    this.player.setPosition(this.playerSpawn.x, this.playerSpawn.y);
+    // Freeze player
+    this.player.body.setVelocity(0, 0);
+    this._hideTouchControls();
 
-    this.updateViewportTiles(this.playerSpawn.x, this.playerSpawn.y, true);
-    this.drawPartyHUD();
-    this.showDialogue(['You were overwhelmed... Your party retreats to camp and rests.']);
+    // Dark overlay
+    const overlay = this.add.rectangle(400, 320, 800, 640, 0x000000, 0.85)
+      .setScrollFactor(0).setDepth(9999);
+    this._addUI(overlay);
+
+    // "Defeat" title
+    const title = this.add.text(400, 200, 'Defeat', {
+      fontSize: '36px', color: '#cc3333', fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(10000);
+    this._addUI(title);
+
+    // Subtitle
+    const msg = this.add.text(400, 260, 'Your party has fallen...', {
+      fontSize: '16px', color: '#aaaaaa',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(10000);
+    this._addUI(msg);
+
+    // Check for saves
+    const autoData = loadAutoSave();
+    let yPos = 340;
+
+    if (autoData) {
+      // "Load Last Save" button
+      const btnBg = this.add.rectangle(400, yPos, 260, 44, 0x224422)
+        .setScrollFactor(0).setDepth(10000).setInteractive({ useHandCursor: true });
+      this._addUI(btnBg);
+      const btnText = this.add.text(400, yPos, 'Load Last Save', {
+        fontSize: '18px', color: '#66cc66',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
+      this._addUI(btnText);
+
+      btnBg.on('pointerover', () => btnBg.setFillStyle(0x336633));
+      btnBg.on('pointerout', () => btnBg.setFillStyle(0x224422));
+      btnBg.on('pointerdown', () => {
+        this.scene.start('Boot', { loadData: autoData });
+      });
+      yPos += 60;
+    }
+
+    // "Return to Title" button
+    const titleBg = this.add.rectangle(400, yPos, 260, 44, 0x222244)
+      .setScrollFactor(0).setDepth(10000).setInteractive({ useHandCursor: true });
+    this._addUI(titleBg);
+    const titleText = this.add.text(400, yPos, 'Return to Title', {
+      fontSize: '18px', color: '#6666cc',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(10001);
+    this._addUI(titleText);
+
+    titleBg.on('pointerover', () => titleBg.setFillStyle(0x333366));
+    titleBg.on('pointerout', () => titleBg.setFillStyle(0x222244));
+    titleBg.on('pointerdown', () => {
+      this.scene.start('Title');
+    });
   }
 
   // ──── Interaction ────
@@ -2866,6 +2961,91 @@ export class OverworldScene extends Phaser.Scene {
       'Metz: "Clearly he\'s not one for savory friends. Rivin\'s right. Let\'s make a move on it."',
     ], () => {
       this.triggerAutoSave();
+    });
+  }
+
+  triggerRicketsCutscene() {
+    this.registry.set('ricketsCutscenePlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('RicketsCutscene');
+    });
+  }
+
+  startRicketsBattle() {
+    this.player.body.setVelocity(0);
+    this._hideTouchControls();
+    this.inBattle = true;
+    this.sfx.playEncounterStart();
+
+    const enemies = ['skeleton', 'skeleton', 'skeleton', 'skeleton'].map(key => createEnemy(key));
+    const activeParty = this.getActiveParty();
+    for (const member of activeParty) {
+      member.isDefending = false;
+      member.isCharged = false;
+      member.statusEffects = [];
+    }
+
+    // Create temporary Rickets guest character for the battle
+    const roster = this.registry.get('roster');
+    const ricketsRef = roster.rickets;
+    const tempRickets = {
+      id: 'rickets_guest',
+      name: 'Rickets',
+      cls: 'Wizard',
+      color: ricketsRef.color,
+      level: 3,
+      maxHp: ricketsRef.maxHp, hp: ricketsRef.maxHp,
+      maxMp: ricketsRef.maxMp, mp: ricketsRef.maxMp,
+      baseMaxHp: ricketsRef.maxHp, baseMaxMp: ricketsRef.maxMp,
+      baseAtk: ricketsRef.atk, baseDef: ricketsRef.def, baseSpd: ricketsRef.spd,
+      get atk() { return this.baseAtk; },
+      get def() { return this.baseDef; },
+      get spd() { return this.baseSpd; },
+      learnedAbilities: ['arcane_bolt', 'fireball'],
+      activeAbilities: ['arcane_bolt', 'fireball'],
+      get abilities() { return this.activeAbilities; },
+      equipment: {},
+      isDefending: false,
+      isCharged: false,
+      statusEffects: [],
+    };
+    activeParty.push(tempRickets);
+
+    this.cameras.main.flash(400, 100, 0, 0);
+    this.time.delayedCall(500, () => {
+      this.scene.launch('Battle', {
+        party: activeParty,
+        enemies,
+        xpReward: 35,
+        goldReward: 28,
+        enemyTypes: ['skeleton', 'skeleton', 'skeleton', 'skeleton'],
+        roster: this.getFullRoster(),
+        isBossEncounter: false,
+        zone: 'cursed',
+        onBattleEnd: (result) => {
+          this.scene.stop('Battle');
+          this.scene.stop('BattleUI');
+          this.scene.resume();
+          this.inBattle = false;
+          this.drawPartyHUD();
+          this._showTouchControls();
+          if (result === 'win') {
+            this.triggerRicketsRecruitCutscene();
+          } else if (result === 'lose') {
+            this.handleDefeat();
+          }
+        },
+      });
+      this.scene.pause();
+    });
+  }
+
+  triggerRicketsRecruitCutscene() {
+    this.registry.set('ricketsRecruitPlayerPos', { x: this.player.x, y: this.player.y });
+    this.cameras.main.fadeOut(600, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.start('RicketsRecruitCutscene');
     });
   }
 
