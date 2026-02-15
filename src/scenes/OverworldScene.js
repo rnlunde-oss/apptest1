@@ -399,12 +399,10 @@ export class OverworldScene extends Phaser.Scene {
     if (!this.textures.exists('grassland_tileset')) {
       this.load.image('grassland_tileset', 'assets/tilesets/grassland_tileset.png');
     }
-    const dirs = ['down', 'up', 'left', 'right'];
-    for (const d of dirs) {
-      const key = `player_${d}`;
-      if (!this.textures.exists(key)) {
-        this.load.image(key, `assets/sprites/${key}.png`);
-      }
+    if (!this.textures.exists('metz_walk')) {
+      this.load.spritesheet('metz_walk', 'assets/sprites/metz_spritesheet.png', {
+        frameWidth: 48, frameHeight: 48,
+      });
     }
     if (!this.textures.exists('metz_portrait_base')) {
       this.load.image('metz_portrait_base', 'assets/sprites/metz_portrait_base.png');
@@ -431,6 +429,21 @@ export class OverworldScene extends Phaser.Scene {
 
   create() {
     this.sfx = this.registry.get('soundManager');
+
+    // Create walk animations for Metz spritesheet
+    if (!this.anims.exists('metz_walk_down')) {
+      ['down', 'left', 'right', 'up'].forEach((dir, row) => {
+        this.anims.create({
+          key: `metz_walk_${dir}`,
+          frames: this.anims.generateFrameNumbers('metz_walk', {
+            frames: [row * 4, row * 4 + 1, row * 4 + 2, row * 4 + 3],
+          }),
+          frameRate: 8,
+          repeat: -1,
+        });
+      });
+    }
+
     this._buildGrassTileTextures();
     this.buildMap();
     this.spawnPlayer();
@@ -1120,10 +1133,9 @@ export class OverworldScene extends Phaser.Scene {
   spawnPlayer() {
     const { x, y } = this.loadedPos || this.playerSpawn || { x: 304, y: 5904 };
 
-    // Sprite-based player with directional textures
     this.playerDir = 'down';
     const SPRITE_DISPLAY_H = 36;
-    this.player = this.add.sprite(x, y, 'player_down').setDepth(10);
+    this.player = this.add.sprite(x, y, 'metz_walk', 0).setDepth(10);
     const scaleY = SPRITE_DISPLAY_H / this.player.height;
     this.player.setScale(scaleY);
     this.physics.add.existing(this.player);
@@ -1742,7 +1754,7 @@ export class OverworldScene extends Phaser.Scene {
       else if (down) vy = PLAYER_SPEED;
       if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
     }
-    // Update facing direction based on movement
+    // Update facing direction and walk animation
     if (vx !== 0 || vy !== 0) {
       let newDir;
       if (Math.abs(vy) > Math.abs(vx)) {
@@ -1750,12 +1762,15 @@ export class OverworldScene extends Phaser.Scene {
       } else {
         newDir = vx < 0 ? 'left' : 'right';
       }
-      if (newDir !== this.playerDir) {
+      const animKey = `metz_walk_${newDir}`;
+      if (this.player.anims.currentAnim?.key !== animKey) {
         this.playerDir = newDir;
-        this.player.setTexture(`player_${newDir}`);
-        const scaleY = 36 / this.player.height;
-        this.player.setScale(scaleY);
+        this.player.play(animKey);
       }
+    } else {
+      const idleFrames = { down: 0, left: 4, right: 8, up: 12 };
+      this.player.stop();
+      this.player.setFrame(idleFrames[this.playerDir]);
     }
 
     this.player.body.setVelocity(vx, vy);

@@ -55,17 +55,30 @@ export class BrackenScene extends Phaser.Scene {
   }
 
   preload() {
-    const dirs = ['down', 'up', 'left', 'right'];
-    for (const d of dirs) {
-      const key = `player_${d}`;
-      if (!this.textures.exists(key)) {
-        this.load.image(key, `assets/sprites/${key}.png`);
-      }
+    if (!this.textures.exists('metz_walk')) {
+      this.load.spritesheet('metz_walk', 'assets/sprites/metz_spritesheet.png', {
+        frameWidth: 48, frameHeight: 48,
+      });
     }
   }
 
   create() {
     this.sfx = this.registry.get('soundManager');
+
+    // Create walk animations for Metz spritesheet
+    if (!this.anims.exists('metz_walk_down')) {
+      ['down', 'left', 'right', 'up'].forEach((dir, row) => {
+        this.anims.create({
+          key: `metz_walk_${dir}`,
+          frames: this.anims.generateFrameNumbers('metz_walk', {
+            frames: [row * 4, row * 4 + 1, row * 4 + 2, row * 4 + 3],
+          }),
+          frameRate: 8,
+          repeat: -1,
+        });
+      });
+    }
+
     this.transitioning = false;
     this.inBattle = false;
     this.dialogueActive = false;
@@ -124,7 +137,8 @@ export class BrackenScene extends Phaser.Scene {
                    : 'down';
     if (this.savedPlayerPos) this.playerDir = 'down';
 
-    this.player = this.add.sprite(spawn.x, spawn.y, `player_${this.playerDir}`).setDepth(10);
+    const idleFrames = { down: 0, left: 4, right: 8, up: 12 };
+    this.player = this.add.sprite(spawn.x, spawn.y, 'metz_walk', idleFrames[this.playerDir]).setDepth(10);
     const scaleY = 36 / this.player.height;
     this.player.setScale(scaleY);
     this.physics.add.existing(this.player);
@@ -935,7 +949,7 @@ export class BrackenScene extends Phaser.Scene {
     else if (down) vy = PLAYER_SPEED;
     if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
 
-    // Update facing
+    // Update facing and walk animation
     if (vx !== 0 || vy !== 0) {
       let newDir;
       if (Math.abs(vy) > Math.abs(vx)) {
@@ -943,11 +957,15 @@ export class BrackenScene extends Phaser.Scene {
       } else {
         newDir = vx < 0 ? 'left' : 'right';
       }
-      if (newDir !== this.playerDir) {
+      const animKey = `metz_walk_${newDir}`;
+      if (this.player.anims.currentAnim?.key !== animKey) {
         this.playerDir = newDir;
-        this.player.setTexture(`player_${newDir}`);
-        this.player.setScale(36 / this.player.height);
+        this.player.play(animKey);
       }
+    } else {
+      const idleFrames = { down: 0, left: 4, right: 8, up: 12 };
+      this.player.stop();
+      this.player.setFrame(idleFrames[this.playerDir]);
     }
 
     this.player.body.setVelocity(vx, vy);

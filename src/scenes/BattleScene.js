@@ -55,8 +55,10 @@ export class BattleScene extends Phaser.Scene {
     }
 
     // Character battle sprites
-    if (!this.textures.exists('spr_metz')) {
-      this.load.image('spr_metz', 'assets/sprites/metz_battle.png');
+    if (!this.textures.exists('metz_walk')) {
+      this.load.spritesheet('metz_walk', 'assets/sprites/metz_spritesheet.png', {
+        frameWidth: 48, frameHeight: 48,
+      });
     }
     if (!this.textures.exists('spr_farmer_alan')) {
       this.load.image('spr_farmer_alan', 'assets/sprites/alan_battle.png');
@@ -165,8 +167,12 @@ export class BattleScene extends Phaser.Scene {
       const spriteKey = this.getCharSpriteKey(member);
       let sprite;
       if (spriteKey && this.textures.exists(spriteKey)) {
-        sprite = this.add.image(x, y, spriteKey).setDepth(baseD);
-        const targetH = spriteKey === 'spr_metz' ? 147 : 128;
+        if (spriteKey === 'metz_walk') {
+          sprite = this.add.sprite(x, y, 'metz_walk', 0).setDepth(baseD);
+        } else {
+          sprite = this.add.image(x, y, spriteKey).setDepth(baseD);
+        }
+        const targetH = spriteKey === 'metz_walk' ? 147 : 128;
         const scale = targetH / sprite.height;
         sprite.setScale(scale);
         sprite.setOrigin(0.5, 0.5);
@@ -625,7 +631,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   _removeWhiteBackgrounds() {
-    const keys = ['spr_metz', 'spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn', 'spr_zombie', 'spr_dire_wolf', 'spr_plague_rat', 'spr_corrupted_treant', 'spr_bandit_thief', 'spr_bandit_henchman', 'spr_bandit_chief', 'spr_shadow_fiend', 'spr_bone_reaper', 'spr_skeletal_captain'];
+    const keys = ['spr_farmer_alan', 'spr_skeleton', 'spr_dagvar', 'spr_havrifyn', 'spr_zombie', 'spr_dire_wolf', 'spr_plague_rat', 'spr_corrupted_treant', 'spr_bandit_thief', 'spr_bandit_henchman', 'spr_bandit_chief', 'spr_shadow_fiend', 'spr_bone_reaper', 'spr_skeletal_captain'];
     for (const key of keys) {
       if (!this.textures.exists(key)) continue;
       const src = this.textures.get(key).getSourceImage();
@@ -1577,8 +1583,12 @@ export class BattleScene extends Phaser.Scene {
     const spriteKey = this.getCharSpriteKey(allyChar);
     let sprite;
     if (spriteKey && this.textures.exists(spriteKey)) {
-      sprite = this.add.image(x, y, spriteKey).setDepth(baseD);
-      const targetH = spriteKey === 'spr_metz' ? 147 : 128;
+      if (spriteKey === 'metz_walk') {
+        sprite = this.add.sprite(x, y, 'metz_walk', 0).setDepth(baseD);
+      } else {
+        sprite = this.add.image(x, y, spriteKey).setDepth(baseD);
+      }
+      const targetH = spriteKey === 'metz_walk' ? 147 : 128;
       const scale = targetH / sprite.height;
       sprite.setScale(scale);
       sprite.setOrigin(0.5, 0.5);
@@ -1628,7 +1638,7 @@ export class BattleScene extends Phaser.Scene {
 
   getCharSpriteKey(character) {
     const spriteMap = {
-      metz: 'spr_metz',
+      metz: 'metz_walk',
       farmer_alan: 'spr_farmer_alan',
       skeleton: 'spr_skeleton',
       dagvar: 'spr_dagvar',
