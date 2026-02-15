@@ -67,7 +67,7 @@ export class BrackenScene extends Phaser.Scene {
 
     // Create walk animations for Metz spritesheet
     if (!this.anims.exists('metz_walk_down')) {
-      ['down', 'left', 'right', 'up'].forEach((dir, row) => {
+      ['down', 'right', 'left', 'up'].forEach((dir, row) => {
         this.anims.create({
           key: `metz_walk_${dir}`,
           frames: this.anims.generateFrameNumbers('metz_walk', {
@@ -137,7 +137,7 @@ export class BrackenScene extends Phaser.Scene {
                    : 'down';
     if (this.savedPlayerPos) this.playerDir = 'down';
 
-    const idleFrames = { down: 0, left: 4, right: 8, up: 12 };
+    const idleFrames = { down: 0, right: 4, left: 8, up: 12 };
     this.player = this.add.sprite(spawn.x, spawn.y, 'metz_walk', idleFrames[this.playerDir]).setDepth(10);
     const scaleY = 36 / this.player.height;
     this.player.setScale(scaleY);
@@ -963,7 +963,7 @@ export class BrackenScene extends Phaser.Scene {
         this.player.play(animKey);
       }
     } else {
-      const idleFrames = { down: 0, left: 4, right: 8, up: 12 };
+      const idleFrames = { down: 0, right: 4, left: 8, up: 12 };
       this.player.stop();
       this.player.setFrame(idleFrames[this.playerDir]);
     }
