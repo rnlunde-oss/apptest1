@@ -1,0 +1,537 @@
+{
+  "generator_id": "townfolk",
+  "seed": 42,
+  "count": 10,
+  "sprite_size": [
+    16,
+    24
+  ],
+  "scale": 4,
+  "npcs": [
+    {
+      "npc_id": "townfolk_001",
+      "display_name": "Townfolk 001",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_medium",
+          "z_order": 0
+        },
+        {
+          "template": "tunic_simple",
+          "palette": "clothing_white",
+          "z_order": 1
+        },
+        {
+          "template": "hair_long_wavy",
+          "palette": "hair_black",
+          "z_order": 2
+        },
+        {
+          "template": "accessory_necklace",
+          "palette": "accessory_gold",
+          "z_order": 3
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "tunic_simple",
+        "hair": "hair_long_wavy",
+        "accessory": "accessory_necklace",
+        "skin_palette": "skin_medium",
+        "hair_palette": "hair_black",
+        "clothing_palette": "clothing_white",
+        "accessory_palette": "accessory_gold",
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_002",
+      "display_name": "Townfolk 002",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_light",
+          "z_order": 0
+        },
+        {
+          "template": "armor_light",
+          "palette": "clothing_blue",
+          "z_order": 1
+        },
+        {
+          "template": "hair_long_wavy",
+          "palette": "hair_brown",
+          "z_order": 2
+        },
+        {
+          "template": "accessory_necklace",
+          "palette": "accessory_gold",
+          "z_order": 3
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "armor_light",
+        "hair": "hair_long_wavy",
+        "accessory": "accessory_necklace",
+        "skin_palette": "skin_light",
+        "hair_palette": "hair_brown",
+        "clothing_palette": "clothing_blue",
+        "accessory_palette": "accessory_gold",
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_003",
+      "display_name": "Townfolk 003",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_medium",
+          "z_order": 0
+        },
+        {
+          "template": "armor_light",
+          "palette": "clothing_purple",
+          "z_order": 1
+        },
+        {
+          "template": "hair_short",
+          "palette": "hair_auburn",
+          "z_order": 2
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "armor_light",
+        "hair": "hair_short",
+        "accessory": null,
+        "skin_palette": "skin_medium",
+        "hair_palette": "hair_auburn",
+        "clothing_palette": "clothing_purple",
+        "accessory_palette": null,
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_004",
+      "display_name": "Townfolk 004",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_tan",
+          "z_order": 0
+        },
+        {
+          "template": "tunic_simple",
+          "palette": "clothing_blue",
+          "z_order": 1
+        },
+        {
+          "template": "hair_long_wavy",
+          "palette": "hair_black",
+          "z_order": 2
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "tunic_simple",
+        "hair": "hair_long_wavy",
+        "accessory": null,
+        "skin_palette": "skin_tan",
+        "hair_palette": "hair_black",
+        "clothing_palette": "clothing_blue",
+        "accessory_palette": null,
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_005",
+      "display_name": "Townfolk 005",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_tan",
+          "z_order": 0
+        },
+        {
+          "template": "tunic_simple",
+          "palette": "clothing_purple",
+          "z_order": 1
+        },
+        {
+          "template": "hair_long_wavy",
+          "palette": "hair_blonde",
+          "z_order": 2
+        },
+        {
+          "template": "accessory_necklace",
+          "palette": "accessory_silver",
+          "z_order": 3
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "tunic_simple",
+        "hair": "hair_long_wavy",
+        "accessory": "accessory_necklace",
+        "skin_palette": "skin_tan",
+        "hair_palette": "hair_blonde",
+        "clothing_palette": "clothing_purple",
+        "accessory_palette": "accessory_silver",
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_006",
+      "display_name": "Townfolk 006",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_dark",
+          "z_order": 0
+        },
+        {
+          "template": "armor_light",
+          "palette": "clothing_purple",
+          "z_order": 1
+        },
+        {
+          "template": "hair_long_wavy",
+          "palette": "hair_brown",
+          "z_order": 2
+        },
+        {
+          "template": "accessory_necklace",
+          "palette": "accessory_silver",
+          "z_order": 3
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "armor_light",
+        "hair": "hair_long_wavy",
+        "accessory": "accessory_necklace",
+        "skin_palette": "skin_dark",
+        "hair_palette": "hair_brown",
+        "clothing_palette": "clothing_purple",
+        "accessory_palette": "accessory_silver",
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_007",
+      "display_name": "Townfolk 007",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_light",
+          "z_order": 0
+        },
+        {
+          "template": "armor_light",
+          "palette": "clothing_blue",
+          "z_order": 1
+        },
+        {
+          "template": "hair_short",
+          "palette": "hair_blue",
+          "z_order": 2
+        },
+        {
+          "template": "accessory_necklace",
+          "palette": "accessory_silver",
+          "z_order": 3
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "armor_light",
+        "hair": "hair_short",
+        "accessory": "accessory_necklace",
+        "skin_palette": "skin_light",
+        "hair_palette": "hair_blue",
+        "clothing_palette": "clothing_blue",
+        "accessory_palette": "accessory_silver",
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_008",
+      "display_name": "Townfolk 008",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_tan",
+          "z_order": 0
+        },
+        {
+          "template": "tunic_simple",
+          "palette": "clothing_white",
+          "z_order": 1
+        },
+        {
+          "template": "hair_short",
+          "palette": "hair_auburn",
+          "z_order": 2
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "tunic_simple",
+        "hair": "hair_short",
+        "accessory": null,
+        "skin_palette": "skin_tan",
+        "hair_palette": "hair_auburn",
+        "clothing_palette": "clothing_white",
+        "accessory_palette": null,
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_009",
+      "display_name": "Townfolk 009",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_tan",
+          "z_order": 0
+        },
+        {
+          "template": "dress_simple",
+          "palette": "clothing_white",
+          "z_order": 1
+        },
+        {
+          "template": "hair_long_wavy",
+          "palette": "hair_blue",
+          "z_order": 2
+        },
+        {
+          "template": "accessory_necklace",
+          "palette": "accessory_leather",
+          "z_order": 3
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "dress_simple",
+        "hair": "hair_long_wavy",
+        "accessory": "accessory_necklace",
+        "skin_palette": "skin_tan",
+        "hair_palette": "hair_blue",
+        "clothing_palette": "clothing_white",
+        "accessory_palette": "accessory_leather",
+        "tags": [
+          "generated"
+        ]
+      }
+    },
+    {
+      "npc_id": "townfolk_010",
+      "display_name": "Townfolk 010",
+      "sprite_size": [
+        16,
+        24
+      ],
+      "layers": [
+        {
+          "template": "body_medium",
+          "palette": "skin_medium",
+          "z_order": 0
+        },
+        {
+          "template": "armor_light",
+          "palette": "clothing_brown",
+          "z_order": 1
+        },
+        {
+          "template": "hair_short",
+          "palette": "hair_auburn",
+          "z_order": 2
+        },
+        {
+          "template": "accessory_necklace",
+          "palette": "accessory_silver",
+          "z_order": 3
+        }
+      ],
+      "animation": {
+        "walk_speed_fps": 8,
+        "idle_bob": false,
+        "frame_order": [
+          "idle",
+          "walk_1",
+          "idle",
+          "walk_2"
+        ]
+      },
+      "metadata": {
+        "generator": "townfolk",
+        "body": "body_medium",
+        "clothing": "armor_light",
+        "hair": "hair_short",
+        "accessory": "accessory_necklace",
+        "skin_palette": "skin_medium",
+        "hair_palette": "hair_auburn",
+        "clothing_palette": "clothing_brown",
+        "accessory_palette": "accessory_silver",
+        "tags": [
+          "generated"
+        ]
+      }
+    }
+  ]
+}

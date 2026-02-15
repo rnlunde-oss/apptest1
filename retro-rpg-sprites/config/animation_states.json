@@ -1,0 +1,30 @@
+{
+  "states": {
+    "idle": {
+      "frames": ["idle"],
+      "frame_duration_ms": 500,
+      "loop": true
+    },
+    "walking": {
+      "frames": ["idle", "walk_1", "idle", "walk_2"],
+      "frame_duration_ms": 150,
+      "loop": true
+    },
+    "talking": {
+      "frames": ["idle", "talk_1"],
+      "frame_duration_ms": 300,
+      "loop": true
+    },
+    "emote_surprise": {
+      "frames": ["idle", "surprise"],
+      "frame_duration_ms": 200,
+      "loop": false,
+      "on_complete": "idle"
+    }
+  },
+  "transitions": {
+    "idle_to_walking": { "blend_frames": 0 },
+    "walking_to_idle": { "snap_to": "idle" },
+    "any_to_emote": { "interrupt": true }
+  }
+}

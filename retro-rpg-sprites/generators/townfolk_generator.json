@@ -1,0 +1,59 @@
+{
+  "generator_id": "townfolk",
+  "display_name": "Townfolk NPC Generator",
+  "base_sprite_size": [16, 24],
+
+  "body_templates": ["body_medium"],
+
+  "clothing_options": [
+    "tunic_simple",
+    "dress_simple",
+    "armor_light"
+  ],
+
+  "hair_options": [
+    "hair_short",
+    "hair_long_wavy"
+  ],
+
+  "accessory_options": [
+    "accessory_necklace",
+    null
+  ],
+
+  "skin_palettes": [
+    "skin_light",
+    "skin_medium",
+    "skin_tan",
+    "skin_dark",
+    "skin_deep"
+  ],
+
+  "hair_palettes": [
+    "hair_brown",
+    "hair_black",
+    "hair_blonde",
+    "hair_auburn",
+    "hair_grey",
+    "hair_blue"
+  ],
+
+  "clothing_palettes": [
+    "clothing_red",
+    "clothing_blue",
+    "clothing_green",
+    "clothing_brown",
+    "clothing_purple",
+    "clothing_white"
+  ],
+
+  "accessory_palettes": [
+    "accessory_gold",
+    "accessory_silver",
+    "accessory_leather"
+  ],
+
+  "name_prefixes": [
+    "townfolk", "villager", "citizen", "resident"
+  ]
+}

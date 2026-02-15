@@ -1,0 +1,41 @@
+{
+  "npc_id": "villager_elara",
+  "display_name": "Elara",
+  "sprite_size": [16, 24],
+
+  "layers": [
+    {
+      "template": "body_medium",
+      "palette": "skin_light",
+      "z_order": 0
+    },
+    {
+      "template": "dress_simple",
+      "palette": "clothing_red",
+      "z_order": 1
+    },
+    {
+      "template": "hair_long_wavy",
+      "palette": "hair_auburn",
+      "z_order": 2
+    },
+    {
+      "template": "accessory_necklace",
+      "palette": "accessory_gold",
+      "z_order": 3
+    }
+  ],
+
+  "animation": {
+    "walk_speed_fps": 8,
+    "idle_bob": false,
+    "frame_order": ["idle", "walk_1", "idle", "walk_2"]
+  },
+
+  "metadata": {
+    "role": "shopkeeper",
+    "location": "market_district",
+    "dialogue_id": "elara_shop_01",
+    "tags": ["friendly", "merchant", "quest_giver"]
+  }
+}

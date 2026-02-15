@@ -1,0 +1,62 @@
+[
+  {
+    "palette_id": "hair_brown",
+    "type": "hair",
+    "colors": {
+      "base":      "#6B4423",
+      "shadow":    "#4A2E14",
+      "highlight": "#8B6340",
+      "outline":   "#2E1A08"
+    }
+  },
+  {
+    "palette_id": "hair_black",
+    "type": "hair",
+    "colors": {
+      "base":      "#2A2A2A",
+      "shadow":    "#1A1A1A",
+      "highlight": "#444444",
+      "outline":   "#0A0A0A"
+    }
+  },
+  {
+    "palette_id": "hair_blonde",
+    "type": "hair",
+    "colors": {
+      "base":      "#D4A840",
+      "shadow":    "#B08A28",
+      "highlight": "#F0CC60",
+      "outline":   "#7A6018"
+    }
+  },
+  {
+    "palette_id": "hair_auburn",
+    "type": "hair",
+    "colors": {
+      "base":      "#A0522D",
+      "shadow":    "#6B3410",
+      "highlight": "#CD853F",
+      "outline":   "#3E1A00"
+    }
+  },
+  {
+    "palette_id": "hair_grey",
+    "type": "hair",
+    "colors": {
+      "base":      "#9A9A9A",
+      "shadow":    "#707070",
+      "highlight": "#C0C0C0",
+      "outline":   "#505050"
+    }
+  },
+  {
+    "palette_id": "hair_blue",
+    "type": "hair",
+    "colors": {
+      "base":      "#4466AA",
+      "shadow":    "#2A4480",
+      "highlight": "#6688CC",
+      "outline":   "#1A2A55"
+    }
+  }
+]

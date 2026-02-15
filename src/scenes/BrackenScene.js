@@ -4,8 +4,9 @@ import { BRACKEN_MAP, BRACKEN_COLS, BRACKEN_ROWS, BRACKEN_TILE_SIZE, BRACKEN_SPA
 import { TILE_COLORS } from '../data/maps.js';
 import { createEnemy } from '../data/characters.js';
 import { QUEST_DEFS } from '../data/quests.js';
-import { serializeGameState, autoSave, saveToSlot } from '../data/saveManager.js';
+import { serializeGameState, autoSave, saveToSlot, getSlotSummaries } from '../data/saveManager.js';
 import {
+  getTrackedQuest,
   findDefeatEnemyObjectives, findDefeatCountObjectives, findTalkNPCObjectives,
   progressObjective, completeQuest, isQuestActive, isQuestComplete,
 } from '../utils/QuestManager.js';
@@ -153,9 +154,25 @@ export class BrackenScene extends Phaser.Scene {
       right: Phaser.Input.Keyboard.KeyCodes.D,
     });
     this.interactKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.partyKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+    this.inventoryKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+    this.experienceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.muteKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    this.mapKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
+    this.questKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 
     this.lastTileX = Math.floor(this.player.x / BRACKEN_TILE_SIZE);
     this.lastTileY = Math.floor(this.player.y / BRACKEN_TILE_SIZE);
+    this.partyOpen = false;
+    this.inventoryOpen = false;
+    this.experienceOpen = false;
+    this.saveMenuOpen = false;
+    this.questLogOpen = false;
+
+    // ─── HUD & Minimap ───
+    this.drawPartyHUD();
+    this.buildMiniMap();
 
     // ─── NPCs ───
     this.spawnNPCs();
@@ -393,6 +410,7 @@ export class BrackenScene extends Phaser.Scene {
       this.rivinNpc.marker.destroy();
     }
 
+    this.drawPartyHUD();
     this.triggerAutoSave();
   }
 
@@ -472,6 +490,7 @@ export class BrackenScene extends Phaser.Scene {
             this.scene.resume();
             this.inBattle = false;
 
+            this.drawPartyHUD();
             if (result === 'win') {
               this.skeletalCaptain.defeated = true;
               this.skeletalCaptain.body.destroy();
@@ -539,6 +558,7 @@ export class BrackenScene extends Phaser.Scene {
           this.scene.resume();
           this.inBattle = false;
 
+          this.drawPartyHUD();
           if (result === 'win') {
             this.checkQuestBattleEnd(picked.enemies);
             this.triggerAutoSave();
@@ -868,9 +888,39 @@ export class BrackenScene extends Phaser.Scene {
   // ──── Update ────
 
   update() {
-    if (this.transitioning || this.inBattle || this.dialogueActive) {
+    if (this.transitioning || this.inBattle || this.dialogueActive || this.partyOpen || this.inventoryOpen || this.experienceOpen || this.saveMenuOpen || this.questLogOpen) {
       this.player.body.setVelocity(0);
       return;
+    }
+
+    // Menu key checks
+    if (Phaser.Input.Keyboard.JustDown(this.partyKey)) {
+      this.openPartyScreen();
+      return;
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.inventoryKey)) {
+      this.openInventoryScreen();
+      return;
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.experienceKey)) {
+      this.openExperienceScreen();
+      return;
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.questKey)) {
+      this.openQuestLog();
+      return;
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.openSaveMenu();
+      return;
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.muteKey)) {
+      const muted = this.sfx.toggleMute();
+      this.showSaveToast(muted ? 'Sound OFF' : 'Sound ON');
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.mapKey)) {
+      this.minimapVisible = !this.minimapVisible;
+      if (this.minimapContainer) this.minimapContainer.setVisible(this.minimapVisible);
     }
 
     // Movement
@@ -925,7 +975,357 @@ export class BrackenScene extends Phaser.Scene {
       // Skeleton encounters
       this.checkEncounter(tx, ty);
     }
+
+    this.updateMiniMap();
   }
+
+  // ──── Party HUD (top-left) ────
+
+  drawPartyHUD() {
+    if (this.hudContainer) this.hudContainer.destroy();
+    this.hudContainer = this.add.container(10, 36).setScrollFactor(0).setDepth(100);
+    this._addUI(this.hudContainer);
+
+    const roster = this.registry.get('roster');
+    const activeParty = this.getActiveParty();
+
+    activeParty.forEach((member, i) => {
+      const yy = i * 28;
+      this.hudContainer.add(
+        this.add.rectangle(12, yy + 10, 20, 20, member.color)
+          .setStrokeStyle(1, 0xffffff, 0.5)
+      );
+      this.hudContainer.add(
+        this.add.text(26, yy + 1, `${member.name} Lv.${member.level}`, {
+          fontSize: '10px', color: '#ffffff', fontStyle: 'bold',
+        })
+      );
+      this.hudContainer.add(
+        this.add.text(26, yy + 13, `HP ${member.hp}/${member.maxHp}  MP ${member.mp}/${member.maxMp}`, {
+          fontSize: '8px', color: '#aaaaaa',
+        })
+      );
+    });
+
+    const gold = this.registry.get('gold') || 0;
+    const allRoster = Object.values(roster).filter(c => c.recruited);
+    const unspentPts = allRoster.some(c => c.talentPoints > 0);
+    const ptIndicator = unspentPts ? '  \u2605 Talent Pts!' : '';
+    this.hudContainer.add(
+      this.add.text(0, activeParty.length * 28 + 4, `Gold: ${gold}  [P] Party  [I] Inv  [X] Exp  [Q] Quest`, {
+        fontSize: '8px', color: '#666666',
+      })
+    );
+    if (unspentPts) {
+      this.hudContainer.add(
+        this.add.text(0, activeParty.length * 28 + 16, `${ptIndicator}`, {
+          fontSize: '8px', color: '#ffcc44', fontStyle: 'bold',
+        })
+      );
+    }
+
+    const tracked = getTrackedQuest(this.registry);
+    if (tracked) {
+      const qY = activeParty.length * 28 + (unspentPts ? 30 : 18);
+      this.hudContainer.add(
+        this.add.text(0, qY, tracked.def.name, {
+          fontSize: '9px', color: '#ccaa44', fontStyle: 'bold',
+        })
+      );
+      for (const obj of tracked.def.objectives) {
+        const progress = tracked.state.objectiveProgress[obj.id] || 0;
+        if (progress < obj.required) {
+          const progressStr = obj.required > 1 ? ` (${progress}/${obj.required})` : '';
+          this.hudContainer.add(
+            this.add.text(6, qY + 13, `${obj.description}${progressStr}`, {
+              fontSize: '8px', color: '#888877',
+            })
+          );
+          break;
+        }
+      }
+    }
+  }
+
+  // ──── Mini-Map (Bracken 40×40) ────
+
+  buildMiniMap() {
+    const MINI_SCALE = 3;
+    const mapW = BRACKEN_COLS * MINI_SCALE;
+    const mapH = BRACKEN_ROWS * MINI_SCALE;
+
+    this.minimapContainer = this.add.container(670 - mapW, 36).setScrollFactor(0).setDepth(150);
+    this._addUI(this.minimapContainer);
+    this.minimapVisible = true;
+
+    const bg = this.add.rectangle(mapW / 2, mapH / 2, mapW + 6, mapH + 6, 0x000000, 0.6)
+      .setStrokeStyle(1, 0xaaaaaa, 0.4);
+    this.minimapContainer.add(bg);
+
+    const gfx = this.add.graphics();
+    for (let row = 0; row < BRACKEN_ROWS; row++) {
+      for (let col = 0; col < BRACKEN_COLS; col++) {
+        const tile = BRACKEN_MAP[row][col];
+        const color = TILE_COLORS[tile] ?? 0x000000;
+        gfx.fillStyle(color, 1);
+        gfx.fillRect(col * MINI_SCALE, row * MINI_SCALE, MINI_SCALE, MINI_SCALE);
+      }
+    }
+    this.minimapContainer.add(gfx);
+
+    // Player dot
+    this.minimapPlayerDot = this.add.circle(0, 0, 3, 0xffffff);
+    this.minimapContainer.add(this.minimapPlayerDot);
+    this.tweens.add({
+      targets: this.minimapPlayerDot, alpha: 0.3,
+      duration: 400, yoyo: true, repeat: -1,
+    });
+
+    // NPC dots
+    if (this.rivinNpc) {
+      const rx = (this.rivinNpc.x / BRACKEN_TILE_SIZE) * MINI_SCALE;
+      const ry = (this.rivinNpc.y / BRACKEN_TILE_SIZE) * MINI_SCALE;
+      this.minimapContainer.add(this.add.circle(rx, ry, 2, 0xffff00));
+    }
+    if (this.skeletalCaptain) {
+      const cx = (this.skeletalCaptain.x / BRACKEN_TILE_SIZE) * MINI_SCALE;
+      const cy = (this.skeletalCaptain.y / BRACKEN_TILE_SIZE) * MINI_SCALE;
+      const dot = this.add.circle(cx, cy, 2.5, 0xff4444);
+      this.minimapContainer.add(dot);
+      this.tweens.add({
+        targets: dot, alpha: 0.3,
+        duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+      });
+    }
+    if (this.tertullianNpc) {
+      const tx = (this.tertullianNpc.x / BRACKEN_TILE_SIZE) * MINI_SCALE;
+      const ty = (this.tertullianNpc.y / BRACKEN_TILE_SIZE) * MINI_SCALE;
+      this.minimapContainer.add(this.add.circle(tx, ty, 2, 0x44ff44));
+    }
+
+    const label = this.add.text(mapW / 2, mapH + 8, 'N: Map', {
+      fontSize: '7px', color: '#666666',
+    }).setOrigin(0.5, 0);
+    this.minimapContainer.add(label);
+  }
+
+  updateMiniMap() {
+    if (!this.minimapVisible || !this.minimapPlayerDot) return;
+    const MINI_SCALE = 3;
+    this.minimapPlayerDot.setPosition(
+      (this.player.x / BRACKEN_TILE_SIZE) * MINI_SCALE,
+      (this.player.y / BRACKEN_TILE_SIZE) * MINI_SCALE
+    );
+  }
+
+  // ──── Menu Screens ────
+
+  openPartyScreen() {
+    this.partyOpen = true;
+    this.sfx.playMenuOpen();
+    this.player.body.setVelocity(0);
+    this.scene.launch('Party', {
+      onClose: () => {
+        this.sfx.playMenuClose();
+        this.scene.stop('Party');
+        this.time.delayedCall(100, () => {
+          this.partyOpen = false;
+          this.drawPartyHUD();
+        });
+      },
+    });
+  }
+
+  openExperienceScreen() {
+    this.experienceOpen = true;
+    this.sfx.playMenuOpen();
+    this.player.body.setVelocity(0);
+    this.scene.launch('Experience', {
+      onClose: () => {
+        this.sfx.playMenuClose();
+        this.scene.stop('Experience');
+        this.time.delayedCall(100, () => {
+          this.experienceOpen = false;
+          this.drawPartyHUD();
+        });
+      },
+    });
+  }
+
+  openInventoryScreen() {
+    this.inventoryOpen = true;
+    this.sfx.playMenuOpen();
+    this.player.body.setVelocity(0);
+    this.scene.launch('Inventory', {
+      onClose: () => {
+        this.sfx.playMenuClose();
+        this.scene.stop('Inventory');
+        this.time.delayedCall(100, () => {
+          this.inventoryOpen = false;
+          this.drawPartyHUD();
+        });
+      },
+    });
+  }
+
+  openQuestLog() {
+    this.questLogOpen = true;
+    this.sfx.playMenuOpen();
+    this.player.body.setVelocity(0);
+    this.scene.launch('QuestLog', {
+      onClose: () => {
+        this.sfx.playMenuClose();
+        this.scene.stop('QuestLog');
+        this.time.delayedCall(100, () => {
+          this.questLogOpen = false;
+          this.drawPartyHUD();
+        });
+      },
+    });
+  }
+
+  openSaveMenu() {
+    this.saveMenuOpen = true;
+    this.sfx.playMenuOpen();
+    this.player.body.setVelocity(0);
+
+    const elements = [];
+    const { width, height } = this.scale;
+
+    const bg = this._addUI(this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.85)
+      .setScrollFactor(0).setDepth(300));
+    elements.push(bg);
+
+    const title = this._addUI(this.add.text(width / 2, 80, 'SAVE GAME', {
+      fontSize: '24px', color: '#ffddaa', fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301));
+    elements.push(title);
+
+    const gold = this.registry.get('gold') || 0;
+    const roster = this.registry.get('roster');
+    const recruited = Object.values(roster).filter(c => c.recruited).length;
+    const maxLevel = Object.values(roster)
+      .filter(c => c.recruited)
+      .reduce((max, c) => Math.max(max, c.level || 1), 1);
+    const summary = this._addUI(this.add.text(width / 2, 120, `Current: Lv.${maxLevel}  Gold: ${gold}  Party: ${recruited}`, {
+      fontSize: '12px', color: '#888888',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301));
+    elements.push(summary);
+
+    const slotSummaries = getSlotSummaries();
+    const slotY = 180;
+
+    for (let i = 0; i < 3; i++) {
+      const slotNum = i + 1;
+      const sy = slotY + i * 70;
+      const slotData = slotSummaries[i];
+
+      const slotBg = this._addUI(this.add.rectangle(width / 2, sy, 500, 55, 0x1a1a2e)
+        .setStrokeStyle(1, 0x4a3a6a, 0.6)
+        .setScrollFactor(0).setDepth(301));
+      elements.push(slotBg);
+
+      let infoStr;
+      if (slotData.exists) {
+        const time = new Date(slotData.saveTime);
+        const timeStr = time.toLocaleDateString() + ' ' + time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        infoStr = `Slot ${slotNum}  —  Lv.${slotData.level}  Gold: ${slotData.gold}  Party: ${slotData.recruited}  (${timeStr})`;
+      } else {
+        infoStr = `Slot ${slotNum}  —  Empty`;
+      }
+      const infoText = this._addUI(this.add.text(width / 2 - 210, sy, infoStr, {
+        fontSize: '13px', color: slotData.exists ? '#ccbbaa' : '#555555',
+      }).setOrigin(0, 0.5).setScrollFactor(0).setDepth(302));
+      elements.push(infoText);
+
+      const btnBg = this._addUI(this.add.rectangle(width / 2 + 200, sy, 70, 30, 0x335533)
+        .setStrokeStyle(1, 0x55aa55, 0.7)
+        .setScrollFactor(0).setDepth(302)
+        .setInteractive({ useHandCursor: true }));
+      elements.push(btnBg);
+      const btnText = this._addUI(this.add.text(width / 2 + 200, sy, 'Save', {
+        fontSize: '12px', color: '#aaffaa',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(303));
+      elements.push(btnText);
+
+      btnBg.on('pointerover', () => btnBg.setFillStyle(0x447744));
+      btnBg.on('pointerout', () => btnBg.setFillStyle(0x335533));
+      btnBg.on('pointerdown', () => {
+        this.sfx.playSave();
+        const exitPos = OVERWORLD_EXIT[this.entrance] || OVERWORLD_EXIT.west;
+        const state = serializeGameState(this.registry, exitPos);
+        state.activeSlot = slotNum;
+        saveToSlot(slotNum, state);
+        autoSave(state);
+        this.registry.set('activeSlot', slotNum);
+        closeSaveMenu();
+        this.showSaveToast(`Saved to Slot ${slotNum}`);
+      });
+    }
+
+    const closeHint = this._addUI(this.add.text(width / 2, slotY + 3 * 70 + 20, 'Press ESC or click here to close', {
+      fontSize: '11px', color: '#666666',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(301).setInteractive({ useHandCursor: true }));
+    elements.push(closeHint);
+    closeHint.on('pointerdown', () => closeSaveMenu());
+
+    const keyHandlers = [];
+    for (let i = 1; i <= 3; i++) {
+      const slotNum = i;
+      const handler = (event) => {
+        if (event.key === String(slotNum)) {
+          this.sfx.playSave();
+          const exitPos = OVERWORLD_EXIT[this.entrance] || OVERWORLD_EXIT.west;
+          const state = serializeGameState(this.registry, exitPos);
+          state.activeSlot = slotNum;
+          saveToSlot(slotNum, state);
+          autoSave(state);
+          this.registry.set('activeSlot', slotNum);
+          closeSaveMenu();
+          this.showSaveToast(`Saved to Slot ${slotNum}`);
+        }
+      };
+      this.input.keyboard.on(`keydown-${i}`, handler);
+      keyHandlers.push({ key: `keydown-${i}`, handler });
+    }
+
+    const closeSaveMenu = () => {
+      this.sfx.playMenuClose();
+      for (const el of elements) el.destroy();
+      for (const kh of keyHandlers) {
+        this.input.keyboard.off(kh.key, kh.handler);
+      }
+      this.time.delayedCall(100, () => {
+        this.saveMenuOpen = false;
+      });
+    };
+
+    this.time.delayedCall(200, () => {
+      if (!this.saveMenuOpen) return;
+      const escOnce = () => {
+        if (this.saveMenuOpen) {
+          closeSaveMenu();
+          this.input.keyboard.off('keydown-ESC', escOnce);
+        }
+      };
+      this.input.keyboard.on('keydown-ESC', escOnce);
+      keyHandlers.push({ key: 'keydown-ESC', handler: escOnce });
+    });
+  }
+
+  showSaveToast(message) {
+    const toast = this._addUI(this.add.text(400, 600, message, {
+      fontSize: '12px', color: '#aaffaa',
+      backgroundColor: '#00000099', padding: { x: 12, y: 6 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(400));
+    this.tweens.add({
+      targets: toast, alpha: 0, y: 580,
+      delay: 1200, duration: 600,
+      onComplete: () => toast.destroy(),
+    });
+  }
+
+  // ──── Gate Exit ────
 
   exitTown(tx, ty) {
     // Determine which gate based on position

@@ -1,0 +1,32 @@
+[
+  {
+    "palette_id": "accessory_gold",
+    "type": "accessory",
+    "colors": {
+      "base":      "#FFD700",
+      "shadow":    "#B8860B",
+      "highlight": "#FFEC8B",
+      "outline":   "#8B6914"
+    }
+  },
+  {
+    "palette_id": "accessory_silver",
+    "type": "accessory",
+    "colors": {
+      "base":      "#C0C0C0",
+      "shadow":    "#808080",
+      "highlight": "#E8E8E8",
+      "outline":   "#505050"
+    }
+  },
+  {
+    "palette_id": "accessory_leather",
+    "type": "accessory",
+    "colors": {
+      "base":      "#8B5A2B",
+      "shadow":    "#5A3818",
+      "highlight": "#A87040",
+      "outline":   "#3A2010"
+    }
+  }
+]

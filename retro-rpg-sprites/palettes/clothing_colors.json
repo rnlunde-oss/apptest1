@@ -1,0 +1,62 @@
+[
+  {
+    "palette_id": "clothing_red",
+    "type": "clothing",
+    "colors": {
+      "primary":   "#C41E3A",
+      "secondary": "#8B0000",
+      "accent":    "#FF6B6B",
+      "outline":   "#4A0010"
+    }
+  },
+  {
+    "palette_id": "clothing_blue",
+    "type": "clothing",
+    "colors": {
+      "primary":   "#2255AA",
+      "secondary": "#143870",
+      "accent":    "#5588DD",
+      "outline":   "#0A1A40"
+    }
+  },
+  {
+    "palette_id": "clothing_green",
+    "type": "clothing",
+    "colors": {
+      "primary":   "#2D7A2D",
+      "secondary": "#1A4A1A",
+      "accent":    "#55AA55",
+      "outline":   "#0A2A0A"
+    }
+  },
+  {
+    "palette_id": "clothing_brown",
+    "type": "clothing",
+    "colors": {
+      "primary":   "#8B6538",
+      "secondary": "#5A4020",
+      "accent":    "#B08A58",
+      "outline":   "#3A2810"
+    }
+  },
+  {
+    "palette_id": "clothing_purple",
+    "type": "clothing",
+    "colors": {
+      "primary":   "#7A3AAA",
+      "secondary": "#4A1A70",
+      "accent":    "#AA66DD",
+      "outline":   "#2A0A40"
+    }
+  },
+  {
+    "palette_id": "clothing_white",
+    "type": "clothing",
+    "colors": {
+      "primary":   "#E8E8E8",
+      "secondary": "#B0B0B0",
+      "accent":    "#FFFFFF",
+      "outline":   "#707070"
+    }
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "palette_id": "skin_light",
+    "type": "skin",
+    "colors": {
+      "base":      "#F5D6B8",
+      "shadow":    "#D4A574",
+      "highlight": "#FDE8D0",
+      "outline":   "#8B5E3C"
+    }
+  },
+  {
+    "palette_id": "skin_medium",
+    "type": "skin",
+    "colors": {
+      "base":      "#D4A574",
+      "shadow":    "#A0714A",
+      "highlight": "#E8C49A",
+      "outline":   "#6B3F1F"
+    }
+  },
+  {
+    "palette_id": "skin_tan",
+    "type": "skin",
+    "colors": {
+      "base":      "#C68E5B",
+      "shadow":    "#8B6338",
+      "highlight": "#DAAC7A",
+      "outline":   "#5A3A1A"
+    }
+  },
+  {
+    "palette_id": "skin_dark",
+    "type": "skin",
+    "colors": {
+      "base":      "#8B6338",
+      "shadow":    "#5A3A1A",
+      "highlight": "#A07848",
+      "outline":   "#3E2210"
+    }
+  },
+  {
+    "palette_id": "skin_deep",
+    "type": "skin",
+    "colors": {
+      "base":      "#5A3A1A",
+      "shadow":    "#3E2210",
+      "highlight": "#7A5230",
+      "outline":   "#2A1508"
+    }
+  }
+]

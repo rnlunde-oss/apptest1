@@ -1798,34 +1798,7 @@ export class OverworldScene extends Phaser.Scene {
         }
       }
 
-      if (this.registry.get('brackenCutscenePlayed') && !this.registry.get('rivinDialoguePlayed')) {
-        const dx = tx - 80, dy = ty - 115;
-        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
-          this.registry.set('rivinDialoguePlayed', true);
-          this.player.body.setVelocity(0);
-          this.triggerRivinDialogue();
-        }
-      }
-
-      if (this.registry.get('rivinDialoguePlayed') && !this.registry.get('rivinRecruitPlayed')
-          && isQuestComplete(this.registry, 'act1_clear_bracken')) {
-        const dx = tx - 80, dy = ty - 115;
-        if (Math.sqrt(dx * dx + dy * dy) <= 5) {
-          this.registry.set('rivinRecruitPlayed', true);
-          this.player.body.setVelocity(0);
-          this.triggerRivinRecruit();
-        }
-      }
-
-      if (this.registry.get('rivinRecruitPlayed') && !this.registry.get('captainApproachPlayed')
-          && isQuestActive(this.registry, 'act1_retake_bracken')) {
-        const dx = tx - 80, dy = ty - 111;
-        if (Math.sqrt(dx * dx + dy * dy) <= 3) {
-          this.registry.set('captainApproachPlayed', true);
-          this.player.body.setVelocity(0);
-          this.triggerCaptainApproach();
-        }
-      }
+      // Rivin dialogue, recruit, and captain approach now trigger inside BrackenScene
 
       // Catacombs approach cutscene
       if (!this.registry.get('catacombsCutscenePlayed')
